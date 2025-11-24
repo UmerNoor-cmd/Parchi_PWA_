@@ -20,7 +20,8 @@ import {
 } from "recharts"
 import { TrendingUp, Users, DollarSign, ShoppingCart, Plus, Download } from "lucide-react"
 import { CorporateSidebar } from "./corporate-sidebar"
-import { OffersManagement } from "./offers-management"
+import { CorporateOffers } from "./corporate-offers"
+import { CorporateBranches } from "./corporate-branches"
 import { DASHBOARD_COLORS, getChartColor } from "@/lib/colors"
 
 const mockRedemptionTrend = [
@@ -239,27 +240,9 @@ export function CorporateDashboard() {
             </>
           )}
 
-          {activeTab === "offers" && <OffersManagement />}
+          {activeTab === "offers" && <CorporateOffers />}
 
-          {activeTab === "branches" && (
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle>Branch Management</CardTitle>
-                  <CardDescription>Manage your branch locations</CardDescription>
-                </div>
-                <Button className="gap-2" style={{ backgroundColor: colors.primary }}>
-                  <Plus className="w-4 h-4" />
-                  Add Branch
-                </Button>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-muted-foreground">
-                  <p>Branch management coming soon</p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          {activeTab === "branches" && <CorporateBranches />}
 
           {activeTab === "reports" && (
             <Card>

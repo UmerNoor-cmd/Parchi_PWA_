@@ -23,12 +23,12 @@ export function AdminSidebar({ activeTab, onTabChange, onLogout }: AdminSidebarP
     },
     {
       id: "merchants",
-      label: "Merchant Approval",
+      label: "Merchants",
       icon: ShoppingCart,
     },
     {
       id: "offers",
-      label: "Offer Oversight",
+      label: "Offers",
       icon: FileText,
     },
     {

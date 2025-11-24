@@ -17,8 +17,11 @@ import {
   ResponsiveContainer,
 } from "recharts"
 import { AdminSidebar } from "./admin-sidebar"
-import { Check, X, TrendingUp, Users, FileText, ShoppingCart } from "lucide-react"
+import { Check, X, TrendingUp, Users, FileText, ShoppingCart, CheckCircle2 } from "lucide-react"
 import { DASHBOARD_COLORS } from "@/lib/colors"
+import { AdminKYC } from "./admin-kyc"
+import { AdminMerchants } from "./admin-merchants"
+import { AdminOffers } from "./admin-offers"
 
 const mockSystemStats = [
   { date: "Mon", redemptions: 120, kyc_approvals: 15, merchant_reg: 3 },
@@ -187,125 +190,11 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             </>
           )}
 
-          {activeTab === "kyc" && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Student KYC Verification</CardTitle>
-                <CardDescription>Review and approve student registrations</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {mockKycRequests.map((req) => (
-                  <div
-                    key={req.id}
-                    className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors"
-                  >
-                    <div>
-                      <p className="font-semibold text-foreground">{req.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {req.university} • {req.submitted}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={req.status === "pending" ? "outline" : "default"}>{req.status}</Badge>
-                      {req.status === "pending" && (
-                        <div className="flex gap-2">
-                          <Button size="sm" className="gap-2" style={{ backgroundColor: colors.primary }}>
-                            <Check className="w-4 h-4" />
-                            Approve
-                          </Button>
-                          <Button size="sm" variant="outline">
-                            <X className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
+          {activeTab === "kyc" && <AdminKYC />}
 
-          {activeTab === "merchants" && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Merchant Registration Requests</CardTitle>
-                <CardDescription>Approve or reject merchant applications</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {mockMerchantRequests.map((req) => (
-                  <div
-                    key={req.id}
-                    className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors"
-                  >
-                    <div>
-                      <p className="font-semibold text-foreground">{req.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {req.type} • {req.submitted}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={req.status === "pending" ? "outline" : "default"}>{req.status}</Badge>
-                      {req.status === "pending" && (
-                        <div className="flex gap-2">
-                          <Button size="sm" className="gap-2" style={{ backgroundColor: colors.primary }}>
-                            <Check className="w-4 h-4" />
-                            Approve
-                          </Button>
-                          <Button size="sm" variant="outline">
-                            <X className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
+          {activeTab === "merchants" && <AdminMerchants />}
 
-          {activeTab === "offers" && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Offer Oversight</CardTitle>
-                <CardDescription>View and manage merchant offers</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {mockOffers.map((offer) => (
-                  <div
-                    key={offer.id}
-                    className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors"
-                  >
-                    <div>
-                      <p className="font-semibold text-foreground">{offer.merchant}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {offer.offer} • Revenue: {offer.revenue}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge
-                        variant={
-                          offer.status === "active" ? "default" : offer.status === "review" ? "outline" : "secondary"
-                        }
-                      >
-                        {offer.status}
-                      </Badge>
-                      {offer.status === "review" && (
-                        <div className="flex gap-2">
-                          <Button size="sm" className="gap-2" style={{ backgroundColor: colors.primary }}>
-                            <Check className="w-4 h-4" />
-                            Approve
-                          </Button>
-                          <Button size="sm" variant="outline">
-                            <X className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
+          {activeTab === "offers" && <AdminOffers />}
 
           {activeTab === "logs" && (
             <Card>
