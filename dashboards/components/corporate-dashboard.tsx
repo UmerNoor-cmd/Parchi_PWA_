@@ -47,10 +47,9 @@ const mockPayables = [
   { week: "Week 4", count: 710, payable: 142000 },
 ]
 
-const colors = DASHBOARD_COLORS("corporate")
-
 export function CorporateDashboard() {
   const [activeTab, setActiveTab] = useState("overview")
+  const colors = DASHBOARD_COLORS("corporate")
 
   return (
     <div className="flex min-h-screen bg-background">

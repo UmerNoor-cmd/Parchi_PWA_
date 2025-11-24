@@ -5,7 +5,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle, Clock } from "lucide-react"
+import { CheckCircle, Clock, TrendingUp, Users, FileText, ShoppingCart } from "lucide-react"
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts"
 import { BranchSidebar } from "./branch-sidebar"
 import { DASHBOARD_COLORS } from "@/lib/colors"
 
@@ -56,7 +68,7 @@ const mockTodayStats = [
 const colors = DASHBOARD_COLORS("branch")
 
 export function BranchDashboard() {
-  const [activeTab, setActiveTab] = useState("redemption")
+  const [activeTab, setActiveTab] = useState("overview")
   const [parchiIdInput, setParchiIdInput] = useState("")
   const [selectedOffer, setSelectedOffer] = useState<number | null>(null)
   const [recentRedemptions, setRecentRedemptions] = useState(mockRecentRedemptions)
@@ -89,11 +101,130 @@ export function BranchDashboard() {
             <p className="text-muted-foreground mt-1">Process student redemptions in real-time</p>
           </div>
 
+          {activeTab === "overview" && (
+            <>
+              {/* Key Metrics */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                <Card className="border-l-4" style={{ borderLeftColor: colors.primary }}>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between">
+                      <span>Total Redemptions</span>
+                      <ShoppingCart className="w-4 h-4" style={{ color: colors.primary }} />
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold">24</div>
+                    <p className="text-xs mt-1 flex items-center gap-1" style={{ color: colors.primary }}>
+                      <TrendingUp className="w-3 h-3" /> +3 today
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-l-4" style={{ borderLeftColor: colors.primary }}>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between">
+                      <span>Amount Owed</span>
+                      <FileText className="w-4 h-4" style={{ color: colors.primary }} />
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold">Rs. 4,800</div>
+                    <p className="text-xs text-muted-foreground mt-1">24 × Rs. 200/redemption</p>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-l-4" style={{ borderLeftColor: colors.primary }}>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between">
+                      <span>Active Students</span>
+                      <Users className="w-4 h-4" style={{ color: colors.primary }} />
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold">142</div>
+                    <p className="text-xs text-muted-foreground mt-1">Verified accounts</p>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-l-4" style={{ borderLeftColor: colors.primary }}>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between">
+                      <span>Active Offers</span>
+                      <FileText className="w-4 h-4" style={{ color: colors.primary }} />
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold">4</div>
+                    <p className="text-xs text-muted-foreground mt-1">Managed by corporate</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Charts */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Weekly Activity</CardTitle>
+                    <CardDescription>Redemptions and footfall this week</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <LineChart data={[
+                        { date: "Mon", redemptions: 18, footfall: 120 },
+                        { date: "Tue", redemptions: 22, footfall: 140 },
+                        { date: "Wed", redemptions: 16, footfall: 110 },
+                        { date: "Thu", redemptions: 24, footfall: 160 },
+                        { date: "Fri", redemptions: 28, footfall: 180 },
+                        { date: "Sat", redemptions: 30, footfall: 200 },
+                        { date: "Sun", redemptions: 20, footfall: 130 },
+                      ]}>
+                        <CartesianGrid strokeDasharray="3 3" stroke={colors.border} />
+                        <XAxis dataKey="date" stroke={colors.mutedForeground} />
+                        <YAxis stroke={colors.mutedForeground} />
+                        <Tooltip />
+                        <Legend />
+                        <Line type="monotone" dataKey="redemptions" stroke={colors.primary} strokeWidth={2} name="Redemptions" />
+                        <Line type="monotone" dataKey="footfall" stroke={colors.chart2} strokeWidth={2} name="Footfall" />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Offer Usage</CardTitle>
+                    <CardDescription>Redemptions per day</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={[
+                        { date: "Mon", redemptions: 18 },
+                        { date: "Tue", redemptions: 22 },
+                        { date: "Wed", redemptions: 16 },
+                        { date: "Thu", redemptions: 24 },
+                        { date: "Fri", redemptions: 28 },
+                        { date: "Sat", redemptions: 30 },
+                        { date: "Sun", redemptions: 20 },
+                      ]}>
+                        <CartesianGrid strokeDasharray="3 3" stroke={colors.border} />
+                        <XAxis dataKey="date" stroke={colors.mutedForeground} />
+                        <YAxis stroke={colors.mutedForeground} />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="redemptions" fill={colors.primary} name="Redemptions" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              </div>
+            </>
+          )}
+
           {activeTab === "redemption" && (
             <>
               <div className="mb-8">
-                <Card className="border-2 shadow-lg" style={{ borderColor: `${colors.primary}40` }}>
-                  <CardHeader className="pb-4" style={{ backgroundColor: `${colors.primary}08` }}>
+                <Card className="border-l-4" style={{ borderLeftColor: colors.primary }}>
+                  <CardHeader className="pb-4">
                     <CardTitle className="text-2xl" style={{ color: colors.primary }}>
                       Quick Redemption
                     </CardTitle>

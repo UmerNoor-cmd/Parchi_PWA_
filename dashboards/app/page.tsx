@@ -18,7 +18,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="min-h-screen bg-background">
+    <main className="min-h-screen bg-background" suppressHydrationWarning>
       {authState === "corporate" ? (
         <CorporateDashboard />
       ) : authState === "branch" ? (
