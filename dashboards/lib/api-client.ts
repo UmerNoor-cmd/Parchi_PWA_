@@ -34,6 +34,60 @@ export interface ApiError {
   error: string;
 }
 
+// Corporate Merchant Types
+export interface CorporateMerchant {
+  id: string;
+  userId: string;
+  businessName: string;
+  businessRegistrationNumber: string | null;
+  contactEmail: string;
+  contactPhone: string;
+  logoPath: string | null;
+  category: string | null;
+  verificationStatus: string | null;
+  verifiedAt: string | null;
+  isActive: boolean | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+}
+
+export interface CorporateMerchantsResponse {
+  data: CorporateMerchant[];
+  status: number;
+  message: string;
+}
+
+// Branch Signup Types
+export interface BranchSignupRequest {
+  name: string;
+  emailPrefix: string;
+  password: string;
+  address: string;
+  city: string;
+  contact: string;
+  linkedCorporate: string;
+  latitude?: string;
+  longitude?: string;
+  email: string;
+}
+
+export interface BranchSignupResponse {
+  status: number;
+  message: string;
+  data: {
+    id: string;
+    email: string;
+    branchName: string;
+    address: string;
+    city: string;
+    contactPhone: string;
+    latitude?: string;
+    longitude?: string;
+    linkedCorporate: string;
+    createdAt: string;
+  };
+}
+
 export async function apiRequest(
   endpoint: string,
   options: RequestInit = {}
@@ -84,6 +138,29 @@ export async function corporateSignup(
   data: CorporateSignupRequest
 ): Promise<CorporateSignupResponse> {
   return apiRequest('/auth/corporate/signup', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+/**
+ * Fetch all corporate merchant accounts
+ * Requires admin authentication
+ */
+export async function getCorporateMerchants(): Promise<CorporateMerchantsResponse> {
+  return apiRequest('/merchants/corporate', {
+    method: 'GET',
+  });
+}
+
+/**
+ * Create a new branch account
+ * Requires admin or corporate merchant authentication
+ */
+export async function branchSignup(
+  data: BranchSignupRequest
+): Promise<BranchSignupResponse> {
+  return apiRequest('/auth/branch/signup', {
     method: 'POST',
     body: JSON.stringify(data),
   });

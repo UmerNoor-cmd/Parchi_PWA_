@@ -10,8 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Eye, EyeOff, RefreshCw, Building2, Store, Upload, Loader2 } from "lucide-react"
 import { DASHBOARD_COLORS } from "@/lib/colors"
 import { SupabaseStorageService } from "@/lib/storage"
-import { corporateSignup, type ApiError } from "@/lib/api-client"
+import { corporateSignup, branchSignup, type ApiError } from "@/lib/api-client"
 import { useToast } from "@/hooks/use-toast"
+import { useMerchants } from "@/hooks/use-merchants"
 
 interface AccountCreationProps {
   role?: 'admin' | 'corporate'
@@ -38,6 +39,7 @@ export function AccountCreation({ role = 'admin', corporateId }: AccountCreation
   
   const [isUploading, setIsUploading] = useState(false)
   const [isLogoUploading, setIsLogoUploading] = useState(false)
+  const [isBranchUploading, setIsBranchUploading] = useState(false)
 
   const [branchData, setBranchData] = useState({
     name: "",
@@ -51,17 +53,23 @@ export function AccountCreation({ role = 'admin', corporateId }: AccountCreation
     longitude: ""
   })
 
-  // Mock corporate accounts for linking
-  const corporateAccounts = [
-    { id: "c1", name: "Tech Solutions Ltd", slug: "tech" },
-    { id: "c2", name: "Global Retail Inc", slug: "global" },
-    { id: "c3", name: "Food Chain Co", slug: "food" },
-  ]
+  // Fetch real corporate accounts from API
+  const { merchants: corporateAccounts, loading: merchantsLoading } = useMerchants()
 
   const getCorporateSlug = () => {
     const selectedId = role === 'corporate' && corporateId ? corporateId : branchData.linkedCorporate
     const corporate = corporateAccounts.find(c => c.id === selectedId)
-    return corporate ? `${corporate.slug}-` : ""
+    // Generate a slug from business name
+    if (corporate) {
+      // Convert business name to slug: lowercase, replace spaces/special chars with hyphens, remove multiple hyphens
+      const slug = corporate.businessName
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '') // Remove leading/trailing hyphens
+      return slug ? `${slug}-` : ""
+    }
+    return ""
   }
 
   const generatePassword = (type: 'corporate' | 'branch') => {
@@ -193,16 +201,107 @@ export function AccountCreation({ role = 'admin', corporateId }: AccountCreation
     }
   }
 
-  const handleBranchSubmit = (e: React.FormEvent) => {
+  const handleBranchSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const slug = getCorporateSlug()
-    const completeEmail = `${slug}${branchData.emailPrefix}@parchipakistan.com`
+    setIsBranchUploading(true)
     
-    console.log("Creating Branch Account:", {
-      ...branchData,
-      email: completeEmail
-    })
-    // Add API call here
+    try {
+      // Validate required fields
+      if (!branchData.name || !branchData.emailPrefix || !branchData.password || 
+          !branchData.address || !branchData.city || !branchData.contact) {
+        toast({
+          variant: "destructive",
+          title: "Validation Error",
+          description: "Please fill in all required fields.",
+        })
+        setIsBranchUploading(false)
+        return
+      }
+
+      // Validate linked corporate
+      if (!branchData.linkedCorporate) {
+        if (role === 'admin') {
+          toast({
+            variant: "destructive",
+            title: "Corporate Account Required",
+            description: "Please select a corporate account to link this branch to.",
+          })
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Corporate Account Required",
+            description: "Corporate account ID is missing. Please contact support.",
+          })
+        }
+        setIsBranchUploading(false)
+        return
+      }
+
+      // Calculate email with corporate slug prefix: {corporateSlug}{emailPrefix}@parchipakistan.com
+      const corporateSlug = getCorporateSlug()
+      const email = `${corporateSlug}${branchData.emailPrefix}@parchipakistan.com`
+
+      // Prepare request data
+      const requestData = {
+        name: branchData.name,
+        emailPrefix: branchData.emailPrefix,
+        password: branchData.password,
+        address: branchData.address,
+        city: branchData.city,
+        contact: branchData.contact,
+        linkedCorporate: branchData.linkedCorporate,
+        email: email,
+        ...(branchData.latitude && { latitude: branchData.latitude }),
+        ...(branchData.longitude && { longitude: branchData.longitude }),
+      }
+
+      // Call API
+      const response = await branchSignup(requestData)
+
+      // Success toast
+      toast({
+        title: "Branch Account Created Successfully",
+        description: response.message || "Branch account created. Verification pending.",
+      })
+
+      // Reset form
+      setBranchData({
+        name: "",
+        emailPrefix: "",
+        password: "",
+        address: "",
+        city: "",
+        contact: "",
+        linkedCorporate: role === 'corporate' && corporateId ? corporateId : "",
+        latitude: "",
+        longitude: ""
+      })
+
+    } catch (error) {
+      console.error("Error creating branch account:", error)
+      
+      // Handle API errors
+      if (error && typeof error === 'object' && 'statusCode' in error) {
+        const apiError = error as ApiError
+        const errorMessage = Array.isArray(apiError.message) 
+          ? apiError.message.join(', ') 
+          : apiError.message || 'Failed to create branch account'
+        
+        toast({
+          variant: "destructive",
+          title: `Error ${apiError.statusCode}`,
+          description: errorMessage,
+        })
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: error instanceof Error ? error.message : "Failed to create branch account. Please try again.",
+        })
+      }
+    } finally {
+      setIsBranchUploading(false)
+    }
   }
 
   const BranchForm = () => (
@@ -220,13 +319,20 @@ export function AccountCreation({ role = 'admin', corporateId }: AccountCreation
                 <Select 
                   value={branchData.linkedCorporate} 
                   onValueChange={(value) => setBranchData(prev => ({ ...prev, linkedCorporate: value }))}
+                  disabled={merchantsLoading || corporateAccounts.length === 0}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a corporate entity" />
+                    <SelectValue placeholder={
+                      merchantsLoading 
+                        ? "Loading corporations..." 
+                        : corporateAccounts.length === 0 
+                        ? "No corporations available" 
+                        : "Select a corporate entity"
+                    } />
                   </SelectTrigger>
                   <SelectContent>
                     {corporateAccounts.map(corp => (
-                      <SelectItem key={corp.id} value={corp.id}>{corp.name}</SelectItem>
+                      <SelectItem key={corp.id} value={corp.id}>{corp.businessName}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -351,8 +457,20 @@ export function AccountCreation({ role = 'admin', corporateId }: AccountCreation
           </div>
 
           <div className="flex justify-end pt-4">
-            <Button type="submit" className="w-full md:w-auto" style={{ backgroundColor: colors.primary }}>
-              Create Branch Account
+            <Button 
+              type="submit" 
+              className="w-full md:w-auto" 
+              style={{ backgroundColor: colors.primary }}
+              disabled={isBranchUploading}
+            >
+              {isBranchUploading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Creating Branch...
+                </>
+              ) : (
+                "Create Branch Account"
+              )}
             </Button>
           </div>
         </form>
