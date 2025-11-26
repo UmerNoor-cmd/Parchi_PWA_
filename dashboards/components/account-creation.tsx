@@ -7,8 +7,9 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Eye, EyeOff, RefreshCw, Building2, Store } from "lucide-react"
+import { Eye, EyeOff, RefreshCw, Building2, Store, Upload, Loader2 } from "lucide-react"
 import { DASHBOARD_COLORS } from "@/lib/colors"
+import { SupabaseStorageService } from "@/lib/storage"
 
 interface AccountCreationProps {
   role?: 'admin' | 'corporate'
@@ -23,11 +24,17 @@ export function AccountCreation({ role = 'admin', corporateId }: AccountCreation
   const [corporateData, setCorporateData] = useState({
     name: "",
     emailPrefix: "",
+    contactEmail: "",
     password: "",
     contact: "",
     regNumber: "",
-    category: ""
+    category: "",
+    logo: null as File | null,
+    logoUrl: ""
   })
+  
+  const [isUploading, setIsUploading] = useState(false)
+  const [isLogoUploading, setIsLogoUploading] = useState(false)
 
   const [branchData, setBranchData] = useState({
     name: "",
@@ -68,21 +75,54 @@ export function AccountCreation({ role = 'admin', corporateId }: AccountCreation
     }
   }
 
-  const handleCorporateSubmit = (e: React.FormEvent) => {
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setIsLogoUploading(true)
+    try {
+      // Use a temporary name if business name is empty
+      const businessName = corporateData.name || "temp-upload"
+      const url = await SupabaseStorageService.uploadCorporateLogo(file, businessName)
+      
+      setCorporateData(prev => ({ 
+        ...prev, 
+        logo: file,
+        logoUrl: url 
+      }))
+    } catch (error) {
+      console.error("Error uploading logo:", error)
+    } finally {
+      setIsLogoUploading(false)
+    }
+  }
+
+  const handleCorporateSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("Creating Corporate Account:", {
-      ...corporateData,
-      email: `${corporateData.emailPrefix}@parchipakistan.com`
-    })
-    // Add API call here
+    setIsUploading(true)
+    
+    try {
+      console.log("Creating Corporate Account:", {
+        ...corporateData,
+        email: `${corporateData.emailPrefix}@parchipakistan.com`,
+        logo_path: corporateData.logoUrl
+      })
+      // Add API call here
+    } catch (error) {
+      console.error("Error creating account:", error)
+    } finally {
+      setIsUploading(false)
+    }
   }
 
   const handleBranchSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     const slug = getCorporateSlug()
+    const completeEmail = `${slug}${branchData.emailPrefix}@parchipakistan.com`
+    
     console.log("Creating Branch Account:", {
       ...branchData,
-      email: `${slug}${branchData.emailPrefix}@parchipakistan.com`
+      email: completeEmail
     })
     // Add API call here
   }
@@ -340,6 +380,46 @@ export function AccountCreation({ role = 'admin', corporateId }: AccountCreation
                   </div>
 
                   <div className="space-y-2">
+                    <Label htmlFor="corp-contact-email">Contact Email</Label>
+                    <Input 
+                      id="corp-contact-email" 
+                      type="email"
+                      placeholder="contact@business.com" 
+                      value={corporateData.contactEmail}
+                      onChange={(e) => setCorporateData(prev => ({ ...prev, contactEmail: e.target.value }))}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="corp-logo">Business Logo</Label>
+                    <div className="flex items-center gap-4">
+                      <div className="relative">
+                        <Input 
+                          id="corp-logo" 
+                          type="file" 
+                          accept="image/*"
+                          onChange={handleLogoUpload}
+                          className="cursor-pointer"
+                          disabled={isLogoUploading}
+                        />
+                        {isLogoUploading && (
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                            <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                          </div>
+                        )}
+                      </div>
+                      {corporateData.logoUrl && (
+                        <div className="text-xs text-green-600 flex items-center gap-1">
+                          <Upload className="w-3 h-3" />
+                          Uploaded
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Upload business logo (JPG, PNG)</p>
+                  </div>
+
+                  <div className="space-y-2">
                     <Label htmlFor="corp-contact">Contact Phone</Label>
                     <Input 
                       id="corp-contact" 
@@ -372,8 +452,15 @@ export function AccountCreation({ role = 'admin', corporateId }: AccountCreation
                 </div>
 
                 <div className="flex justify-end pt-4">
-                  <Button type="submit" className="w-full md:w-auto" style={{ backgroundColor: colors.primary }}>
-                    Create Corporate Account
+                  <Button type="submit" className="w-full md:w-auto" style={{ backgroundColor: colors.primary }} disabled={isUploading}>
+                    {isUploading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Creating Account...
+                      </>
+                    ) : (
+                      "Create Corporate Account"
+                    )}
                   </Button>
                 </div>
               </form>
