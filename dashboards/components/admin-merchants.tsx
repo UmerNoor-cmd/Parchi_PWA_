@@ -50,9 +50,6 @@ export function AdminMerchants() {
           <h2 className="text-2xl font-bold tracking-tight">Merchant Management</h2>
           <p className="text-muted-foreground">Create and manage corporate and branch accounts</p>
         </div>
-        <Button onClick={() => setIsCreateOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" /> Add Merchant
-        </Button>
       </div>
 
       <Card>

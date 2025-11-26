@@ -54,7 +54,17 @@ export function AccountCreation({ role = 'admin', corporateId }: AccountCreation
   })
 
   // Fetch real corporate accounts from API
-  const { merchants: corporateAccounts, loading: merchantsLoading } = useMerchants()
+  const { merchants: corporateAccounts, loading: merchantsLoading, error: merchantsError } = useMerchants()
+
+  // Show error if fetching merchants fails
+  if (merchantsError && role === 'admin') {
+    // We use a useEffect to avoid rendering side-effects, or just log it. 
+    // Better to show it in the UI near the dropdown or use a toast.
+    // Since we can't call hooks conditionally or inside render easily without useEffect, 
+    // let's just log it for now or rely on the dropdown showing "No corporations" 
+    // but we can also display an alert.
+    console.error("Failed to fetch merchants:", merchantsError)
+  }
 
   const getCorporateSlug = () => {
     const selectedId = role === 'corporate' && corporateId ? corporateId : branchData.linkedCorporate
@@ -325,6 +335,8 @@ export function AccountCreation({ role = 'admin', corporateId }: AccountCreation
                     <SelectValue placeholder={
                       merchantsLoading 
                         ? "Loading corporations..." 
+                        : merchantsError
+                        ? "Error loading corporations"
                         : corporateAccounts.length === 0 
                         ? "No corporations available" 
                         : "Select a corporate entity"
