@@ -10,23 +10,26 @@ import { useAuth } from "@/contexts/AuthContext"
 
 export default function LoginPage() {
   const router = useRouter()
-  const { login, user } = useAuth()
+  const { login, user, logout } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
 
-  // Redirect if user is already logged in
+  // Redirect if user is already logged in (only for valid dashboard roles)
   useEffect(() => {
     if (user) {
       const role = user.role
+      // Note: Student role is already blocked in handleSubmit, so we skip it here
+      // to avoid double logout calls
       if (role === 'admin') {
         router.push("/admin")
       } else if (role === 'merchant_corporate') {
         router.push("/corporate")
       } else if (role === 'merchant_branch') {
         router.push("/branch")
-      } else {
+      } else if (role !== 'student') {
+        // Only redirect if not a student (student is handled in handleSubmit)
         router.push("/")
       }
     }
@@ -44,8 +47,18 @@ export default function LoginPage() {
         return
       }
 
-      await login(email, password)
-      // User will be set in context, useEffect will handle redirect
+      const loggedInUser = await login(email, password)
+      
+      // Check if user is a student - block access immediately
+      if (loggedInUser.role === 'student') {
+        await logout()
+        setError("Student accounts cannot access the dashboard. Please use the mobile app.")
+        setIsLoading(false)
+        return
+      }
+
+      // User will be set in context, useEffect will handle redirect for valid roles
+      setIsLoading(false)
     } catch (err: any) {
       setError(err.message || "Login failed. Please check your credentials.")
       setIsLoading(false)
