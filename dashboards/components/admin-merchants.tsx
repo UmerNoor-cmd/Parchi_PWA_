@@ -9,16 +9,30 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Building2, Store, MoreHorizontal, Search, Loader2, AlertCircle, RefreshCw } from "lucide-react"
+import { Plus, Building2, Store, MoreHorizontal, Search, Loader2, AlertCircle, RefreshCw, Edit } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useMerchants } from "@/hooks/use-merchants"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { updateCorporateMerchant, CorporateMerchant } from "@/lib/api-client"
+import { useToast } from "@/hooks/use-toast"
 
 export function AdminMerchants() {
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [merchantType, setMerchantType] = useState<"corporate" | "branch">("corporate")
   const [searchQuery, setSearchQuery] = useState("")
   const { merchants, loading, error, refetch } = useMerchants()
+  const { toast } = useToast()
+
+  // Edit Modal State
+  const [isEditOpen, setIsEditOpen] = useState(false)
+  const [editingMerchant, setEditingMerchant] = useState<CorporateMerchant | null>(null)
+  const [editForm, setEditForm] = useState({
+    business_name: "",
+    contact_phone: "",
+    contact_email: "",
+    business_registration_number: "",
+  })
+  const [isSaving, setIsSaving] = useState(false)
 
   // Filter merchants based on search query
   const filteredMerchants = merchants.filter((merchant) =>
@@ -41,6 +55,32 @@ export function AdminMerchants() {
     if (status === "approved") return "Active"
     if (status === "pending") return "Pending"
     return status || "Unknown"
+  }
+
+  const openEditModal = (merchant: CorporateMerchant) => {
+    setEditingMerchant(merchant)
+    setEditForm({
+      business_name: merchant.businessName,
+      contact_phone: merchant.contactPhone,
+      contact_email: merchant.contactEmail,
+      business_registration_number: merchant.businessRegistrationNumber || "",
+    })
+    setIsEditOpen(true)
+  }
+
+  const handleUpdate = async () => {
+    if (!editingMerchant) return
+    try {
+      setIsSaving(true)
+      await updateCorporateMerchant(editingMerchant.id, editForm)
+      toast({ title: "Success", description: "Merchant updated successfully" })
+      setIsEditOpen(false)
+      refetch()
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to update merchant", variant: "destructive" })
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (
@@ -156,7 +196,9 @@ export function AdminMerchants() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem>Edit Details</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => openEditModal(merchant)}>
+                              <Edit className="mr-2 h-4 w-4" /> Edit Details
+                            </DropdownMenuItem>
                             <DropdownMenuItem>View Dashboard</DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem className="text-destructive">
@@ -174,7 +216,54 @@ export function AdminMerchants() {
         </CardContent>
       </Card>
 
-      {/* Create Merchant Dialog */}
+      {/* Edit Merchant Modal */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Merchant Details</DialogTitle>
+            <DialogDescription>Update corporate merchant information.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label>Business Name</Label>
+              <Input 
+                value={editForm.business_name}
+                onChange={(e) => setEditForm({...editForm, business_name: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Registration Number</Label>
+              <Input 
+                value={editForm.business_registration_number}
+                onChange={(e) => setEditForm({...editForm, business_registration_number: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Contact Email</Label>
+              <Input 
+                value={editForm.contact_email}
+                onChange={(e) => setEditForm({...editForm, contact_email: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Contact Phone</Label>
+              <Input 
+                value={editForm.contact_phone}
+                onChange={(e) => setEditForm({...editForm, contact_phone: e.target.value})}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
+            <Button onClick={handleUpdate} disabled={isSaving}>
+              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Merchant Dialog (Kept for reference, but functionality might be moved to Account Creation tab) */}
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>

@@ -24,6 +24,7 @@ import { Check, X, TrendingUp, Users, FileText, ShoppingCart, CheckCircle2 } fro
 import { DASHBOARD_COLORS } from "@/lib/colors"
 import { AdminKYC } from "./admin-kyc"
 import { AdminMerchants } from "./admin-merchants"
+import { AdminBranches } from "./admin-branches"
 import { AdminOffers } from "./admin-offers"
 import { AccountCreation } from "./account-creation"
 
@@ -250,6 +251,8 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           {activeTab === "kyc" && <AdminKYC />}
 
           {activeTab === "merchants" && <AdminMerchants />}
+
+          {activeTab === "branches" && <AdminBranches />}
 
           {activeTab === "offers" && <AdminOffers />}
 
