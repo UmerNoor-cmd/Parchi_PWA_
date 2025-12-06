@@ -153,6 +153,193 @@ export async function getCorporateMerchants(): Promise<CorporateMerchantsRespons
   });
 }
 
+export interface Branch {
+  id: string
+  merchant_id: string
+  name: string
+  address: string
+  city: string
+  contact_phone: string
+  is_active: boolean
+}
+
+/**
+ * Fetch all corporate merchant accounts
+ * Requires admin authentication
+ */
+export const getMerchantBranches = async (merchantId: string): Promise<Branch[]> => {
+  const response = await apiRequest(`/merchants/${merchantId}/branches`, {
+    method: 'GET',
+  })
+  return response.data || []
+}
+
+// Branch Management Types
+export interface AdminBranch {
+  id: string
+  merchant_id: string
+  user_id: string | null
+  branch_name: string
+  address: string
+  city: string
+  contact_phone: string
+  latitude: number | null
+  longitude: number | null
+  is_active: boolean
+  created_at: string
+  merchant?: {
+    business_name: string
+  }
+}
+
+export interface UpdateBranchRequest {
+  branchName?: string
+  address?: string
+  city?: string
+  contactPhone?: string
+  latitude?: number
+  longitude?: number
+  isActive?: boolean
+}
+
+export interface UpdateMerchantRequest {
+  businessName?: string
+  businessRegistrationNumber?: string
+  contactEmail?: string
+  contactPhone?: string
+  logoPath?: string
+  category?: string
+  isActive?: boolean
+  verificationStatus?: 'pending' | 'approved' | 'rejected' | 'expired'
+}
+
+// Branch Management API Functions
+// Corporate Account Endpoints (Admin Only)
+
+/**
+ * Get a single corporate account by ID
+ */
+export async function getCorporateMerchant(id: string): Promise<CorporateMerchant> {
+  const response = await apiRequest(`/merchants/corporate/${id}`, {
+    method: 'GET',
+  });
+  return response.data;
+}
+
+/**
+ * Update a corporate account
+ */
+export const updateCorporateMerchant = async (merchantId: string, data: UpdateMerchantRequest): Promise<CorporateMerchant> => {
+  const response = await apiRequest(`/merchants/corporate/${merchantId}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+  return response.data
+}
+
+/**
+ * Delete a corporate account
+ */
+export async function deleteCorporateMerchant(id: string): Promise<void> {
+  await apiRequest(`/merchants/corporate/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+// Branch Endpoints (Admin + Corporate)
+
+export interface BranchFilter {
+  corporateAccountId?: string;
+}
+
+/**
+ * Transform branch response from camelCase to snake_case
+ */
+const transformBranchResponse = (branch: any): AdminBranch => {
+  return {
+    id: branch.id,
+    merchant_id: branch.merchantId,
+    user_id: branch.userId,
+    branch_name: branch.branchName,
+    address: branch.address,
+    city: branch.city,
+    contact_phone: branch.contactPhone,
+    latitude: branch.latitude,
+    longitude: branch.longitude,
+    is_active: branch.isActive,
+    created_at: branch.createdAt,
+    merchant: branch.merchantName ? {
+      business_name: branch.merchantName
+    } : (branch.merchant ? {
+      business_name: branch.merchant.businessName || branch.merchant.business_name
+    } : undefined)
+  }
+}
+
+/**
+ * Get branches (optionally filtered by corporateAccountId)
+ */
+export const getBranches = async (filters?: BranchFilter): Promise<AdminBranch[]> => {
+  const queryParams = new URLSearchParams();
+  if (filters?.corporateAccountId) {
+    queryParams.append('corporateAccountId', filters.corporateAccountId);
+  }
+  
+  const endpoint = `/merchants/branches${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+  
+  const response = await apiRequest(endpoint, {
+    method: 'GET',
+  })
+  
+  const branches = response.data || []
+  return branches.map(transformBranchResponse)
+}
+
+/**
+ * Get branch by ID
+ */
+export const getBranch = async (id: string): Promise<AdminBranch> => {
+  const response = await apiRequest(`/merchants/branches/${id}`, {
+    method: 'GET',
+  });
+  return transformBranchResponse(response.data);
+}
+
+/**
+ * Update branch
+ */
+export const updateBranch = async (branchId: string, data: UpdateBranchRequest): Promise<AdminBranch> => {
+  const response = await apiRequest(`/merchants/branches/${branchId}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+  return transformBranchResponse(response.data)
+}
+
+/**
+ * Delete branch
+ */
+export const deleteBranch = async (branchId: string): Promise<void> => {
+  await apiRequest(`/merchants/branches/${branchId}`, {
+    method: 'DELETE',
+  })
+}
+
+/**
+ * Approve or reject a branch (Admin only)
+ */
+export const approveRejectBranch = async (branchId: string, status: 'approved' | 'rejected'): Promise<void> => {
+  await apiRequest(`/merchants/branches/${branchId}/approve-reject`, {
+    method: 'PUT',
+    body: JSON.stringify({ status }),
+  })
+}
+
+// Legacy/Other functions kept for compatibility if needed, but the above are the primary ones now.
+// Note: getAllBranches was replaced by getBranches
+// Note: approveBranch/rejectBranch were replaced by approveRejectBranch
+
+
 /**
  * Create a new branch account
  * Requires admin or corporate merchant authentication

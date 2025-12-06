@@ -11,7 +11,7 @@ import { Loader2, MoreHorizontal, Search, CheckCircle, XCircle, Edit } from "luc
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast"
-import { getAllBranches, approveBranch, rejectBranch, updateBranch, AdminBranch } from "@/lib/api-client"
+import { getBranches, approveRejectBranch, updateBranch, AdminBranch } from "@/lib/api-client"
 
 export function AdminBranches() {
   const [branches, setBranches] = useState<AdminBranch[]>([])
@@ -23,19 +23,22 @@ export function AdminBranches() {
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [editingBranch, setEditingBranch] = useState<AdminBranch | null>(null)
   const [editForm, setEditForm] = useState({
-    branch_name: "",
+    branchName: "",
     address: "",
     city: "",
-    contact_phone: "",
+    contactPhone: "",
+    latitude: null as number | null,
+    longitude: null as number | null,
   })
   const [isSaving, setIsSaving] = useState(false)
 
   const fetchBranches = useCallback(async () => {
     try {
       setLoading(true)
-      const data = await getAllBranches()
+      const data = await getBranches()
       setBranches(data)
     } catch (error) {
+      console.error('Failed to fetch branches:', error)
       toast({
         title: "Error",
         description: "Failed to fetch branches",
@@ -44,15 +47,27 @@ export function AdminBranches() {
     } finally {
       setLoading(false)
     }
-  }, [toast])
+  }, []) // Removed toast from dependencies
 
   useEffect(() => {
-    fetchBranches()
+    let mounted = true
+    
+    const loadBranches = async () => {
+      if (mounted) {
+        await fetchBranches()
+      }
+    }
+    
+    loadBranches()
+    
+    return () => {
+      mounted = false
+    }
   }, [fetchBranches])
 
   const handleApprove = async (id: string) => {
     try {
-      await approveBranch(id)
+      await approveRejectBranch(id, 'approved')
       toast({ title: "Success", description: "Branch approved successfully" })
       fetchBranches()
     } catch (error) {
@@ -63,7 +78,7 @@ export function AdminBranches() {
   const handleReject = async (id: string) => {
     if (!confirm("Are you sure you want to reject and delete this branch?")) return
     try {
-      await rejectBranch(id)
+      await approveRejectBranch(id, 'rejected')
       toast({ title: "Success", description: "Branch rejected successfully" })
       fetchBranches()
     } catch (error) {
@@ -74,10 +89,12 @@ export function AdminBranches() {
   const openEditModal = (branch: AdminBranch) => {
     setEditingBranch(branch)
     setEditForm({
-      branch_name: branch.branch_name,
+      branchName: branch.branch_name,
       address: branch.address,
       city: branch.city,
-      contact_phone: branch.contact_phone,
+      contactPhone: branch.contact_phone,
+      latitude: branch.latitude,
+      longitude: branch.longitude,
     })
     setIsEditOpen(true)
   }
@@ -86,7 +103,13 @@ export function AdminBranches() {
     if (!editingBranch) return
     try {
       setIsSaving(true)
-      await updateBranch(editingBranch.id, editForm)
+      // Convert null to undefined for API compatibility
+      const updateData = {
+        ...editForm,
+        latitude: editForm.latitude ?? undefined,
+        longitude: editForm.longitude ?? undefined,
+      }
+      await updateBranch(editingBranch.id, updateData)
       toast({ title: "Success", description: "Branch updated successfully" })
       setIsEditOpen(false)
       fetchBranches()
@@ -98,9 +121,9 @@ export function AdminBranches() {
   }
 
   const filteredBranches = branches.filter(branch => 
-    branch.branch_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    branch.merchant?.business_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    branch.city.toLowerCase().includes(searchQuery.toLowerCase())
+    branch?.branch_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    branch?.merchant?.business_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    branch?.city?.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
   return (
@@ -213,8 +236,8 @@ export function AdminBranches() {
             <div className="space-y-2">
               <Label>Branch Name</Label>
               <Input 
-                value={editForm.branch_name}
-                onChange={(e) => setEditForm({...editForm, branch_name: e.target.value})}
+                value={editForm.branchName}
+                onChange={(e) => setEditForm({...editForm, branchName: e.target.value})}
               />
             </div>
             <div className="space-y-2">
@@ -235,9 +258,33 @@ export function AdminBranches() {
               <div className="space-y-2">
                 <Label>Contact Phone</Label>
                 <Input 
-                  value={editForm.contact_phone}
-                  onChange={(e) => setEditForm({...editForm, contact_phone: e.target.value})}
+                  value={editForm.contactPhone}
+                  onChange={(e) => setEditForm({...editForm, contactPhone: e.target.value})}
                 />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Latitude</Label>
+                <Input 
+                  type="number"
+                  step="any"
+                  placeholder="e.g., 24.8607"
+                  value={editForm.latitude ?? ""}
+                  onChange={(e) => setEditForm({...editForm, latitude: e.target.value ? parseFloat(e.target.value) : null})}
+                />
+                <p className="text-xs text-muted-foreground">Valid range: -90 to 90</p>
+              </div>
+              <div className="space-y-2">
+                <Label>Longitude</Label>
+                <Input 
+                  type="number"
+                  step="any"
+                  placeholder="e.g., 67.0011"
+                  value={editForm.longitude ?? ""}
+                  onChange={(e) => setEditForm({...editForm, longitude: e.target.value ? parseFloat(e.target.value) : null})}
+                />
+                <p className="text-xs text-muted-foreground">Valid range: -180 to 180</p>
               </div>
             </div>
           </div>
