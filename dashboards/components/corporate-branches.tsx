@@ -11,56 +11,41 @@ import { Badge } from "@/components/ui/badge"
 import { Plus, Store, MoreHorizontal, MapPin, Loader2, Edit, AlertCircle } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { AccountCreation } from "./account-creation"
-import { getMerchantBranches, updateBranch, Branch, UpdateBranchRequest } from "@/lib/api-client"
+import { getBranches, updateBranch, AdminBranch, UpdateBranchRequest } from "@/lib/api-client"
 import { useToast } from "@/hooks/use-toast"
+import { useAuth } from "@/contexts/AuthContext"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 export function CorporateBranches() {
   const [isCreateOpen, setIsCreateOpen] = useState(false)
-  const [branches, setBranches] = useState<Branch[]>([])
+  const [branches, setBranches] = useState<AdminBranch[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { toast } = useToast()
+  const { user } = useAuth()
 
   // Edit Modal State
   const [isEditOpen, setIsEditOpen] = useState(false)
-  const [editingBranch, setEditingBranch] = useState<Branch | null>(null)
+  const [editingBranch, setEditingBranch] = useState<AdminBranch | null>(null)
   const [editForm, setEditForm] = useState<UpdateBranchRequest>({
-    branch_name: "",
+    branchName: "",
     address: "",
     city: "",
-    contact_phone: "",
+    contactPhone: "",
+    latitude: undefined,
+    longitude: undefined,
   })
   const [isSaving, setIsSaving] = useState(false)
 
-  // Get merchant ID from localStorage (set during login)
-  const getMerchantId = () => {
-    if (typeof window === 'undefined') return null
-    const userData = localStorage.getItem('user_data')
-    if (userData) {
-      try {
-        const parsed = JSON.parse(userData)
-        return parsed.merchantId || parsed.id
-      } catch (e) {
-        console.error('Failed to parse user data:', e)
-      }
-    }
-    return null
-  }
-
-  const merchantId = getMerchantId()
+  const merchantId = user?.merchant?.id
  
 
   const fetchBranches = useCallback(async () => {
-    if (!merchantId) {
-      setError("Merchant ID not found. Please log in again.")
-      setLoading(false)
-      return
-    }
     try {
       setLoading(true)
       setError(null)
-      const data = await getMerchantBranches(merchantId)
+      // Use getBranches which handles corporate filtering automatically on the backend
+      const data = await getBranches()
       setBranches(data)
     } catch (err) {
       setError("Failed to fetch branches. Please try again.")
@@ -68,19 +53,21 @@ export function CorporateBranches() {
     } finally {
       setLoading(false)
     }
-  }, [merchantId])
+  }, [])
 
   useEffect(() => {
     fetchBranches()
   }, [fetchBranches])
 
-  const openEditModal = (branch: Branch) => {
+  const openEditModal = (branch: AdminBranch) => {
     setEditingBranch(branch)
     setEditForm({
-      branch_name: branch.name,
+      branchName: branch.branch_name,
       address: branch.address,
       city: branch.city,
-      contact_phone: branch.contact_phone,
+      contactPhone: branch.contact_phone,
+      latitude: branch.latitude ?? undefined,
+      longitude: branch.longitude ?? undefined,
     })
     setIsEditOpen(true)
   }
@@ -164,7 +151,7 @@ export function CorporateBranches() {
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
                           <Store className="h-4 w-4 text-primary" />
-                          {branch.name}
+                          {branch.branch_name}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -218,8 +205,8 @@ export function CorporateBranches() {
             <div className="space-y-2">
               <Label>Branch Name</Label>
               <Input 
-                value={editForm.branch_name}
-                onChange={(e) => setEditForm({...editForm, branch_name: e.target.value})}
+                value={editForm.branchName}
+                onChange={(e) => setEditForm({...editForm, branchName: e.target.value})}
               />
             </div>
             <div className="space-y-2">
@@ -240,9 +227,33 @@ export function CorporateBranches() {
               <div className="space-y-2">
                 <Label>Contact Phone</Label>
                 <Input 
-                  value={editForm.contact_phone}
-                  onChange={(e) => setEditForm({...editForm, contact_phone: e.target.value})}
+                  value={editForm.contactPhone}
+                  onChange={(e) => setEditForm({...editForm, contactPhone: e.target.value})}
                 />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Latitude</Label>
+                <Input 
+                  type="number"
+                  step="any"
+                  placeholder="e.g., 24.8607"
+                  value={editForm.latitude ?? ""}
+                  onChange={(e) => setEditForm({...editForm, latitude: e.target.value ? parseFloat(e.target.value) : undefined})}
+                />
+                <p className="text-xs text-muted-foreground">Valid range: -90 to 90</p>
+              </div>
+              <div className="space-y-2">
+                <Label>Longitude</Label>
+                <Input 
+                  type="number"
+                  step="any"
+                  placeholder="e.g., 67.0011"
+                  value={editForm.longitude ?? ""}
+                  onChange={(e) => setEditForm({...editForm, longitude: e.target.value ? parseFloat(e.target.value) : undefined})}
+                />
+                <p className="text-xs text-muted-foreground">Valid range: -180 to 180</p>
               </div>
             </div>
           </div>
@@ -267,7 +278,11 @@ export function CorporateBranches() {
           </DialogHeader>
           
           <div className="py-4">
-            <AccountCreation role="corporate" corporateId={merchantId} />
+            <AccountCreation 
+              role="corporate" 
+              corporateId={merchantId} 
+              emailPrefix={user?.merchant?.email_prefix}
+            />
           </div>
         </DialogContent>
       </Dialog>

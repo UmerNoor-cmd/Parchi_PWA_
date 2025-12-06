@@ -17,9 +17,10 @@ import { useMerchants } from "@/hooks/use-merchants"
 interface AccountCreationProps {
   role?: 'admin' | 'corporate'
   corporateId?: string
+  emailPrefix?: string | null
 }
 
-export function AccountCreation({ role = 'admin', corporateId }: AccountCreationProps) {
+export function AccountCreation({ role = 'admin', corporateId, emailPrefix }: AccountCreationProps) {
   const colors = DASHBOARD_COLORS(role === 'corporate' ? 'corporate' : 'admin')
   const { toast } = useToast()
   const [showPassword, setShowPassword] = useState(false)
@@ -67,6 +68,11 @@ export function AccountCreation({ role = 'admin', corporateId }: AccountCreation
   }
 
   const getCorporateSlug = () => {
+    // If emailPrefix is provided (e.g. for logged in corporate user), use it
+    if (emailPrefix) {
+      return `${emailPrefix}-`
+    }
+
     const selectedId = role === 'corporate' && corporateId ? corporateId : branchData.linkedCorporate
     const corporate = corporateAccounts.find(c => c.id === selectedId)
     // Generate a slug from business name
@@ -322,9 +328,9 @@ export function AccountCreation({ role = 'admin', corporateId }: AccountCreation
       </CardHeader>
       <CardContent>
         <form onSubmit={handleBranchSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {role === 'admin' && (
-              <div className="space-y-2 md:col-span-2">
+              <div className="space-y-2 md:col-span-2 lg:col-span-3">
                 <Label htmlFor="branch-corporate">Linked Corporate Account</Label>
                 <Select 
                   value={branchData.linkedCorporate} 
@@ -436,7 +442,7 @@ export function AccountCreation({ role = 'admin', corporateId }: AccountCreation
               />
             </div>
 
-            <div className="space-y-2 md:col-span-2">
+            <div className="space-y-2 md:col-span-2 lg:col-span-3">
               <Label htmlFor="branch-address">Address</Label>
               <Input 
                 id="branch-address" 
@@ -492,7 +498,7 @@ export function AccountCreation({ role = 'admin', corporateId }: AccountCreation
 
   if (role === 'corporate') {
     return (
-      <div className="max-w-4xl mx-auto">
+      <div className="w-full mx-auto">
         <BranchForm />
       </div>
     )
@@ -525,7 +531,7 @@ export function AccountCreation({ role = 'admin', corporateId }: AccountCreation
             </CardHeader>
             <CardContent>
               <form onSubmit={handleCorporateSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="corp-name">Business Name</Label>
                     <Input 

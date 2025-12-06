@@ -331,7 +331,7 @@ export const deleteBranch = async (branchId: string): Promise<void> => {
 export const approveRejectBranch = async (branchId: string, status: 'approved' | 'rejected'): Promise<void> => {
   await apiRequest(`/merchants/branches/${branchId}/approve-reject`, {
     method: 'PUT',
-    body: JSON.stringify({ status }),
+    body: JSON.stringify({ action: status }),
   })
 }
 

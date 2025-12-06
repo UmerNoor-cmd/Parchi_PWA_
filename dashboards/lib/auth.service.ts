@@ -5,11 +5,35 @@ interface LoginData {
   password: string;
 }
 
+interface StudentProfile {
+  first_name: string;
+  last_name: string;
+  parchi_id: string;
+  university: string;
+}
+
+interface MerchantProfile {
+  id: string;
+  business_name: string;
+  email_prefix: string | null;
+  category: string | null;
+}
+
+interface BranchProfile {
+  id: string;
+  branch_name: string;
+  merchant_id: string;
+  city: string;
+}
+
 interface User {
   id: string;
   email: string;
   role: string;
   is_active: boolean;
+  student: StudentProfile | null;
+  merchant: MerchantProfile | null;
+  branch: BranchProfile | null;
 }
 
 interface Session {
