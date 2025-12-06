@@ -27,10 +27,10 @@ export function AdminMerchants() {
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [editingMerchant, setEditingMerchant] = useState<CorporateMerchant | null>(null)
   const [editForm, setEditForm] = useState({
-    business_name: "",
-    contact_phone: "",
-    contact_email: "",
-    business_registration_number: "",
+    businessName: "",
+    contactPhone: "",
+    contactEmail: "",
+    businessRegistrationNumber: "",
   })
   const [isSaving, setIsSaving] = useState(false)
 
@@ -41,29 +41,23 @@ export function AdminMerchants() {
     merchant.contactPhone.includes(searchQuery)
   )
 
-  // Get verification status badge variant
-  const getStatusVariant = (status: string | null, isActive: boolean | null) => {
-    if (!isActive) return "secondary"
-    if (status === "approved") return "default"
-    if (status === "pending") return "secondary"
-    return "secondary"
+  // Get status badge variant based on isActive only
+  const getStatusVariant = (isActive: boolean | null) => {
+    return isActive ? "default" : "secondary"
   }
 
-  // Get status display text
-  const getStatusText = (status: string | null, isActive: boolean | null) => {
-    if (!isActive) return "Inactive"
-    if (status === "approved") return "Active"
-    if (status === "pending") return "Pending"
-    return status || "Unknown"
+  // Get status display text based on isActive only
+  const getStatusText = (isActive: boolean | null) => {
+    return isActive ? "Active" : "Inactive"
   }
 
   const openEditModal = (merchant: CorporateMerchant) => {
     setEditingMerchant(merchant)
     setEditForm({
-      business_name: merchant.businessName,
-      contact_phone: merchant.contactPhone,
-      contact_email: merchant.contactEmail,
-      business_registration_number: merchant.businessRegistrationNumber || "",
+      businessName: merchant.businessName,
+      contactPhone: merchant.contactPhone,
+      contactEmail: merchant.contactEmail,
+      businessRegistrationNumber: merchant.businessRegistrationNumber || "",
     })
     setIsEditOpen(true)
   }
@@ -150,7 +144,7 @@ export function AdminMerchants() {
                     <TableHead>Business Name</TableHead>
                     <TableHead>Contact</TableHead>
                     <TableHead>Category</TableHead>
-                    <TableHead>Verification Status</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -182,8 +176,8 @@ export function AdminMerchants() {
                         </span>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={getStatusVariant(merchant.verificationStatus, merchant.isActive)}>
-                          {getStatusText(merchant.verificationStatus, merchant.isActive)}
+                        <Badge variant={getStatusVariant(merchant.isActive)}>
+                          {getStatusText(merchant.isActive)}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
@@ -227,29 +221,29 @@ export function AdminMerchants() {
             <div className="space-y-2">
               <Label>Business Name</Label>
               <Input 
-                value={editForm.business_name}
-                onChange={(e) => setEditForm({...editForm, business_name: e.target.value})}
+                value={editForm.businessName}
+                onChange={(e) => setEditForm({...editForm, businessName: e.target.value})}
               />
             </div>
             <div className="space-y-2">
               <Label>Registration Number</Label>
               <Input 
-                value={editForm.business_registration_number}
-                onChange={(e) => setEditForm({...editForm, business_registration_number: e.target.value})}
+                value={editForm.businessRegistrationNumber}
+                onChange={(e) => setEditForm({...editForm, businessRegistrationNumber: e.target.value})}
               />
             </div>
             <div className="space-y-2">
               <Label>Contact Email</Label>
               <Input 
-                value={editForm.contact_email}
-                onChange={(e) => setEditForm({...editForm, contact_email: e.target.value})}
+                value={editForm.contactEmail}
+                onChange={(e) => setEditForm({...editForm, contactEmail: e.target.value})}
               />
             </div>
             <div className="space-y-2">
               <Label>Contact Phone</Label>
               <Input 
-                value={editForm.contact_phone}
-                onChange={(e) => setEditForm({...editForm, contact_phone: e.target.value})}
+                value={editForm.contactPhone}
+                onChange={(e) => setEditForm({...editForm, contactPhone: e.target.value})}
               />
             </div>
           </div>
