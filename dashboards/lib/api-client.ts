@@ -238,6 +238,16 @@ export const updateCorporateMerchant = async (merchantId: string, data: UpdateMe
 }
 
 /**
+ * Toggle corporate merchant status (active <-> inactive)
+ */
+export async function toggleCorporateMerchant(id: string): Promise<CorporateMerchant> {
+  const response = await apiRequest(`/merchants/corporate/${id}/toggle`, {
+    method: 'PATCH',
+  });
+  return response.data;
+}
+
+/**
  * Delete a corporate account
  */
 export async function deleteCorporateMerchant(id: string): Promise<void> {

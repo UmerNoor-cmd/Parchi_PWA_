@@ -13,7 +13,7 @@ import { Plus, Building2, Store, MoreHorizontal, Search, Loader2, AlertCircle, R
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useMerchants } from "@/hooks/use-merchants"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { updateCorporateMerchant, CorporateMerchant } from "@/lib/api-client"
+import { updateCorporateMerchant, toggleCorporateMerchant, CorporateMerchant } from "@/lib/api-client"
 import { SupabaseStorageService } from "@/lib/storage"
 import { useToast } from "@/hooks/use-toast"
 
@@ -108,6 +108,23 @@ export function AdminMerchants() {
       toast({ title: "Error", description: "Failed to update merchant", variant: "destructive" })
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  const handleToggleStatus = async (merchant: CorporateMerchant) => {
+    try {
+      await toggleCorporateMerchant(merchant.id)
+      toast({ 
+        title: "Success", 
+        description: `Merchant ${merchant.isActive ? 'deactivated' : 'activated'} successfully` 
+      })
+      refetch()
+    } catch (error) {
+      toast({ 
+        title: "Error", 
+        description: "Failed to update merchant status", 
+        variant: "destructive" 
+      })
     }
   }
 
@@ -229,7 +246,10 @@ export function AdminMerchants() {
                             </DropdownMenuItem>
                             <DropdownMenuItem>View Dashboard</DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-destructive">
+                            <DropdownMenuItem 
+                              className="text-destructive"
+                              onClick={() => handleToggleStatus(merchant)}
+                            >
                               {merchant.isActive ? 'Deactivate' : 'Activate'}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
