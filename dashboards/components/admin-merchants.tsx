@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -21,8 +21,17 @@ export function AdminMerchants() {
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [merchantType, setMerchantType] = useState<"corporate" | "branch">("corporate")
   const [searchQuery, setSearchQuery] = useState("")
-  const { merchants, loading, error, refetch } = useMerchants()
+  const [debouncedSearch, setDebouncedSearch] = useState("")
+  const { merchants, loading, error, refetch } = useMerchants(debouncedSearch)
   const { toast } = useToast()
+
+  // Debounce search query
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setDebouncedSearch(searchQuery)
+    }, 300)
+    return () => clearTimeout(timeoutId)
+  }, [searchQuery])
 
   // Edit Modal State
   const [isEditOpen, setIsEditOpen] = useState(false)
@@ -37,12 +46,8 @@ export function AdminMerchants() {
   const [isSaving, setIsSaving] = useState(false)
   const [isLogoUploading, setIsLogoUploading] = useState(false)
 
-  // Filter merchants based on search query
-  const filteredMerchants = merchants.filter((merchant) =>
-    merchant.businessName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    merchant.contactEmail.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    merchant.contactPhone.includes(searchQuery)
-  )
+  // Merchants are already filtered server-side based on searchQuery
+  const filteredMerchants = merchants
 
   // Get status badge variant based on isActive only
   const getStatusVariant = (isActive: boolean | null) => {

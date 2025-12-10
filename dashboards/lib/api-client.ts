@@ -146,9 +146,16 @@ export async function corporateSignup(
 /**
  * Fetch all corporate merchant accounts
  * Requires admin authentication
+ * @param search Optional search query to filter by business name, email, or phone
  */
-export async function getCorporateMerchants(): Promise<CorporateMerchantsResponse> {
-  return apiRequest('/merchants/corporate', {
+export async function getCorporateMerchants(search?: string): Promise<CorporateMerchantsResponse> {
+  const queryParams = new URLSearchParams();
+  if (search) {
+    queryParams.append('search', search);
+  }
+  
+  const endpoint = `/merchants/corporate${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+  return apiRequest(endpoint, {
     method: 'GET',
   });
 }
@@ -260,6 +267,7 @@ export async function deleteCorporateMerchant(id: string): Promise<void> {
 
 export interface BranchFilter {
   corporateAccountId?: string;
+  search?: string;
 }
 
 /**
@@ -287,12 +295,15 @@ const transformBranchResponse = (branch: any): AdminBranch => {
 }
 
 /**
- * Get branches (optionally filtered by corporateAccountId)
+ * Get branches (optionally filtered by corporateAccountId and search)
  */
 export const getBranches = async (filters?: BranchFilter): Promise<AdminBranch[]> => {
   const queryParams = new URLSearchParams();
   if (filters?.corporateAccountId) {
     queryParams.append('corporateAccountId', filters.corporateAccountId);
+  }
+  if (filters?.search) {
+    queryParams.append('search', filters.search);
   }
   
   const endpoint = `/merchants/branches${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;

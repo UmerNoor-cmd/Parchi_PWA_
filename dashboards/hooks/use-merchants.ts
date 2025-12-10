@@ -7,20 +7,20 @@ interface UseMerchantsResult {
   merchants: CorporateMerchant[]
   loading: boolean
   error: string | null
-  refetch: () => Promise<void>
+  refetch: (search?: string) => Promise<void>
 }
 
-export function useMerchants(): UseMerchantsResult {
+export function useMerchants(search?: string): UseMerchantsResult {
   const [merchants, setMerchants] = useState<CorporateMerchant[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchMerchants = async () => {
+  const fetchMerchants = async (searchQuery?: string) => {
     try {
       setLoading(true)
       setError(null)
 
-      const response = await getCorporateMerchants()
+      const response = await getCorporateMerchants(searchQuery)
       setMerchants(response.data || [])
     } catch (err) {
       console.error('Error fetching merchants:', err)
@@ -47,8 +47,8 @@ export function useMerchants(): UseMerchantsResult {
   }
 
   useEffect(() => {
-    fetchMerchants()
-  }, [])
+    fetchMerchants(search)
+  }, [search])
 
   return {
     merchants,

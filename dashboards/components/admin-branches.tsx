@@ -32,10 +32,10 @@ export function AdminBranches() {
   })
   const [isSaving, setIsSaving] = useState(false)
 
-  const fetchBranches = useCallback(async () => {
+  const fetchBranches = useCallback(async (search?: string) => {
     try {
       setLoading(true)
-      const data = await getBranches()
+      const data = await getBranches({ search })
       setBranches(data)
     } catch (error) {
       console.error('Failed to fetch branches:', error)
@@ -47,23 +47,27 @@ export function AdminBranches() {
     } finally {
       setLoading(false)
     }
-  }, []) // Removed toast from dependencies
+  }, [toast])
 
   useEffect(() => {
     let mounted = true
     
     const loadBranches = async () => {
       if (mounted) {
-        await fetchBranches()
+        await fetchBranches(searchQuery)
       }
     }
     
-    loadBranches()
+    // Debounce search
+    const timeoutId = setTimeout(() => {
+      loadBranches()
+    }, searchQuery ? 300 : 0)
     
     return () => {
       mounted = false
+      clearTimeout(timeoutId)
     }
-  }, [fetchBranches])
+  }, [searchQuery, fetchBranches])
 
   const handleApprove = async (id: string) => {
     try {
@@ -120,11 +124,8 @@ export function AdminBranches() {
     }
   }
 
-  const filteredBranches = branches.filter(branch => 
-    branch?.branch_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    branch?.merchant?.business_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    branch?.city?.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  // Branches are already filtered server-side based on searchQuery
+  const filteredBranches = branches
 
   return (
     <div className="space-y-6">
