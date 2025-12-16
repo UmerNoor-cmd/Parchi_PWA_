@@ -682,7 +682,8 @@ export const getOfferAnalytics = async (id: string): Promise<OfferAnalytics> => 
 
 export interface StudentKYC {
   id: string;
-  studentIdImagePath: string;
+  studentIdCardFrontPath: string;
+  studentIdCardBackPath: string;
   selfieImagePath: string;
   submittedAt: string | null;
   reviewedBy: string | null;

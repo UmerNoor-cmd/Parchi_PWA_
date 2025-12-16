@@ -442,11 +442,25 @@ export function AdminKYC() {
           ) : studentDetail && studentDetail.kyc ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
               <div className="space-y-2">
-                <Label>Student ID Card</Label>
+                <Label>Student ID Card (Front)</Label>
                 <div className="border rounded-lg p-2 bg-muted/20">
                   <img 
-                    src={studentDetail.kyc.studentIdImagePath} 
-                    alt="Student ID" 
+                    src={studentDetail.kyc.studentIdCardFrontPath} 
+                    alt="Student ID Front" 
+                    className="w-full h-auto rounded-md object-contain max-h-[300px]"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/placeholder.svg?height=300&width=500'
+                    }}
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Student ID Card (Back)</Label>
+                <div className="border rounded-lg p-2 bg-muted/20">
+                  <img 
+                    src={studentDetail.kyc.studentIdCardBackPath} 
+                    alt="Student ID Back" 
                     className="w-full h-auto rounded-md object-contain max-h-[300px]"
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = '/placeholder.svg?height=300&width=500'
