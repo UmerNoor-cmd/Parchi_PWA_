@@ -790,6 +790,74 @@ export const getAllStudents = async (
   });
 };
 
+export interface StudentVerificationResponse {
+  parchiId: string;
+  firstName: string;
+  lastName: string;
+  university: string;
+  verificationStatus: string;
+  profilePicture: string | null;
+}
+
+/**
+ * Get student details by Parchi ID for verification
+ * Requires branch authentication
+ */
+export const getStudentByParchiId = async (parchiId: string): Promise<StudentVerificationResponse> => {
+  const response = await apiRequest(`/admin/students/by-parchi/${parchiId}`, {
+    method: 'GET',
+  });
+  return response.data;
+};
+
+export interface CreateRedemptionRequest {
+  parchiId: string;
+  offerId: string;
+  notes?: string;
+}
+
+export interface RedemptionResponse {
+  id: string;
+  studentId: string;
+  offerId: string;
+  branchId: string;
+  isBonusApplied: boolean;
+  bonusDiscountApplied: number | null;
+  verifiedBy: string | null;
+  notes: string | null;
+  createdAt: string;
+  status: 'pending' | 'verified' | 'rejected';
+  offer?: {
+    id: string;
+    title: string;
+    discountType: string;
+    discountValue: number;
+  };
+  branch?: {
+    id: string;
+    branchName: string;
+    address: string;
+  };
+  student?: {
+    id: string;
+    parchiId: string;
+    firstName: string;
+    lastName: string;
+  };
+}
+
+/**
+ * Create a new redemption
+ * Requires branch authentication
+ */
+export const createRedemption = async (data: CreateRedemptionRequest): Promise<RedemptionResponse> => {
+  const response = await apiRequest('/admin/redemptions', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  return response.data;
+};
+
 /**
  * Get student details for review (includes KYC images)
  * Requires admin authentication

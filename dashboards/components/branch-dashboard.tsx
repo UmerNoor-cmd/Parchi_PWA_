@@ -5,7 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle, Clock, TrendingUp, Users, FileText, ShoppingCart } from "lucide-react"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { CheckCircle, Clock, TrendingUp, Users, FileText, ShoppingCart, Loader2, XCircle, AlertCircle } from "lucide-react"
 import {
   LineChart,
   Line,
@@ -20,6 +22,8 @@ import {
 } from "recharts"
 import { BranchSidebar } from "./branch-sidebar"
 import { DASHBOARD_COLORS } from "@/lib/colors"
+import { getStudentByParchiId, createRedemption, StudentVerificationResponse } from "@/lib/api-client"
+import { toast } from "sonner"
 
 const mockActiveOffers = [
   { id: 1, title: "Weekend Special", discount: "20% off", description: "All items", icon: "🎉" },
@@ -83,20 +87,57 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
   const [parchiIdInput, setParchiIdInput] = useState("")
   const [selectedOffer, setSelectedOffer] = useState<number | null>(null)
   const [recentRedemptions, setRecentRedemptions] = useState(mockRecentRedemptions)
+  const [studentDetails, setStudentDetails] = useState<StudentVerificationResponse | null>(null)
+  const [isVerificationDialogOpen, setIsVerificationDialogOpen] = useState(false)
+  const [isLoadingStudent, setIsLoadingStudent] = useState(false)
+  const [isCreatingRedemption, setIsCreatingRedemption] = useState(false)
 
-  const handleRedemption = () => {
-    if (parchiIdInput && selectedOffer) {
-      const offer = mockActiveOffers.find((o) => o.id === selectedOffer)
-      const newRedemption = {
-        id: recentRedemptions.length + 1,
-        parchiId: parchiIdInput,
-        studentName: "Student Name",
-        offer: `${offer?.title} - ${offer?.discount}`,
-        timestamp: "just now",
+  const handleRedemptionClick = async () => {
+    if (!parchiIdInput || !selectedOffer) return
+
+    setIsLoadingStudent(true)
+    try {
+      const student = await getStudentByParchiId(parchiIdInput)
+      setStudentDetails(student)
+      setIsVerificationDialogOpen(true)
+    } catch (error) {
+      toast.error("Student not found or error fetching details")
+    } finally {
+      setIsLoadingStudent(false)
+    }
+  }
+
+  const handleConfirmRedemption = async () => {
+    if (parchiIdInput && selectedOffer && studentDetails) {
+      setIsCreatingRedemption(true)
+      try {
+        const offer = mockActiveOffers.find((o) => o.id === selectedOffer)
+        
+        // Call API to create redemption
+        await createRedemption({
+          parchiId: parchiIdInput,
+          offerId: selectedOffer.toString(), // Assuming offer IDs are strings in backend, but numbers in mock. Adjust as needed.
+          notes: "Quick redemption from dashboard"
+        })
+
+        const newRedemption = {
+          id: recentRedemptions.length + 1,
+          parchiId: parchiIdInput,
+          studentName: `${studentDetails.firstName} ${studentDetails.lastName}`,
+          offer: `${offer?.title} - ${offer?.discount}`,
+          timestamp: "just now",
+        }
+        setRecentRedemptions([newRedemption, ...recentRedemptions])
+        setParchiIdInput("")
+        setSelectedOffer(null)
+        setStudentDetails(null)
+        setIsVerificationDialogOpen(false)
+        toast.success("Redemption processed successfully")
+      } catch (error) {
+        toast.error("Failed to process redemption. Please try again.")
+      } finally {
+        setIsCreatingRedemption(false)
       }
-      setRecentRedemptions([newRedemption, ...recentRedemptions])
-      setParchiIdInput("")
-      setSelectedOffer(null)
     }
   }
 
@@ -247,6 +288,103 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
 
           {activeTab === "redeem" && (
             <>
+              <div className="mb-8">
+                <Card className="border-2" style={{ borderColor: `${colors.primary}40` }}>
+                  <CardHeader className="pb-4 bg-muted/20">
+                    <CardTitle className="text-2xl flex items-center gap-2" style={{ color: colors.primary }}>
+                      <CheckCircle className="w-6 h-6" />
+                      Quick Redemption
+                    </CardTitle>
+                    <CardDescription>Enter Parchi ID and select an offer to process redemption</CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-6 space-y-6">
+                    {/* Step 1: Parchi ID */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold" style={{ color: colors.primary }}>Step 1: Student Parchi ID</label>
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Enter Parchi ID (e.g., PK-12345)"
+                          value={parchiIdInput}
+                          onChange={(e) => setParchiIdInput(e.target.value.toUpperCase())}
+                          className="text-lg font-mono h-12"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && parchiIdInput && selectedOffer) {
+                              handleRedemptionClick()
+                            }
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Step 2: Select Offer */}
+                    {parchiIdInput && (
+                      <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                        <label className="text-sm font-semibold" style={{ color: colors.primary }}>Step 2: Select Offer</label>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {mockActiveOffers.map((offer) => (
+                            <button
+                              key={offer.id}
+                              onClick={() => setSelectedOffer(offer.id)}
+                              className={`p-4 rounded-lg border-2 transition-all text-left relative overflow-hidden group ${
+                                selectedOffer === offer.id
+                                  ? "bg-opacity-10 shadow-md"
+                                  : "border-border hover:border-opacity-50 hover:bg-muted/50"
+                              }`}
+                              style={{
+                                borderColor: selectedOffer === offer.id ? colors.primary : "currentColor",
+                                backgroundColor: selectedOffer === offer.id ? `${colors.primary}10` : undefined,
+                              }}
+                            >
+                              <div className="flex items-start justify-between relative z-10">
+                                <div className="flex-1">
+                                  <p className="font-semibold text-foreground text-lg">{offer.title}</p>
+                                  <p className="text-sm text-muted-foreground">{offer.description}</p>
+                                </div>
+                                <span className="text-3xl ml-2 group-hover:scale-110 transition-transform">{offer.icon}</span>
+                              </div>
+                              <p className="font-bold mt-2 text-xl" style={{ color: colors.primary }}>
+                                {offer.discount}
+                              </p>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Redemption Button */}
+                    {parchiIdInput && selectedOffer && (
+                      <div className="flex gap-2 pt-4 border-t animate-in fade-in slide-in-from-top-2">
+                        <Button
+                          onClick={handleRedemptionClick}
+                          className="flex-1 gap-2 h-12 text-lg"
+                          size="lg"
+                          style={{ backgroundColor: colors.primary }}
+                          disabled={isLoadingStudent}
+                        >
+                          {isLoadingStudent ? (
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                          ) : (
+                            <CheckCircle className="w-5 h-5" />
+                          )}
+                          Process Redemption
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setParchiIdInput("")
+                            setSelectedOffer(null)
+                          }}
+                          className="px-6 h-12"
+                          disabled={isLoadingStudent}
+                        >
+                          Clear
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
               {/* Today's Redemption Count */}
               <div className="mb-8">
                 <Card>
@@ -261,89 +399,6 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
                     <p className="text-xs mt-1 flex items-center gap-1" style={{ color: colors.primary }}>
                       <TrendingUp className="w-3 h-3" /> +15% vs Yesterday
                     </p>
-                  </CardContent>
-                </Card>
-              </div>
-
-              <div className="mb-8">
-                <Card>
-                  <CardHeader className="pb-4">
-                    <CardTitle className="text-2xl" style={{ color: colors.primary }}>
-                      Quick Redemption
-                    </CardTitle>
-                    <CardDescription>Enter Parchi ID and select an offer to process redemption</CardDescription>
-                  </CardHeader>
-                  <CardContent className="pt-6 space-y-6">
-                    {/* Step 1: Parchi ID */}
-                    <div className="space-y-2">
-                      <label className="text-sm font-semibold" style={{ color: colors.primary }}>Step 1: Student Parchi ID</label>
-                      <Input
-                        placeholder="Enter Parchi ID (e.g., PK-12345)"
-                        value={parchiIdInput}
-                        onChange={(e) => setParchiIdInput(e.target.value.toUpperCase())}
-                        className="text-lg font-mono"
-                      />
-                    </div>
-
-                    {/* Step 2: Select Offer */}
-                    {parchiIdInput && (
-                      <div className="space-y-2 animate-in fade-in">
-                        <label className="text-sm font-semibold" style={{ color: colors.primary }}>Step 2: Select Offer</label>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {mockActiveOffers.map((offer) => (
-                            <button
-                              key={offer.id}
-                              onClick={() => setSelectedOffer(offer.id)}
-                              className={`p-3 rounded-lg border-2 transition-all text-left ${
-                                selectedOffer === offer.id
-                                  ? "bg-opacity-10 shadow-md"
-                                  : "border-border hover:border-opacity-50"
-                              }`}
-                              style={{
-                                borderColor: selectedOffer === offer.id ? colors.primary : "currentColor",
-                                backgroundColor: selectedOffer === offer.id ? `${colors.primary}10` : "transparent",
-                              }}
-                            >
-                              <div className="flex items-start justify-between">
-                                <div className="flex-1">
-                                  <p className="font-semibold text-foreground">{offer.title}</p>
-                                  <p className="text-sm text-muted-foreground">{offer.description}</p>
-                                </div>
-                                <span className="text-2xl ml-2">{offer.icon}</span>
-                              </div>
-                              <p className="font-bold mt-2" style={{ color: colors.primary }}>
-                                {offer.discount}
-                              </p>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Redemption Button */}
-                    {parchiIdInput && selectedOffer && (
-                      <div className="flex gap-2 pt-4 border-t animate-in fade-in">
-                        <Button
-                          onClick={handleRedemption}
-                          className="flex-1 gap-2"
-                          size="lg"
-                          style={{ backgroundColor: colors.primary }}
-                        >
-                          <CheckCircle className="w-5 h-5" />
-                          Process Redemption
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={() => {
-                            setParchiIdInput("")
-                            setSelectedOffer(null)
-                          }}
-                          className="px-4"
-                        >
-                          Clear
-                        </Button>
-                      </div>
-                    )}
                   </CardContent>
                 </Card>
               </div>
@@ -399,6 +454,88 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
           )}
         </div>
       </main>
+
+      {/* Student Verification Dialog */}
+      <Dialog open={isVerificationDialogOpen} onOpenChange={setIsVerificationDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Verify Student</DialogTitle>
+            <DialogDescription>
+              Please verify the student's identity before proceeding.
+            </DialogDescription>
+          </DialogHeader>
+
+          {studentDetails && (
+            <div className="py-4 space-y-6">
+              <div className="flex flex-col items-center text-center space-y-3">
+                <Avatar className="w-24 h-24 border-4 border-background shadow-lg">
+                  <AvatarImage src={studentDetails.profilePicture || ""} />
+                  <AvatarFallback className="text-2xl bg-muted">
+                    {studentDetails.firstName[0]}{studentDetails.lastName[0]}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <h3 className="text-xl font-bold">{studentDetails.firstName} {studentDetails.lastName}</h3>
+                  <p className="text-muted-foreground">{studentDetails.university}</p>
+                  <Badge variant="outline" className="mt-2 font-mono">
+                    {studentDetails.parchiId}
+                  </Badge>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 text-sm border rounded-lg p-4 bg-muted/20">
+                <div>
+                  <p className="text-muted-foreground">Status</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    {studentDetails.verificationStatus === 'approved' ? (
+                      <Badge className="bg-green-500 hover:bg-green-600">Verified</Badge>
+                    ) : (
+                      <Badge variant="destructive">Not Verified</Badge>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Selected Offer</p>
+                  <p className="font-medium mt-1">
+                    {mockActiveOffers.find(o => o.id === selectedOffer)?.discount}
+                  </p>
+                </div>
+              </div>
+
+              {studentDetails.verificationStatus !== 'approved' && (
+                <div className="flex items-center gap-2 p-3 bg-red-50 text-red-600 rounded-md text-sm">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  <p>Warning: This student is not verified.</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsVerificationDialogOpen(false)}
+              className="flex-1"
+            >
+              <XCircle className="w-4 h-4 mr-2" />
+              Reject
+            </Button>
+            <Button 
+              onClick={handleConfirmRedemption}
+              className="flex-1"
+              style={{ backgroundColor: colors.primary }}
+              disabled={isCreatingRedemption}
+            >
+              {isCreatingRedemption ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <CheckCircle className="w-4 h-4 mr-2" />
+              )}
+              Approve & Redeem
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
