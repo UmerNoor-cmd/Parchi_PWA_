@@ -909,3 +909,21 @@ export const getDailyRedemptionStats = async (): Promise<DailyRedemptionStats> =
   });
   return response.data;
 };
+
+export interface DailyRedemptionDetail {
+  id: string;
+  parchiId: string;
+  offerTitle: string;
+  discountDetails: string;
+  createdAt: string;
+}
+
+/**
+ * Get daily redemption details for the branch
+ */
+export const getDailyRedemptionDetails = async (): Promise<DailyRedemptionDetail[]> => {
+  const response = await apiRequest('/admin/redemptions/stats/daily-details', {
+    method: 'GET',
+  });
+  return response.data;
+};

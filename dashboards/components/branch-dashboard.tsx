@@ -23,7 +23,7 @@ import {
 } from "recharts"
 import { BranchSidebar } from "./branch-sidebar"
 import { DASHBOARD_COLORS } from "@/lib/colors"
-import { getStudentByParchiId, createRedemption, StudentVerificationResponse, getDailyRedemptionStats, DailyRedemptionStats } from "@/lib/api-client"
+import { getStudentByParchiId, createRedemption, StudentVerificationResponse, getDailyRedemptionStats, DailyRedemptionStats, getDailyRedemptionDetails, DailyRedemptionDetail } from "@/lib/api-client"
 import { toast } from "sonner"
 
 
@@ -88,14 +88,19 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
   const [isLoadingStudent, setIsLoadingStudent] = useState(false)
   const [isCreatingRedemption, setIsCreatingRedemption] = useState(false)
   const [dailyStats, setDailyStats] = useState<DailyRedemptionStats | null>(null)
+  const [dailyRedemptionDetails, setDailyRedemptionDetails] = useState<DailyRedemptionDetail[]>([])
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const stats = await getDailyRedemptionStats()
+        const [stats, details] = await Promise.all([
+          getDailyRedemptionStats(),
+          getDailyRedemptionDetails()
+        ])
         setDailyStats(stats)
+        setDailyRedemptionDetails(details)
       } catch (error) {
-        console.error("Failed to fetch daily stats:", error)
+        console.error("Failed to fetch daily stats or details:", error)
       }
     }
     fetchStats()
@@ -145,9 +150,13 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
         }
         setRecentRedemptions([newRedemption, ...recentRedemptions])
         
-        // Refresh stats after successful redemption
-        const stats = await getDailyRedemptionStats()
+        // Refresh stats and details after successful redemption
+        const [stats, details] = await Promise.all([
+          getDailyRedemptionStats(),
+          getDailyRedemptionDetails()
+        ])
         setDailyStats(stats)
+        setDailyRedemptionDetails(details)
 
         setParchiIdInput("")
         setApplicableOffer(null)
@@ -426,18 +435,18 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
                   <CardTitle className="flex items-center justify-between">
                     <span>Today's Redemptions</span>
                     <Badge variant="outline" className="rounded-full">
-                      {recentRedemptions.length}
+                      {dailyRedemptionDetails.length}
                     </Badge>
                   </CardTitle>
                   <CardDescription>Real-time redemption log</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  {recentRedemptions.length === 0 ? (
+                  {dailyRedemptionDetails.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
                       <p>No redemptions yet today</p>
                     </div>
                   ) : (
-                    recentRedemptions.map((item) => (
+                    dailyRedemptionDetails.map((item) => (
                       <div
                         key={item.id}
                         className="flex items-center justify-between p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
@@ -453,13 +462,13 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="font-semibold text-foreground">{item.parchiId}</p>
-                            <p className="text-sm text-muted-foreground truncate">{item.offer}</p>
+                            <p className="text-sm text-muted-foreground truncate">{item.offerTitle} - {item.discountDetails}</p>
                           </div>
                         </div>
                         <div className="text-right flex-shrink-0 ml-4">
                           <p className="text-xs text-muted-foreground flex items-center gap-1">
                             <Clock className="w-3 h-3" />
-                            {item.timestamp}
+                            {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </p>
                         </div>
                       </div>
