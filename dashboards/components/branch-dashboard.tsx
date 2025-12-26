@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -17,14 +17,10 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
 } from "recharts"
 import { BranchSidebar } from "./branch-sidebar"
-import { DASHBOARD_COLORS, getChartColor } from "@/lib/colors"
-import { getStudentByParchiId, createRedemption, StudentVerificationResponse, getDailyRedemptionStats, DailyRedemptionStats, getDailyRedemptionDetails, DailyRedemptionDetail, getAggregatedRedemptionStats, AggregatedStats, getOfferPerformance, OfferPerformance } from "@/lib/api-client"
+import { DASHBOARD_COLORS } from "@/lib/colors"
+import { getStudentByParchiId, createRedemption, StudentVerificationResponse, getDailyRedemptionStats, DailyRedemptionStats, getDailyRedemptionDetails, DailyRedemptionDetail, getAggregatedRedemptionStats, AggregatedStats } from "@/lib/api-client"
 import { toast } from "sonner"
 
 const colors = DASHBOARD_COLORS("branch")
@@ -39,26 +35,23 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
   const [dailyStats, setDailyStats] = useState<DailyRedemptionStats | null>(null)
   const [dailyRedemptionDetails, setDailyRedemptionDetails] = useState<DailyRedemptionDetail[]>([])
   const [aggregatedStats, setAggregatedStats] = useState<AggregatedStats | null>(null)
-  const [offerPerformance, setOfferPerformance] = useState<OfferPerformance[]>([])
-
   // Loading states
   const [isVerificationDialogOpen, setIsVerificationDialogOpen] = useState(false)
   const [isLoadingStudent, setIsLoadingStudent] = useState(false)
   const [isCreatingRedemption, setIsCreatingRedemption] = useState(false)
+  const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false)
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const [stats, details, aggregated, offers] = await Promise.all([
+        const [stats, details, aggregated] = await Promise.all([
           getDailyRedemptionStats(),
           getDailyRedemptionDetails(),
           getAggregatedRedemptionStats(),
-          getOfferPerformance()
         ])
         setDailyStats(stats)
         setDailyRedemptionDetails(details)
         setAggregatedStats(aggregated)
-        setOfferPerformance(offers)
       } catch (error) {
         console.error("Failed to fetch stats:", error)
       }
@@ -318,72 +311,6 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
                 </Card>
               </div>
 
-              {/* Charts Row 2: Offer Performance & Distribution */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle style={{ color: colors.primary }}>Offer Performance</CardTitle>
-                    <CardDescription>Top performing offers</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {offerPerformance.length > 0 ? offerPerformance.slice(0, 5).map((offer, i) => (
-                        <div key={offer.id} className="flex items-center justify-between p-3 border rounded-lg">
-                          <div className="flex items-center gap-3">
-                            <div className={`p-2 rounded-full ${i < 3 ? 'bg-green-100' : 'bg-gray-100'}`}>
-                              <TrendingUp className={`w-4 h-4 ${i < 3 ? 'text-green-600' : 'text-gray-600'}`} />
-                            </div>
-                            <div>
-                              <p className="font-medium text-sm">{offer.title}</p>
-                              <p className="text-xs text-muted-foreground">{offer.status}</p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-bold" style={{ color: colors.primary }}>{offer.currentRedemptions}</p>
-                            <p className="text-xs text-muted-foreground">Redemptions</p>
-                          </div>
-                        </div>
-                      )) : (
-                        <p className="text-sm text-muted-foreground text-center py-4">No offers data available</p>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle style={{ color: colors.primary }}>Redemption Distribution</CardTitle>
-                    <CardDescription>By branch percentage</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
-                      {offerPerformance.length > 0 ? (
-                        <PieChart>
-                          <Pie
-                            data={offerPerformance.slice(0, 5) as any[]}
-                            dataKey="currentRedemptions"
-                            nameKey="title"
-                            cx="50%"
-                            cy="50%"
-                            outerRadius={80}
-                            label={({ name, percent }) => `${(name || 'Unknown').substring(0, 15)}... ${((percent || 0) * 100).toFixed(0)}%`}
-                          >
-                            {offerPerformance.slice(0, 5).map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={getChartColor("branch", index)} />
-                            ))}
-                          </Pie>
-                          <Tooltip />
-                          <Legend />
-                        </PieChart>
-                      ) : (
-                        <div className="flex h-full items-center justify-center text-muted-foreground">
-                          No data available
-                        </div>
-                      )}
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-              </div>
             </>
           )}
 
@@ -518,9 +445,12 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
           {studentDetails && (
             <div className="py-4 space-y-6">
               <div className="flex flex-col items-center text-center space-y-3">
-                <Avatar className="w-24 h-24 border-4 border-background shadow-lg">
+                <Avatar 
+                  className="w-36 h-36 border-4 border-background shadow-lg cursor-pointer hover:opacity-90 transition-opacity"
+                  onClick={() => setIsImagePreviewOpen(true)}
+                >
                   <AvatarImage src={studentDetails.profilePicture || ""} />
-                  <AvatarFallback className="text-2xl bg-muted">
+                  <AvatarFallback className="text-3xl bg-muted">
                     {studentDetails.firstName[0]}{studentDetails.lastName[0]}
                   </AvatarFallback>
                 </Avatar>
@@ -591,6 +521,31 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
               Approve & Redeem
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Image Preview Dialog */}
+      <Dialog open={isImagePreviewOpen} onOpenChange={setIsImagePreviewOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Student Profile Picture</DialogTitle>
+            <DialogDescription>
+              {studentDetails?.firstName} {studentDetails?.lastName}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center justify-center p-4">
+            {studentDetails?.profilePicture ? (
+              <img
+                src={studentDetails.profilePicture}
+                alt={`${studentDetails.firstName} ${studentDetails.lastName}`}
+                className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-lg"
+              />
+            ) : (
+              <div className="w-64 h-64 rounded-full bg-muted flex items-center justify-center text-6xl font-bold">
+                {studentDetails?.firstName[0]}{studentDetails?.lastName[0]}
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
