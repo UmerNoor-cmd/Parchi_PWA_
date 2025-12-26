@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Check, X, Search, Eye, MoreHorizontal, Loader2, AlertCircle, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react"
+import { Check, X, Search, Eye, MoreHorizontal, Loader2, AlertCircle, RefreshCw, ChevronLeft, ChevronRight, ZoomIn } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
 import { usePendingStudents, useAllStudents, useStudentDetail, useApproveRejectStudent } from "@/hooks/use-kyc"
@@ -22,6 +22,7 @@ export function AdminKYC() {
   const [isReviewOpen, setIsReviewOpen] = useState(false)
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false)
   const [rejectionNotes, setRejectionNotes] = useState("")
+  const [expandedImage, setExpandedImage] = useState<{ url: string; alt: string } | null>(null)
   const [pendingPage, setPendingPage] = useState(1)
   const [allPage, setAllPage] = useState(1)
   const [statusFilter, setStatusFilter] = useState<'pending' | 'approved' | 'rejected' | 'expired' | undefined>(undefined)
@@ -443,7 +444,13 @@ export function AdminKYC() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
               <div className="space-y-2">
                 <Label>Student ID Card (Front)</Label>
-                <div className="border rounded-lg p-2 bg-muted/20">
+                <div 
+                  className="border rounded-lg p-2 bg-muted/20 cursor-pointer hover:bg-muted/30 transition-colors relative group"
+                  onClick={() => setExpandedImage({ 
+                    url: studentDetail.kyc.studentIdCardFrontPath, 
+                    alt: "Student ID Front" 
+                  })}
+                >
                   <img 
                     src={studentDetail.kyc.studentIdCardFrontPath} 
                     alt="Student ID Front" 
@@ -452,12 +459,21 @@ export function AdminKYC() {
                       (e.target as HTMLImageElement).src = '/placeholder.svg?height=300&width=500'
                     }}
                   />
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-md transition-colors">
+                    <ZoomIn className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
                 </div>
               </div>
               
               <div className="space-y-2">
                 <Label>Student ID Card (Back)</Label>
-                <div className="border rounded-lg p-2 bg-muted/20">
+                <div 
+                  className="border rounded-lg p-2 bg-muted/20 cursor-pointer hover:bg-muted/30 transition-colors relative group"
+                  onClick={() => setExpandedImage({ 
+                    url: studentDetail.kyc.studentIdCardBackPath, 
+                    alt: "Student ID Back" 
+                  })}
+                >
                   <img 
                     src={studentDetail.kyc.studentIdCardBackPath} 
                     alt="Student ID Back" 
@@ -466,12 +482,21 @@ export function AdminKYC() {
                       (e.target as HTMLImageElement).src = '/placeholder.svg?height=300&width=500'
                     }}
                   />
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-md transition-colors">
+                    <ZoomIn className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
                 </div>
               </div>
               
               <div className="space-y-2">
                 <Label>Selfie</Label>
-                <div className="border rounded-lg p-2 bg-muted/20">
+                <div 
+                  className="border rounded-lg p-2 bg-muted/20 cursor-pointer hover:bg-muted/30 transition-colors relative group"
+                  onClick={() => setExpandedImage({ 
+                    url: studentDetail.kyc.selfieImagePath, 
+                    alt: "Selfie" 
+                  })}
+                >
                   <img 
                     src={studentDetail.kyc.selfieImagePath} 
                     alt="Selfie" 
@@ -480,6 +505,9 @@ export function AdminKYC() {
                       (e.target as HTMLImageElement).src = '/placeholder.svg?height=300&width=300'
                     }}
                   />
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-md transition-colors">
+                    <ZoomIn className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
                 </div>
               </div>
 
@@ -616,6 +644,36 @@ export function AdminKYC() {
               )}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Expanded Image Dialog */}
+      <Dialog open={!!expandedImage} onOpenChange={(open) => {
+        if (!open) {
+          setExpandedImage(null)
+        }
+      }}>
+        <DialogContent className="max-w-5xl max-h-[95vh] p-0">
+          {expandedImage && (
+            <div className="relative">
+              <img 
+                src={expandedImage.url} 
+                alt={expandedImage.alt} 
+                className="w-full h-auto max-h-[90vh] object-contain rounded-lg"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/placeholder.svg?height=600&width=800'
+                }}
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white"
+                onClick={() => setExpandedImage(null)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
