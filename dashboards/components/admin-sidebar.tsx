@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { LayoutDashboard, Users, FileText, Settings, LogOut, CheckCircle2, ShoppingCart, Loader2, Store } from "lucide-react"
+import { LayoutDashboard, Users, FileText, LogOut, CheckCircle2, ShoppingCart, Loader2, Store } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 import { DASHBOARD_COLORS } from "@/lib/colors"
@@ -54,11 +54,6 @@ export function AdminSidebar({ activeTab, onTabChange, onLogout }: AdminSidebarP
       id: "logs",
       label: "System Logs",
       icon: CheckCircle2,
-    },
-    {
-      id: "settings",
-      label: "Settings",
-      icon: Settings,
     },
     {
       id: "account-creation",
