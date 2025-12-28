@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { LayoutDashboard, Ticket, Store, BarChart3, LogOut, Loader2 } from "lucide-react"
+import { LayoutDashboard, Ticket, Store, BarChart3, LogOut, Loader2, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 import { DASHBOARD_COLORS } from "@/lib/colors"
@@ -44,6 +44,11 @@ export function CorporateSidebar({ activeTab, onTabChange, onLogout }: Corporate
       id: "reports",
       label: "Reports",
       icon: BarChart3,
+    },
+    {
+      id: "profile",
+      label: "Profile",
+      icon: User,
     },
   ]
 

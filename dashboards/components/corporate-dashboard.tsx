@@ -20,6 +20,7 @@ import { TrendingUp, Users, DollarSign, ShoppingCart, Plus, Download } from "luc
 import { CorporateSidebar } from "./corporate-sidebar"
 import { CorporateOffers } from "./corporate-offers"
 import { CorporateBranches } from "./corporate-branches"
+import { CorporateProfile } from "./corporate-profile"
 import { DASHBOARD_COLORS, getChartColor } from "@/lib/colors"
 
 import {
@@ -275,6 +276,8 @@ export function CorporateDashboard({ onLogout }: { onLogout: () => void }) {
           {activeTab === "offers" && <CorporateOffers />}
 
           {activeTab === "branches" && <CorporateBranches />}
+
+          {activeTab === "profile" && <CorporateProfile />}
 
           {activeTab === "reports" && (
             <Card>

@@ -49,6 +49,8 @@ export interface CorporateMerchant {
   isActive: boolean | null;
   createdAt: string | null;
   updatedAt: string | null;
+  bannerUrl: string | null;
+  termsAndConditions: string | null;
 }
 
 export interface CorporateMerchantsResponse {
@@ -267,6 +269,8 @@ export interface UpdateMerchantRequest {
   contactPhone?: string
   logoPath?: string
   category?: string
+  bannerUrl?: string
+  termsAndConditions?: string
   isActive?: boolean
   verificationStatus?: 'pending' | 'approved' | 'rejected' | 'expired'
 }
