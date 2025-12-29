@@ -74,40 +74,4 @@ export class SupabaseStorageService {
       throw new Error('Failed to upload logo image')
     }
   }
-
-  /**
-   * Upload corporate banner to Supabase Storage
-   * Returns the public URL of the uploaded image
-   */
-  static async uploadCorporateBanner(file: File, businessName: string): Promise<string> {
-    try {
-      // Create a clean filename from business name
-      const cleanName = businessName.toLowerCase().replace(/[^a-z0-9]/g, '-')
-      const timestamp = Date.now()
-      const extension = file.name.split('.').pop()
-      const filePath = `banners/${cleanName}-${timestamp}.${extension}`
-
-      // Upload file to Supabase Storage
-      const { error: uploadError } = await supabase.storage
-        .from(this.BUCKET_NAME)
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false,
-        })
-
-      if (uploadError) {
-        throw uploadError
-      }
-
-      // Get public URL
-      const { data } = supabase.storage
-        .from(this.BUCKET_NAME)
-        .getPublicUrl(filePath)
-
-      return data.publicUrl
-    } catch (e) {
-      console.error('Failed to upload banner:', e)
-      throw new Error('Failed to upload banner image')
-    }
-  }
 }

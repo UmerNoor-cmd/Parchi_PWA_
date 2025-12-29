@@ -8,11 +8,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Save, Loader2, User, Building2, Mail, Phone, Image as ImageIcon, FileText, AlertCircle, X } from "lucide-react"
+import { Save, Loader2, User, Building2, Mail, Phone, Image as ImageIcon, FileText, AlertCircle } from "lucide-react"
 import { DASHBOARD_COLORS } from "@/lib/colors"
 import { getCorporateMerchant, updateCorporateMerchant, CorporateMerchant } from "@/lib/api-client"
 import { useAuth } from "@/contexts/AuthContext"
-import { SupabaseStorageService } from "@/lib/storage"
 import { toast } from "sonner"
 
 export function CorporateProfile() {
@@ -21,8 +20,6 @@ export function CorporateProfile() {
   const [merchant, setMerchant] = useState<CorporateMerchant | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
-  const [isLogoUploading, setIsLogoUploading] = useState(false)
-  const [isBannerUploading, setIsBannerUploading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   // Form state
@@ -172,58 +169,6 @@ export function CorporateProfile() {
     }
   }
 
-  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    setIsLogoUploading(true)
-    try {
-      const businessName = formData.businessName || merchant?.businessName || "temp-upload"
-      const url = await SupabaseStorageService.uploadCorporateLogo(file, businessName)
-      
-      setFormData(prev => ({ 
-        ...prev, 
-        logoPath: url 
-      }))
-      toast.success("Logo uploaded successfully")
-    } catch (error) {
-      console.error("Error uploading logo:", error)
-      toast.error("Failed to upload logo. Please try again.")
-    } finally {
-      setIsLogoUploading(false)
-    }
-  }
-
-  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    setIsBannerUploading(true)
-    try {
-      const businessName = formData.businessName || merchant?.businessName || "temp-upload"
-      const url = await SupabaseStorageService.uploadCorporateBanner(file, businessName)
-      
-      setFormData(prev => ({ 
-        ...prev, 
-        bannerUrl: url 
-      }))
-      toast.success("Banner uploaded successfully")
-    } catch (error) {
-      console.error("Error uploading banner:", error)
-      toast.error("Failed to upload banner. Please try again.")
-    } finally {
-      setIsBannerUploading(false)
-    }
-  }
-
-  const handleRemoveLogo = () => {
-    setFormData(prev => ({ ...prev, logoPath: "" }))
-  }
-
-  const handleRemoveBanner = () => {
-    setFormData(prev => ({ ...prev, bannerUrl: "" }))
-  }
-
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -367,150 +312,57 @@ export function CorporateProfile() {
 
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="logoPath">Business Logo</Label>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleLogoUpload}
-                        className="hidden"
-                        id="logo-upload"
-                        disabled={isLogoUploading}
+                  <Label htmlFor="logoPath">Logo URL</Label>
+                  <Input
+                    id="logoPath"
+                    type="url"
+                    value={formData.logoPath}
+                    onChange={(e) => handleInputChange("logoPath", e.target.value)}
+                    placeholder="https://example.com/logo.png"
+                    className={errors.logoPath ? "border-destructive" : ""}
+                  />
+                  {errors.logoPath && (
+                    <p className="text-sm text-destructive">{errors.logoPath}</p>
+                  )}
+                  {formData.logoPath && isValidUrl(formData.logoPath) && (
+                    <div className="mt-2">
+                      <img
+                        src={formData.logoPath}
+                        alt="Logo preview"
+                        className="h-20 w-20 object-contain border rounded"
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none"
+                        }}
                       />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => document.getElementById('logo-upload')?.click()}
-                        disabled={isLogoUploading}
-                        className="gap-2"
-                      >
-                        {isLogoUploading ? (
-                          <>
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            Uploading...
-                          </>
-                        ) : (
-                          <>
-                            <ImageIcon className="w-4 h-4" />
-                            Select Logo Image
-                          </>
-                        )}
-                      </Button>
-                      {formData.logoPath && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-9 w-9 text-destructive hover:text-destructive/90"
-                          onClick={handleRemoveLogo}
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      )}
                     </div>
-                    {formData.logoPath && (
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-3">
-                          <div className="relative w-20 h-20 rounded border overflow-hidden bg-muted flex-shrink-0">
-                            <img
-                              src={formData.logoPath}
-                              alt="Logo preview"
-                              className="w-full h-full object-contain"
-                              onError={(e) => {
-                                e.currentTarget.style.display = "none"
-                              }}
-                            />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <Label className="text-xs text-muted-foreground">Logo URL (or enter manually)</Label>
-                            <Input
-                              value={formData.logoPath}
-                              onChange={(e) => handleInputChange("logoPath", e.target.value)}
-                              placeholder="https://example.com/logo.png"
-                              className="text-xs mt-1"
-                            />
-                          </div>
-                        </div>
-                        {errors.logoPath && (
-                          <p className="text-sm text-destructive">{errors.logoPath}</p>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="bannerUrl">Banner Image</Label>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleBannerUpload}
-                        className="hidden"
-                        id="banner-upload"
-                        disabled={isBannerUploading}
+                  <Label htmlFor="bannerUrl">Banner URL</Label>
+                  <Input
+                    id="bannerUrl"
+                    type="url"
+                    value={formData.bannerUrl}
+                    onChange={(e) => handleInputChange("bannerUrl", e.target.value)}
+                    placeholder="https://example.com/banner.jpg"
+                    className={errors.bannerUrl ? "border-destructive" : ""}
+                  />
+                  {errors.bannerUrl && (
+                    <p className="text-sm text-destructive">{errors.bannerUrl}</p>
+                  )}
+                  {formData.bannerUrl && isValidUrl(formData.bannerUrl) && (
+                    <div className="mt-2">
+                      <img
+                        src={formData.bannerUrl}
+                        alt="Banner preview"
+                        className="h-32 w-full object-cover border rounded"
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none"
+                        }}
                       />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => document.getElementById('banner-upload')?.click()}
-                        disabled={isBannerUploading}
-                        className="gap-2"
-                      >
-                        {isBannerUploading ? (
-                          <>
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            Uploading...
-                          </>
-                        ) : (
-                          <>
-                            <ImageIcon className="w-4 h-4" />
-                            Select Banner Image
-                          </>
-                        )}
-                      </Button>
-                      {formData.bannerUrl && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-9 w-9 text-destructive hover:text-destructive/90"
-                          onClick={handleRemoveBanner}
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      )}
                     </div>
-                    {formData.bannerUrl && (
-                      <div className="space-y-2">
-                        <div className="relative w-full h-40 rounded border overflow-hidden bg-muted">
-                          <img
-                            src={formData.bannerUrl}
-                            alt="Banner preview"
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              e.currentTarget.style.display = "none"
-                            }}
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-xs text-muted-foreground">Banner URL (or enter manually)</Label>
-                          <Input
-                            type="url"
-                            value={formData.bannerUrl}
-                            onChange={(e) => handleInputChange("bannerUrl", e.target.value)}
-                            placeholder="https://example.com/banner.jpg"
-                            className="text-xs mt-1"
-                          />
-                        </div>
-                        {errors.bannerUrl && (
-                          <p className="text-sm text-destructive">{errors.bannerUrl}</p>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                  )}
                 </div>
               </div>
             </div>

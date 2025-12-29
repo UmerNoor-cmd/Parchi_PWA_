@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Building2, Store, MoreHorizontal, Search, Loader2, AlertCircle, RefreshCw, Edit, Upload, X, Image as ImageIcon } from "lucide-react"
+import { Plus, Building2, Store, MoreHorizontal, Search, Loader2, AlertCircle, RefreshCw, Edit, Upload, X } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useMerchants } from "@/hooks/use-merchants"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -49,7 +49,6 @@ export function AdminMerchants() {
   })
   const [isSaving, setIsSaving] = useState(false)
   const [isLogoUploading, setIsLogoUploading] = useState(false)
-  const [isBannerUploading, setIsBannerUploading] = useState(false)
 
   // Merchants are already filtered server-side based on searchQuery
   const filteredMerchants = merchants
@@ -107,36 +106,6 @@ export function AdminMerchants() {
 
   const handleRemoveLogo = () => {
     setEditForm(prev => ({ ...prev, logoPath: "" }))
-  }
-
-  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    setIsBannerUploading(true)
-    try {
-      // Use a temporary name if business name is empty
-      const businessName = editForm.businessName || "temp-upload"
-      const url = await SupabaseStorageService.uploadCorporateBanner(file, businessName)
-      
-      setEditForm(prev => ({ 
-        ...prev, 
-        bannerUrl: url 
-      }))
-    } catch (error) {
-      console.error("Error uploading banner:", error)
-      toast({
-        variant: "destructive",
-        title: "Upload Failed",
-        description: "Failed to upload banner. Please try again.",
-      })
-    } finally {
-      setIsBannerUploading(false)
-    }
-  }
-
-  const handleRemoveBanner = () => {
-    setEditForm(prev => ({ ...prev, bannerUrl: "" }))
   }
 
   const handleUpdate = async () => {
@@ -361,145 +330,79 @@ export function AdminMerchants() {
 
             <div className="space-y-2">
               <Label>Business Logo</Label>
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="file"
+              <div className="flex items-center gap-4">
+                <div className="relative flex-1">
+                  <Input 
+                    type="file" 
                     accept="image/*"
                     onChange={handleLogoUpload}
-                    className="hidden"
-                    id="logo-upload"
+                    className="cursor-pointer"
                     disabled={isLogoUploading}
                   />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => document.getElementById('logo-upload')?.click()}
-                    disabled={isLogoUploading}
-                    className="gap-2"
-                  >
-                    {isLogoUploading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Uploading...
-                      </>
-                    ) : (
-                      <>
-                        <ImageIcon className="w-4 h-4" />
-                        Select Logo Image
-                      </>
-                    )}
-                  </Button>
-                  {editForm.logoPath && (
+                  {isLogoUploading && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                    </div>
+                  )}
+                </div>
+                {editForm.logoPath && (
+                  <div className="flex items-center gap-2">
+                    <div className="relative w-10 h-10 rounded border overflow-hidden bg-muted">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img 
+                        src={editForm.logoPath} 
+                        alt="Logo" 
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="h-9 w-9 text-destructive hover:text-destructive/90"
+                      className="h-8 w-8 text-destructive hover:text-destructive/90"
                       onClick={handleRemoveLogo}
                     >
                       <X className="w-4 h-4" />
                     </Button>
-                  )}
-                </div>
-                {editForm.logoPath && (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-3">
-                      <div className="relative w-20 h-20 rounded border overflow-hidden bg-muted flex-shrink-0">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img 
-                          src={editForm.logoPath} 
-                          alt="Logo preview" 
-                          className="w-full h-full object-contain"
-                          onError={(e) => {
-                            e.currentTarget.style.display = "none"
-                          }}
-                        />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <Label className="text-xs text-muted-foreground">Logo URL (or enter manually)</Label>
-                        <Input 
-                          value={editForm.logoPath}
-                          onChange={(e) => setEditForm({...editForm, logoPath: e.target.value})}
-                          placeholder="https://example.com/logo.png"
-                          className="text-xs mt-1"
-                        />
-                      </div>
-                    </div>
                   </div>
                 )}
               </div>
+              {editForm.logoPath && !editForm.logoPath.includes("file://") && (
+                <div className="mt-2">
+                  <Label className="text-xs text-muted-foreground">Logo URL</Label>
+                  <Input 
+                    value={editForm.logoPath}
+                    onChange={(e) => setEditForm({...editForm, logoPath: e.target.value})}
+                    placeholder="Or enter logo URL directly"
+                    className="text-xs"
+                  />
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
-              <Label>Banner Image</Label>
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleBannerUpload}
-                    className="hidden"
-                    id="banner-upload"
-                    disabled={isBannerUploading}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => document.getElementById('banner-upload')?.click()}
-                    disabled={isBannerUploading}
-                    className="gap-2"
-                  >
-                    {isBannerUploading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Uploading...
-                      </>
-                    ) : (
-                      <>
-                        <ImageIcon className="w-4 h-4" />
-                        Select Banner Image
-                      </>
-                    )}
-                  </Button>
-                  {editForm.bannerUrl && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-9 w-9 text-destructive hover:text-destructive/90"
-                      onClick={handleRemoveBanner}
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  )}
-                </div>
-                {editForm.bannerUrl && (
-                  <div className="space-y-2">
-                    <div className="relative w-full h-40 rounded border overflow-hidden bg-muted">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img 
-                        src={editForm.bannerUrl} 
-                        alt="Banner preview" 
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.style.display = "none"
-                        }}
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-xs text-muted-foreground">Banner URL (or enter manually)</Label>
-                      <Input 
-                        type="url"
-                        value={editForm.bannerUrl}
-                        onChange={(e) => setEditForm({...editForm, bannerUrl: e.target.value})}
-                        placeholder="https://example.com/banner.jpg"
-                        className="text-xs mt-1"
-                      />
-                    </div>
+              <Label>Banner URL</Label>
+              <Input 
+                type="url"
+                value={editForm.bannerUrl}
+                onChange={(e) => setEditForm({...editForm, bannerUrl: e.target.value})}
+                placeholder="https://example.com/banner.jpg"
+              />
+              {editForm.bannerUrl && (
+                <div className="mt-2">
+                  <div className="relative w-full h-32 rounded border overflow-hidden bg-muted">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img 
+                      src={editForm.bannerUrl} 
+                      alt="Banner preview" 
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none"
+                      }}
+                    />
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
