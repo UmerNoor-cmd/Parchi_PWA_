@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -28,49 +28,44 @@ import { AdminBranches } from "./admin-branches"
 import { AdminOffers } from "./admin-offers"
 import { AccountCreation } from "./account-creation"
 import { AdminAuditLogs } from "./admin-audit-logs"
-
-const mockPlatformStats = [
-  { label: "Total Active Students", value: "12,450", icon: Users, trend: "+12% MoM" },
-  { label: "Total Verified Merchants", value: "85", icon: ShoppingCart, trend: "+5 this month" },
-  { label: "Total Redemptions", value: "45,200", icon: CheckCircle2, trend: "All Time" },
-  { label: "Platform Growth Rate", value: "18%", icon: TrendingUp, trend: "Month over Month" },
-]
-
-const mockUserManagement = [
-  { label: "Verification Queue", value: "142", subtext: "Pending Requests", icon: Users },
-  { label: "Suspended/Rejected", value: "24", subtext: "Accounts", icon: X },
-]
-
-const mockFinancials = [
-  { label: "Corporate Payments Due", value: "Rs. 1.2M", subtext: "Next 30 Days", icon: FileText },
-  { label: "Payment Collection", value: "92%", subtext: "On Time", icon: Check },
-  { label: "Financial Projections", value: "+22%", subtext: "Q4 Growth", icon: TrendingUp },
-]
-
-const mockTopMerchants = [
-  { name: "Burger Hub", redemptions: 1200, rating: 4.8 },
-  { name: "Pizza Palace", redemptions: 980, rating: 4.5 },
-  { name: "Coffee Corner", redemptions: 850, rating: 4.7 },
-  { name: "Student Station", redemptions: 720, rating: 4.6 },
-  { name: "Tech Gadgets", redemptions: 650, rating: 4.9 },
-]
-
-const mockUniversityDistribution = [
-  { name: "FAST-NUCES", value: 35 },
-  { name: "IBA", value: 25 },
-  { name: "LUMS", value: 20 },
-  { name: "NUST", value: 15 },
-  { name: "Other", value: 5 },
-]
-
-const mockEngagementMetrics = [
-  { label: "Leaderboard Top Performers", value: "50", subtext: "Students" },
-  { label: "Founders Club Members", value: "120", subtext: "Exclusive Members" },
-]
+import { getAdminDashboardStats, AdminDashboardStats } from "@/lib/api-client"
+import { toast } from "sonner"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [activeTab, setActiveTab] = useState("overview")
   const colors = DASHBOARD_COLORS("admin")
+
+  // Real-time dashboard statistics
+  const [stats, setStats] = useState<AdminDashboardStats | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
+
+  // Fetch dashboard stats
+  const fetchStats = async () => {
+    try {
+      const data = await getAdminDashboardStats()
+      setStats(data)
+      setLastUpdated(new Date())
+    } catch (error) {
+      console.error('Failed to fetch dashboard stats:', error)
+      toast.error('Failed to load dashboard statistics')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Fetch on mount and set up auto-refresh
+  useEffect(() => {
+    fetchStats()
+
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(() => {
+      fetchStats()
+    }, 30000)
+
+    return () => clearInterval(interval)
+  }, [])
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -90,80 +85,115 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                 {/* Platform Overview */}
                 <div className="mb-8">
                   <h2 className="text-xl font-semibold mb-4" style={{ color: colors.primary }}>Platform Overview</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {mockPlatformStats.map((stat, idx) => {
-                      const Icon = stat.icon
-                      return (
-                        <Card key={idx}>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {/* Platform Overview - Real-time Data */}
+                    {isLoading ? (
+                      <>
+                        <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Loading...</CardTitle></CardHeader><CardContent><Skeleton className="h-10 w-24" /></CardContent></Card>
+                        <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Loading...</CardTitle></CardHeader><CardContent><Skeleton className="h-10 w-24" /></CardContent></Card>
+                        <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Loading...</CardTitle></CardHeader><CardContent><Skeleton className="h-10 w-24" /></CardContent></Card>
+                        <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Loading...</CardTitle></CardHeader><CardContent><Skeleton className="h-10 w-24" /></CardContent></Card>
+                      </>
+                    ) : (
+                      <>
+                        <Card>
                           <CardHeader className="pb-2">
                             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between">
-                              <span>{stat.label}</span>
-                              <Icon className="w-4 h-4" style={{ color: colors.primary }} />
+                              <span>Total Active Students</span>
+                              <Users className="w-4 h-4" style={{ color: colors.primary }} />
                             </CardTitle>
                           </CardHeader>
                           <CardContent>
-                            <div className="text-2xl font-bold" style={{ color: colors.primary }}>{stat.value}</div>
-                            <p className="text-xs text-muted-foreground mt-1">{stat.trend}</p>
+                            <div className="text-2xl font-bold" style={{ color: colors.primary }}>
+                              {stats?.platformOverview.totalActiveStudents.toLocaleString()}
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">+{stats?.platformOverview.totalActiveStudentsGrowth}% MoM</p>
                           </CardContent>
                         </Card>
-                      )
-                    })}
+                        <Card>
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between">
+                              <span>Total Verified Merchants</span>
+                              <ShoppingCart className="w-4 h-4" style={{ color: colors.primary }} />
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="text-2xl font-bold" style={{ color: colors.primary }}>
+                              {stats?.platformOverview.totalVerifiedMerchants}
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">+{stats?.platformOverview.totalVerifiedMerchantsGrowth}% this month</p>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between">
+                              <span>Total Redemptions</span>
+                              <CheckCircle2 className="w-4 h-4" style={{ color: colors.primary }} />
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="text-2xl font-bold" style={{ color: colors.primary }}>
+                              {stats?.platformOverview.totalRedemptions.toLocaleString()}
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">All Time</p>
+                          </CardContent>
+                        </Card>
+
+                      </>
+                    )}
+
                   </div>
                 </div>
 
                 {/* User Management & Financial Oversight */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <div className="mb-8">
                   {/* User Management */}
                   <div>
                     <h2 className="text-xl font-semibold mb-4" style={{ color: colors.primary }}>User Management</h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {mockUserManagement.map((stat, idx) => {
-                        const Icon = stat.icon
-                        return (
-                          <Card key={idx}>
+                      {/* User Management - Real-time Data */}
+                      {isLoading ? (
+                        <>
+                          <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Verification Queue</CardTitle></CardHeader><CardContent><Skeleton className="h-10 w-20" /></CardContent></Card>
+                          <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Suspended/Rejected</CardTitle></CardHeader><CardContent><Skeleton className="h-10 w-20" /></CardContent></Card>
+                        </>
+                      ) : (
+                        <>
+                          <Card>
                             <CardHeader className="pb-2">
                               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between">
-                                <span>{stat.label}</span>
-                                <Icon className="w-4 h-4" style={{ color: colors.primary }} />
+                                <span>Verification Queue</span>
+                                <Users className="w-4 h-4" style={{ color: colors.primary }} />
                               </CardTitle>
                             </CardHeader>
                             <CardContent>
-                              <div className="text-2xl font-bold" style={{ color: colors.primary }}>{stat.value}</div>
-                              <p className="text-xs text-muted-foreground mt-1">{stat.subtext}</p>
+                              <div className="text-2xl font-bold" style={{ color: colors.primary }}>{stats?.userManagement.verificationQueue}</div>
+                              <p className="text-xs text-muted-foreground mt-1">Pending Requests</p>
                             </CardContent>
                           </Card>
-                        )
-                      })}
+                          <Card>
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between">
+                                <span>Suspended/Rejected</span>
+                                <X className="w-4 h-4" style={{ color: colors.primary }} />
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="text-2xl font-bold" style={{ color: colors.primary }}>{stats?.userManagement.suspendedRejected}</div>
+                              <p className="text-xs text-muted-foreground mt-1">Accounts</p>
+                            </CardContent>
+                          </Card>
+                        </>
+                      )}
+
                     </div>
                   </div>
 
-                  {/* Financial Oversight */}
-                  <div>
-                    <h2 className="text-xl font-semibold mb-4" style={{ color: colors.primary }}>Financial Oversight</h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      {mockFinancials.map((stat, idx) => {
-                        const Icon = stat.icon
-                        return (
-                          <Card key={idx}>
-                            <CardHeader className="pb-2">
-                              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between">
-                                <span>{stat.label}</span>
-                                <Icon className="w-4 h-4" style={{ color: colors.primary }} />
-                              </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                              <div className="text-2xl font-bold" style={{ color: colors.primary }}>{stat.value}</div>
-                              <p className="text-xs text-muted-foreground mt-1">{stat.subtext}</p>
-                            </CardContent>
-                          </Card>
-                        )
-                      })}
-                    </div>
-                  </div>
+
                 </div>
 
                 {/* Merchant Performance & Student Analytics */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <div className="mb-8">
                   {/* Merchant Performance */}
                   <Card>
                     <CardHeader>
@@ -172,21 +202,27 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-4">
-                        {mockTopMerchants.map((merchant, idx) => (
-                          <div key={idx} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                            <div className="flex items-center gap-3">
-                              <div className="font-bold text-lg w-6 text-muted-foreground">#{idx + 1}</div>
-                              <div>
-                                <p className="font-semibold">{merchant.name}</p>
-                                <p className="text-xs text-muted-foreground">Rating: {merchant.rating} ⭐</p>
+                        {/* Top Merchants - Real-time Data */}
+                        {isLoading ? (
+                          [...Array(5)].map((_, i) => <Skeleton key={i} className="h-16 w-full mb-2" />)
+                        ) : (
+                          stats?.topPerformingMerchants.map((merchant, idx) => (
+                            <div key={merchant.id} className="flex items-center justify-between p-3 hover:bg-muted rounded-lg mb-2">
+                              <div className="flex items-center gap-3">
+                                <span className="text-lg font-bold text-muted-foreground">#{idx + 1}</span>
+                                <div>
+                                  <div className="font-medium">{merchant.businessName}</div>
+                                  {merchant.category && <div className="text-xs text-muted-foreground">{merchant.category}</div>}
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="font-bold">{merchant.redemptionCount.toLocaleString()}</div>
+                                <div className="text-xs text-muted-foreground">Redemptions</div>
                               </div>
                             </div>
-                            <div className="text-right">
-                              <p className="font-bold" style={{ color: colors.primary }}>{merchant.redemptions}</p>
-                              <p className="text-xs text-muted-foreground">Redemptions</p>
-                            </div>
-                          </div>
-                        ))}
+                          ))
+                        )}
+
                       </div>
                     </CardContent>
                   </Card>
@@ -199,42 +235,97 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                         <CardDescription>Student base by university</CardDescription>
                       </CardHeader>
                       <CardContent>
-                        <ResponsiveContainer width="100%" height={250}>
-                          <PieChart>
-                            <Pie
-                              data={mockUniversityDistribution}
-                              cx="50%"
-                              cy="50%"
-                              innerRadius={60}
-                              outerRadius={80}
-                              paddingAngle={5}
-                              dataKey="value"
-                            >
-                              {mockUniversityDistribution.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={[colors.primary, "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--muted))"][index % 5]} />
-                              ))}
-                            </Pie>
-                            <Tooltip />
-                            <Legend />
-                          </PieChart>
-                        </ResponsiveContainer>
+                        {isLoading ? (
+                          <div className="flex items-center justify-center h-[250px]">
+                            <Skeleton className="h-[200px] w-[200px] rounded-full" />
+                          </div>
+                        ) : stats?.universityDistribution && stats.universityDistribution.length > 0 ? (
+                          <ResponsiveContainer width="100%" height={250}>
+                            <PieChart>
+                              <Pie
+                                data={stats.universityDistribution.map(u => ({
+                                  name: u.university,
+                                  value: u.studentCount
+                                }))}
+                                cx="50%"
+                                cy="50%"
+                                innerRadius={60}
+                                outerRadius={80}
+                                paddingAngle={5}
+                                dataKey="value"
+                              >
+                                {stats.universityDistribution.map((entry, index) => (
+                                  <Cell key={`cell-${index}`} fill={[colors.primary, "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--muted))"][index % 5]} />
+                                ))}
+                              </Pie>
+                              <Tooltip />
+                              <Legend />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        ) : (
+                          <div className="flex items-center justify-center h-[250px] text-muted-foreground">
+                            No university data available
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
 
                     <div className="grid grid-cols-2 gap-4">
-                      {mockEngagementMetrics.map((metric, idx) => (
-                        <Card key={idx}>
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-muted-foreground">
-                              {metric.label}
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="text-2xl font-bold" style={{ color: colors.primary }}>{metric.value}</div>
-                            <p className="text-xs text-muted-foreground mt-1">{metric.subtext}</p>
-                          </CardContent>
-                        </Card>
-                      ))}
+                      {isLoading ? (
+                        <>
+                          <Card>
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-sm font-medium text-muted-foreground">
+                                Leaderboard Top Performers
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <Skeleton className="h-8 w-16" />
+                              <Skeleton className="h-4 w-20 mt-1" />
+                            </CardContent>
+                          </Card>
+                          <Card>
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-sm font-medium text-muted-foreground">
+                                Founders Club Members
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <Skeleton className="h-8 w-16" />
+                              <Skeleton className="h-4 w-24 mt-1" />
+                            </CardContent>
+                          </Card>
+                        </>
+                      ) : (
+                        <>
+                          <Card>
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-sm font-medium text-muted-foreground">
+                                Leaderboard Top Performers
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="text-2xl font-bold" style={{ color: colors.primary }}>
+                                {stats?.leaderboardTopPerformers ?? 0}
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-1">Students</p>
+                            </CardContent>
+                          </Card>
+                          <Card>
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-sm font-medium text-muted-foreground">
+                                Founders Club Members
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="text-2xl font-bold" style={{ color: colors.primary }}>
+                                {stats?.foundersClubMembers ?? 0}
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-1">Exclusive Members</p>
+                            </CardContent>
+                          </Card>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>

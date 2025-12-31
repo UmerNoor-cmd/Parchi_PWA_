@@ -1164,3 +1164,44 @@ export const getAuditLogById = async (id: string): Promise<AuditLog> => {
   });
   return response.data;
 };
+
+// ========== Admin Dashboard Statistics ==========
+
+export interface AdminDashboardStats {
+  platformOverview: {
+    totalActiveStudents: number;
+    totalActiveStudentsGrowth: number;
+    totalVerifiedMerchants: number;
+    totalVerifiedMerchantsGrowth: number;
+    totalRedemptions: number;
+  };
+  userManagement: {
+    verificationQueue: number;
+    suspendedRejected: number;
+  };
+  topPerformingMerchants: {
+    id: string;
+    businessName: string;
+    redemptionCount: number;
+    category: string | null;
+    logoPath: string | null;
+  }[];
+  universityDistribution: {
+    university: string;
+    studentCount: number;
+    percentage: number;
+  }[];
+  leaderboardTopPerformers: number;
+  foundersClubMembers: number;
+}
+
+/**
+ * Get admin dashboard statistics
+ * Requires admin authentication
+ */
+export const getAdminDashboardStats = async (): Promise<AdminDashboardStats> => {
+  const response = await apiRequest('/admin/dashboard/stats', {
+    method: 'GET',
+  });
+  return response.data;
+};
