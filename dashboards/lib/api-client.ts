@@ -970,9 +970,10 @@ export interface BranchAssignment {
 
 export interface BonusSettings {
   redemptionsRequired: number;
-  discountType: 'percentage' | 'fixed';
+  discountType: 'percentage' | 'fixed' | 'item';
   discountValue: number;
   maxDiscountAmount: number | null;
+  additionalItem: string | null;
   validityDays: number | null;
   isActive: boolean | null;
   imageUrl: string | null;

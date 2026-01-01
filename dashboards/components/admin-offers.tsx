@@ -56,6 +56,7 @@ export function AdminOffers() {
     discountType: 'percentage',
     discountValue: 10,
     maxDiscountAmount: null,
+    additionalItem: null,
     validityDays: 30,
     isActive: true,
     imageUrl: null
@@ -71,6 +72,7 @@ export function AdminOffers() {
     discountType: 'percentage',
     discountValue: 10,
     maxDiscountAmount: null,
+    additionalItem: null,
     validityDays: 30,
     isActive: true,
     imageUrl: null
@@ -319,6 +321,7 @@ export function AdminOffers() {
         discountType: settings.discountType || 'percentage',
         discountValue: settings.discountValue || 0,
         maxDiscountAmount: settings.maxDiscountAmount,
+        additionalItem: settings.additionalItem,
         validityDays: settings.validityDays || 30,
         isActive: settings.isActive ?? true,
         imageUrl: settings.imageUrl
@@ -331,6 +334,7 @@ export function AdminOffers() {
         discountType: 'percentage',
         discountValue: 10,
         maxDiscountAmount: null,
+        additionalItem: null,
         validityDays: 30,
         isActive: true,
         imageUrl: null
