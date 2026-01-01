@@ -1,4 +1,12 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const getApiBaseUrl = () => {
+  const url = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+  if (!url.startsWith('http')) {
+    return `https://${url}`;
+  }
+  return url;
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 interface LoginData {
   email: string;
