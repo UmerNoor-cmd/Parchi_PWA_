@@ -817,6 +817,7 @@ export interface StudentVerificationResponse {
     discountType: string;
     discountValue: number;
     maxDiscountAmount: number;
+    additionalItem?: string | null;
     isBonus: boolean;
   };
 }
