@@ -65,7 +65,7 @@ export function AdminSidebar({ activeTab, onTabChange, onLogout }: AdminSidebarP
   return (
     <aside className="sticky top-0 w-64 h-screen bg-white border-r border-border flex flex-col overflow-y-auto">
       <div className="p-6 border-b border-border">
-        <img src="/ParchiFullText.svg" alt="Parchi" className="h-8 w-auto mb-2" />
+        <img src="/ParchiFullTextNewBlue.svg" alt="Parchi" className="h-8 w-auto mb-2" />
         <p className="text-xs text-muted-foreground mt-1">System Management</p>
       </div>
 

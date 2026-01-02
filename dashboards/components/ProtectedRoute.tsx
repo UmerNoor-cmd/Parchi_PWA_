@@ -20,7 +20,7 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
   useEffect(() => {
     if (!loading) {
       if (!user) {
-        router.push('/login');
+        router.push('/portal-access');
       } else if (!hasAccess) {
         router.push('/unauthorized');
       }

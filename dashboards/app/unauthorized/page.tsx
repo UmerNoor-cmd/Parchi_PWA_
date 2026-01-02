@@ -14,7 +14,7 @@ export default function UnauthorizedPage() {
     if (user) {
       await logout()
     }
-    router.push("/login")
+    router.push("/portal-access")
   }
 
   return (

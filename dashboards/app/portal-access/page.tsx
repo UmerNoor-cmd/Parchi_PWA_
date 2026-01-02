@@ -79,7 +79,7 @@ export default function LoginPage() {
         <CardHeader className="text-center space-y-2">
           <div className="flex justify-center mb-4">
             <img
-              src="/ParchiFullText.svg"
+              src="/ParchiFullTextNewBlue.svg"
               alt="Parchi"
               className="h-12 w-auto"
             />

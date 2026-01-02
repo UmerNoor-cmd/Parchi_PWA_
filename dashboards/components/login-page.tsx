@@ -49,7 +49,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="text-center space-y-2">
           <div className="flex justify-center mb-4">
-            <img src="/ParchiFullText.svg" alt="Parchi" className="h-12 w-auto" />
+            <img src="/ParchiFullTextNewBlue.svg" alt="Parchi" className="h-12 w-auto" />
           </div>
           <CardDescription>Sign in to your account</CardDescription>
         </CardHeader>

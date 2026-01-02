@@ -11,7 +11,7 @@ export default function CorporatePage() {
 
   const handleLogout = async () => {
     await logout()
-    router.push("/login")
+    router.push("/portal-access")
   }
 
   return (
