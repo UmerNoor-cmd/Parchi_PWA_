@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
-import { Plus, MoreHorizontal, Calendar, Loader2, Store, Pencil, Settings, Upload, ChevronDown, ChevronUp } from "lucide-react"
+import { Plus, MoreHorizontal, Calendar, Loader2, Store, Pencil, Settings, Upload, ChevronDown, ChevronUp, X } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import {
   getOffers, createOffer, updateOffer, deleteOffer,
@@ -20,7 +20,8 @@ import {
   getBranches, AdminBranch,
   getBranchAssignments, assignBranchOffers,
   getBranchBonusSettings, updateBranchBonusSettings,
-  BranchAssignment, BonusSettings
+  BranchAssignment, BonusSettings,
+  getFeaturedOffers, setFeaturedOffers
 } from "@/lib/api-client"
 import { SupabaseStorageService } from "@/lib/storage"
 import { toast } from "sonner"
@@ -78,6 +79,12 @@ export function AdminOffers() {
     imageUrl: null
   })
   const [isGlobalBonusSaving, setIsGlobalBonusSaving] = useState(false)
+
+  // Featured Offers State
+  const [isFeaturedOffersOpen, setIsFeaturedOffersOpen] = useState(false)
+  const [featuredOffers, setFeaturedOffersList] = useState<{ offerId: string; order: number }[]>([])
+  const [isLoadingFeatured, setIsLoadingFeatured] = useState(false)
+  const [isSavingFeatured, setIsSavingFeatured] = useState(false)
 
   // Form State
   const [formData, setFormData] = useState<Partial<CreateOfferRequest>>({
@@ -373,6 +380,100 @@ export function AdminOffers() {
     }
   }
 
+  // Featured Offers Logic
+  useEffect(() => {
+    if (isFeaturedOffersOpen) {
+      loadFeaturedOffers()
+    }
+  }, [isFeaturedOffersOpen])
+
+  const loadFeaturedOffers = async () => {
+    setIsLoadingFeatured(true)
+    try {
+      // We already have all offers in 'offers' state, just filter active ones
+      // But we need to know which ones are currently featured
+      // The backend 'getFeaturedOffers' endpoint returns sorted featured offers
+      const featuredRes = await getFeaturedOffers()
+
+      const featured = featuredRes.data.map((o: Offer) => ({
+        offerId: o.id,
+        order: o.featuredOrder || 999
+      })).sort((a: any, b: any) => a.order - b.order)
+
+      setFeaturedOffersList(featured)
+    } catch (error) {
+      toast.error("Failed to load featured offers")
+      setFeaturedOffersList([])
+    } finally {
+      setIsLoadingFeatured(false)
+    }
+  }
+
+  const handleAddFeaturedOffer = (offerId: string) => {
+    if (featuredOffers.length >= 6) {
+      toast.error("You can only feature up to 6 offers")
+      return
+    }
+
+    if (featuredOffers.some(o => o.offerId === offerId)) {
+      toast.error("This offer is already featured")
+      return
+    }
+
+    const newOrder = featuredOffers.length + 1
+    setFeaturedOffersList([...featuredOffers, { offerId, order: newOrder }])
+  }
+
+  const handleRemoveFeaturedOffer = (offerId: string) => {
+    const updated = featuredOffers
+      .filter(o => o.offerId !== offerId)
+      .map((o, index) => ({ ...o, order: index + 1 }))
+    setFeaturedOffersList(updated)
+  }
+
+  const handleReorderFeaturedOffer = (offerId: string, newOrder: number) => {
+    if (newOrder < 1 || newOrder > 6) return
+
+    const currentIndex = featuredOffers.findIndex(o => o.offerId === offerId)
+    if (currentIndex === -1) return
+
+    const updated = [...featuredOffers]
+    const [moved] = updated.splice(currentIndex, 1)
+
+    // Adjust other orders
+    updated.forEach(o => {
+      if (o.order >= newOrder && o.order < moved.order) {
+        o.order += 1
+      } else if (o.order <= newOrder && o.order > moved.order) {
+        o.order -= 1
+      }
+    })
+
+    moved.order = newOrder
+    updated.push(moved)
+    updated.sort((a, b) => a.order - b.order)
+
+    setFeaturedOffersList(updated)
+  }
+
+  const handleSaveFeaturedOffers = async () => {
+    if (featuredOffers.length === 0) {
+      toast.error("Please select at least one offer to feature")
+      return
+    }
+
+    setIsSavingFeatured(true)
+    try {
+      await setFeaturedOffers(featuredOffers)
+      toast.success("Featured offers updated successfully")
+      setIsFeaturedOffersOpen(false)
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update featured offers")
+    } finally {
+      setIsSavingFeatured(false)
+    }
+  }
+
   // Global Bonus Settings
   const handleOpenGlobalBonus = (merchantId: string) => {
     setSelectedMerchantId(merchantId)
@@ -468,6 +569,27 @@ export function AdminOffers() {
       </div>
 
       <Separator />
+
+      {/* Featured Offers Card */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Featured Offers</CardTitle>
+              <CardDescription>
+                Customize which 6 offers appear on top for students
+              </CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => setIsFeaturedOffersOpen(true)}
+            >
+              <Pencil className="h-4 w-4 mr-2" />
+              Manage Featured Offers
+            </Button>
+          </div>
+        </CardHeader>
+      </Card>
 
       {/* Merchant Sections */}
       <div className="space-y-6">
@@ -799,6 +921,164 @@ export function AdminOffers() {
             <Button onClick={handleCreateOffer} disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {editingOffer ? 'Update Offer' : 'Create Offer'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Featured Offers Dialog */}
+      <Dialog open={isFeaturedOffersOpen} onOpenChange={setIsFeaturedOffersOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Manage Featured Offers</DialogTitle>
+            <DialogDescription>
+              Select up to 6 active offers to feature on top. Drag to reorder.
+            </DialogDescription>
+          </DialogHeader>
+
+          {isLoadingFeatured ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <span className="ml-2 text-muted-foreground">Loading featured offers...</span>
+            </div>
+          ) : (
+            <div className="grid gap-4 py-4">
+              {/* Featured Offers List */}
+              <div className="space-y-2">
+                <Label>Featured Offers (Top 6)</Label>
+                <div className="border rounded-lg p-4 space-y-2 min-h-[200px]">
+                  {featuredOffers.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No offers selected. Add offers from the list below.
+                    </div>
+                  ) : (
+                    featuredOffers.map((featured) => {
+                      const offer = offers.find(o => o.id === featured.offerId)
+                      if (!offer) return null
+
+                      return (
+                        <div
+                          key={featured.offerId}
+                          className="flex items-center justify-between p-3 border rounded-lg bg-muted/50"
+                        >
+                          <div className="flex items-center gap-3 flex-1">
+                            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground font-bold text-sm">
+                              {featured.order}
+                            </div>
+                            {offer.imageUrl ? (
+                              <div className="relative h-10 w-10 overflow-hidden rounded-md">
+                                <img
+                                  src={offer.imageUrl}
+                                  alt={offer.title}
+                                  className="object-cover h-full w-full"
+                                />
+                              </div>
+                            ) : (
+                              <div className="h-10 w-10 bg-muted rounded-md flex items-center justify-center">
+                                <Store className="h-5 w-5 text-muted-foreground" />
+                              </div>
+                            )}
+                            <div className="flex-1">
+                              <div className="font-medium">{offer.title}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {offer.discountType === 'percentage' ? `${offer.discountValue}% OFF` : `Rs. ${offer.discountValue} OFF`}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Select
+                              value={featured.order.toString()}
+                              onValueChange={(val) => handleReorderFeaturedOffer(featured.offerId, parseInt(val))}
+                            >
+                              <SelectTrigger className="w-20">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {[1, 2, 3, 4, 5, 6].map(num => (
+                                  <SelectItem key={num} value={num.toString()}>
+                                    Position {num}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-9 w-9 text-destructive hover:text-destructive/90"
+                              onClick={() => handleRemoveFeaturedOffer(featured.offerId)}
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      )
+                    })
+                  )}
+                </div>
+              </div>
+
+              {/* Available Offers List */}
+              <div className="space-y-2">
+                <Label>Available Active Offers</Label>
+                <div className="border rounded-lg p-4 max-h-[300px] overflow-y-auto">
+                  {offers
+                    .filter(o => o.status === 'active' && !featuredOffers.some(fo => fo.offerId === o.id))
+                    .length === 0 ? (
+                    <div className="text-center py-4 text-muted-foreground">
+                      No matching active offers available
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-2">
+                      {offers
+                        .filter(o => o.status === 'active' && !featuredOffers.some(fo => fo.offerId === o.id))
+                        .map((offer) => (
+                          <div
+                            key={offer.id}
+                            className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                          >
+                            <div className="flex items-center gap-3">
+                              {offer.imageUrl ? (
+                                <div className="relative h-10 w-10 overflow-hidden rounded-md">
+                                  <img
+                                    src={offer.imageUrl}
+                                    alt={offer.title}
+                                    className="object-cover h-full w-full"
+                                  />
+                                </div>
+                              ) : (
+                                <div className="h-10 w-10 bg-muted rounded-md flex items-center justify-center">
+                                  <Store className="h-5 w-5 text-muted-foreground" />
+                                </div>
+                              )}
+                              <div>
+                                <div className="font-medium">{offer.title}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {offer.discountType === 'percentage' ? `${offer.discountValue}% OFF` : `Rs. ${offer.discountValue} OFF`}
+                                  {' • '}{new Date(offer.validUntil).toLocaleDateString()}
+                                </div>
+                              </div>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => handleAddFeaturedOffer(offer.id)}
+                            >
+                              <Plus className="h-4 w-4 mr-1" /> Add
+                            </Button>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsFeaturedOffersOpen(false)}>Cancel</Button>
+            <Button onClick={handleSaveFeaturedOffers} disabled={isSavingFeatured}>
+              {isSavingFeatured && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save Changes
             </Button>
           </DialogFooter>
         </DialogContent>

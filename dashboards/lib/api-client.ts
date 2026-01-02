@@ -470,6 +470,7 @@ export interface Offer {
     logoPath: string | null;
     category: string;
   };
+  featuredOrder?: number | null;
 }
 
 export interface OfferFilter {
@@ -540,6 +541,34 @@ export const approveRejectOffer = async (id: string, action: 'approve' | 'reject
 export const deleteOffer = async (id: string): Promise<void> => {
   await apiRequest(`/admin/offers/${id}`, {
     method: 'DELETE',
+  });
+  await apiRequest(`/admin/offers/${id}`, {
+    method: 'DELETE',
+  });
+};
+
+export interface FeaturedOffersResponse {
+  data: Offer[];
+  status: number;
+  message: string;
+}
+
+/**
+ * Get featured offers
+ */
+export const getFeaturedOffers = async (): Promise<FeaturedOffersResponse> => {
+  return apiRequest('/offers/featured', {
+    method: 'GET',
+  });
+};
+
+/**
+ * Set featured offers
+ */
+export const setFeaturedOffers = async (offers: { offerId: string; order: number }[]): Promise<{ message: string }> => {
+  return apiRequest('/offers/featured', {
+    method: 'PUT',
+    body: JSON.stringify({ offers }),
   });
 };
 
