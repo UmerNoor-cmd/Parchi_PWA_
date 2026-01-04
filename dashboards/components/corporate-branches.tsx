@@ -38,7 +38,7 @@ export function CorporateBranches() {
   const [isSaving, setIsSaving] = useState(false)
 
   const merchantId = user?.merchant?.id
- 
+
 
   const fetchBranches = useCallback(async () => {
     try {
@@ -204,54 +204,56 @@ export function CorporateBranches() {
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
               <Label>Branch Name</Label>
-              <Input 
+              <Input
                 value={editForm.branchName}
-                onChange={(e) => setEditForm({...editForm, branchName: e.target.value})}
+                onChange={(e) => setEditForm({ ...editForm, branchName: e.target.value })}
               />
             </div>
             <div className="space-y-2">
               <Label>Address</Label>
-              <Input 
+              <Input
                 value={editForm.address}
-                onChange={(e) => setEditForm({...editForm, address: e.target.value})}
+                onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>City</Label>
-                <Input 
+                <Input
                   value={editForm.city}
-                  onChange={(e) => setEditForm({...editForm, city: e.target.value})}
+                  onChange={(e) => setEditForm({ ...editForm, city: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
                 <Label>Contact Phone</Label>
-                <Input 
+                <Input
                   value={editForm.contactPhone}
-                  onChange={(e) => setEditForm({...editForm, contactPhone: e.target.value})}
+                  onChange={(e) => setEditForm({ ...editForm, contactPhone: e.target.value.replace(/\D/g, '') })}
+                  placeholder="03001234567"
+                  maxLength={11}
                 />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Latitude</Label>
-                <Input 
+                <Input
                   type="number"
                   step="any"
                   placeholder="e.g., 24.8607"
                   value={editForm.latitude ?? ""}
-                  onChange={(e) => setEditForm({...editForm, latitude: e.target.value ? parseFloat(e.target.value) : undefined})}
+                  onChange={(e) => setEditForm({ ...editForm, latitude: e.target.value ? parseFloat(e.target.value) : undefined })}
                 />
                 <p className="text-xs text-muted-foreground">Valid range: -90 to 90</p>
               </div>
               <div className="space-y-2">
                 <Label>Longitude</Label>
-                <Input 
+                <Input
                   type="number"
                   step="any"
                   placeholder="e.g., 67.0011"
                   value={editForm.longitude ?? ""}
-                  onChange={(e) => setEditForm({...editForm, longitude: e.target.value ? parseFloat(e.target.value) : undefined})}
+                  onChange={(e) => setEditForm({ ...editForm, longitude: e.target.value ? parseFloat(e.target.value) : undefined })}
                 />
                 <p className="text-xs text-muted-foreground">Valid range: -180 to 180</p>
               </div>
@@ -277,11 +279,11 @@ export function CorporateBranches() {
               Register a new branch location for your business.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="py-4">
-            <AccountCreation 
-              role="corporate" 
-              corporateId={merchantId} 
+            <AccountCreation
+              role="corporate"
+              corporateId={merchantId}
               emailPrefix={user?.merchant?.email_prefix}
             />
           </div>

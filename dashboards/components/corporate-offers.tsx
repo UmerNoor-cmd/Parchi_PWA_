@@ -11,6 +11,16 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Plus, MoreHorizontal, Calendar, Loader2, Store, Pencil, Save, Settings, Upload } from "lucide-react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import {
   getMerchantOffers, createOffer, updateOffer, deleteMerchantOffer,
@@ -29,6 +39,7 @@ export function CorporateOffers() {
   const [offers, setOffers] = useState<Offer[]>([])
   const [assignments, setAssignments] = useState<BranchAssignment[]>([])
   const [loading, setLoading] = useState(true)
+  const [offerToDelete, setOfferToDelete] = useState<string | null>(null)
 
   // UI State
   const [isCreateOpen, setIsCreateOpen] = useState(false)
@@ -191,15 +202,19 @@ export function CorporateOffers() {
     setIsCreateOpen(true)
   }
 
-  const handleDeleteOffer = async (offerId: string) => {
-    if (confirm("Are you sure you want to delete this offer?")) {
-      try {
-        await deleteMerchantOffer(offerId)
-        toast.success("Offer deleted successfully")
-        fetchData()
-      } catch (error) {
-        toast.error("Failed to delete offer")
-      }
+  const handleDeleteClick = (offerId: string) => {
+    setOfferToDelete(offerId)
+  }
+
+  const confirmDeleteOffer = async () => {
+    if (!offerToDelete) return
+    try {
+      await deleteMerchantOffer(offerToDelete)
+      toast.success("Offer deleted successfully")
+      setOfferToDelete(null)
+      fetchData()
+    } catch (error) {
+      toast.error("Failed to delete offer")
     }
   }
 
@@ -544,7 +559,7 @@ export function CorporateOffers() {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     className="text-red-600"
-                    onClick={() => handleDeleteOffer(offer.id)}
+                    onClick={() => handleDeleteClick(offer.id)}
                   >
                     Delete
                   </DropdownMenuItem>
@@ -789,6 +804,23 @@ export function CorporateOffers() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!offerToDelete} onOpenChange={(open) => !open && setOfferToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the offer and remove it from all assigned branches.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteOffer} className="bg-red-600 hover:bg-red-700">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Global Bonus Settings Dialog */}
       <Dialog open={isGlobalBonusOpen} onOpenChange={setIsGlobalBonusOpen}>

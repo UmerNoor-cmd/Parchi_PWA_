@@ -34,6 +34,7 @@ import {
   OfferPerformance
 } from "@/lib/api-client"
 import { toast } from "sonner"
+import { Spinner } from "@/components/ui/spinner"
 
 export function CorporateDashboard({ onLogout }: { onLogout: () => void }) {
   const [activeTab, setActiveTab] = useState("overview")
@@ -87,189 +88,197 @@ export function CorporateDashboard({ onLogout }: { onLogout: () => void }) {
 
           {activeTab === "overview" && (
             <>
-              {/* Key Metrics */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                <Card className="">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between">
-                      <span>Total Redemptions</span>
-                      <ShoppingCart className="w-4 h-4" style={{ color: colors.primary }} />
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold" style={{ color: colors.primary }}>
-                      {stats?.totalRedemptions || 0}
-                    </div>
-                    <p className="text-xs mt-1 flex items-center gap-1" style={{ color: colors.primary }}>
-                      <TrendingUp className="w-3 h-3" /> Total Redemptions
-                    </p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between">
-                      <span>Unique Students</span>
-                      <Users className="w-4 h-4" style={{ color: colors.primary }} />
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold" style={{ color: colors.primary }}>
-                      {stats?.uniqueStudents || 0}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">Students who redeemed</p>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Charts */}
-              {/* Charts Row 1: Redemption Analytics & Branch Comparison */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                <Card>
-                  <CardHeader>
-                    <CardTitle style={{ color: colors.primary }}>Redemption Analytics</CardTitle>
-                    <CardDescription>Redemption activity (Time of Day)</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
-                      {analytics.length > 0 ? (
-                        <LineChart data={analytics}>
-                          <CartesianGrid strokeDasharray="3 3" stroke={colors.border} />
-                          <XAxis dataKey="time" stroke={colors.mutedForeground} />
-                          <YAxis stroke={colors.mutedForeground} />
-                          <Tooltip />
-                          <Legend />
-                          <Line
-                            type="monotone"
-                            dataKey="redemptions"
-                            stroke={colors.primary}
-                            strokeWidth={2}
-                            name="Redemptions"
-                            dot={{ fill: colors.primary }}
-                          />
-                        </LineChart>
-                      ) : (
-                        <div className="flex h-full items-center justify-center text-muted-foreground">
-                          No data available for today
+              {isLoading ? (
+                <div className="flex h-[50vh] items-center justify-center">
+                  <Spinner className="size-10" />
+                </div>
+              ) : (
+                <>
+                  {/* Key Metrics */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                    <Card className="">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between">
+                          <span>Total Redemptions</span>
+                          <ShoppingCart className="w-4 h-4" style={{ color: colors.primary }} />
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-3xl font-bold" style={{ color: colors.primary }}>
+                          {stats?.totalRedemptions || 0}
                         </div>
-                      )}
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
+                        <p className="text-xs mt-1 flex items-center gap-1" style={{ color: colors.primary }}>
+                          <TrendingUp className="w-3 h-3" /> Total Redemptions
+                        </p>
+                      </CardContent>
+                    </Card>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle style={{ color: colors.primary }}>Branch Comparison</CardTitle>
-                    <CardDescription>Top performing branches by redemption volume</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
-                      {branchPerformance.length > 0 ? (
-                        <BarChart data={branchPerformance} layout="vertical">
-                          <CartesianGrid strokeDasharray="3 3" stroke={colors.border} horizontal={false} />
-                          <XAxis type="number" stroke={colors.mutedForeground} />
-                          <YAxis dataKey="branchName" type="category" width={100} stroke={colors.mutedForeground} />
-                          <Tooltip />
-                          <Legend />
-                          <Bar dataKey="redemptions" fill={colors.primary} name="Redemptions" radius={[0, 4, 4, 0]} />
-                        </BarChart>
-                      ) : (
-                        <div className="flex h-full items-center justify-center text-muted-foreground">
-                          No branch data available
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between">
+                          <span>Unique Students</span>
+                          <Users className="w-4 h-4" style={{ color: colors.primary }} />
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-3xl font-bold" style={{ color: colors.primary }}>
+                          {stats?.uniqueStudents || 0}
                         </div>
-                      )}
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-              </div>
+                        <p className="text-xs text-muted-foreground mt-1">Students who redeemed</p>
+                      </CardContent>
+                    </Card>
+                  </div>
 
-              {/* Additional Charts */}
-              {/* Charts Row 2: Offer Performance & Distribution */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle style={{ color: colors.primary }}>Offer Performance</CardTitle>
-                    <CardDescription>Top performing offers</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {offerPerformance.length > 0 ? offerPerformance.map((offer, i) => (
-                        <div key={offer.id} className="flex items-center justify-between p-3 border rounded-lg">
-                          <div className="flex items-center gap-3">
-                            <div className={`p-2 rounded-full ${i < 3 ? 'bg-green-100' : 'bg-gray-100'}`}>
-                              <TrendingUp className={`w-4 h-4 ${i < 3 ? 'text-green-600' : 'text-gray-600'}`} />
+                  {/* Charts */}
+                  {/* Charts Row 1: Redemption Analytics & Branch Comparison */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle style={{ color: colors.primary }}>Redemption Analytics</CardTitle>
+                        <CardDescription>Redemption activity (Time of Day)</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <ResponsiveContainer width="100%" height={300}>
+                          {analytics.length > 0 ? (
+                            <LineChart data={analytics}>
+                              <CartesianGrid strokeDasharray="3 3" stroke={colors.border} />
+                              <XAxis dataKey="time" stroke={colors.mutedForeground} />
+                              <YAxis stroke={colors.mutedForeground} />
+                              <Tooltip />
+                              <Legend />
+                              <Line
+                                type="monotone"
+                                dataKey="redemptions"
+                                stroke={colors.primary}
+                                strokeWidth={2}
+                                name="Redemptions"
+                                dot={{ fill: colors.primary }}
+                              />
+                            </LineChart>
+                          ) : (
+                            <div className="flex h-full items-center justify-center text-muted-foreground">
+                              No data available for today
                             </div>
-                            <div>
-                              <p className="font-medium text-sm">{offer.title}</p>
-                              <p className="text-xs text-muted-foreground">{offer.status}</p>
+                          )}
+                        </ResponsiveContainer>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle style={{ color: colors.primary }}>Branch Comparison</CardTitle>
+                        <CardDescription>Top performing branches by redemption volume</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <ResponsiveContainer width="100%" height={300}>
+                          {branchPerformance.length > 0 ? (
+                            <BarChart data={branchPerformance} layout="vertical">
+                              <CartesianGrid strokeDasharray="3 3" stroke={colors.border} horizontal={false} />
+                              <XAxis type="number" stroke={colors.mutedForeground} />
+                              <YAxis dataKey="branchName" type="category" width={100} stroke={colors.mutedForeground} />
+                              <Tooltip />
+                              <Legend />
+                              <Bar dataKey="redemptions" fill={colors.primary} name="Redemptions" radius={[0, 4, 4, 0]} />
+                            </BarChart>
+                          ) : (
+                            <div className="flex h-full items-center justify-center text-muted-foreground">
+                              No branch data available
                             </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-bold" style={{ color: colors.primary }}>{offer.currentRedemptions}</p>
-                            <p className="text-xs text-muted-foreground">Redemptions</p>
-                          </div>
+                          )}
+                        </ResponsiveContainer>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Additional Charts */}
+                  {/* Charts Row 2: Offer Performance & Distribution */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle style={{ color: colors.primary }}>Offer Performance</CardTitle>
+                        <CardDescription>Top performing offers</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          {offerPerformance.length > 0 ? offerPerformance.map((offer, i) => (
+                            <div key={offer.id} className="flex items-center justify-between p-3 border rounded-lg">
+                              <div className="flex items-center gap-3">
+                                <div className={`p-2 rounded-full ${i < 3 ? 'bg-green-100' : 'bg-gray-100'}`}>
+                                  <TrendingUp className={`w-4 h-4 ${i < 3 ? 'text-green-600' : 'text-gray-600'}`} />
+                                </div>
+                                <div>
+                                  <p className="font-medium text-sm">{offer.title}</p>
+                                  <p className="text-xs text-muted-foreground">{offer.status}</p>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <p className="font-bold" style={{ color: colors.primary }}>{offer.currentRedemptions}</p>
+                                <p className="text-xs text-muted-foreground">Redemptions</p>
+                              </div>
+                            </div>
+                          )) : (
+                            <p className="text-sm text-muted-foreground text-center py-4">No offers data available</p>
+                          )}
                         </div>
-                      )) : (
-                        <p className="text-sm text-muted-foreground text-center py-4">No offers data available</p>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+                      </CardContent>
+                    </Card>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle style={{ color: colors.primary }}>Redemption Distribution</CardTitle>
-                    <CardDescription>By branch percentage</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
-                      {(() => {
-                        // Filter to only show branches with redemptions
-                        const activeBranches = branchPerformance.filter(b => b.redemptions > 0);
+                    <Card>
+                      <CardHeader>
+                        <CardTitle style={{ color: colors.primary }}>Redemption Distribution</CardTitle>
+                        <CardDescription>By branch percentage</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <ResponsiveContainer width="100%" height={300}>
+                          {(() => {
+                            // Filter to only show branches with redemptions
+                            const activeBranches = branchPerformance.filter(b => b.redemptions > 0);
 
-                        return activeBranches.length > 0 ? (
-                          <PieChart>
-                            <Pie
-                              data={activeBranches}
-                              dataKey="redemptions"
-                              nameKey="branchName"
-                              cx="50%"
-                              cy="50%"
-                              outerRadius={80}
-                              label={(props: any) => {
-                                // Only show label if percentage > 5%
-                                const percentage = ((props.percent || 0) * 100);
-                                return percentage > 5 ? `${props.branchName} ${percentage.toFixed(0)}%` : '';
-                              }}
-                            >
-                              {activeBranches.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={getChartColor("corporate", index)} />
-                              ))}
-                            </Pie>
-                            <Tooltip
-                              formatter={(value: any, name: any) => [`${value} redemptions`, name]}
-                            />
-                            <Legend
-                              layout="horizontal"
-                              verticalAlign="bottom"
-                              align="center"
-                              wrapperStyle={{ paddingTop: '20px' }}
-                              formatter={(value: string) => {
-                                // Truncate long branch names in legend
-                                return value.length > 15 ? value.substring(0, 15) + '...' : value;
-                              }}
-                            />
-                          </PieChart>
-                        ) : (
-                          <div className="flex h-full items-center justify-center text-muted-foreground">
-                            No redemption data available
-                          </div>
-                        );
-                      })()}
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-              </div>
+                            return activeBranches.length > 0 ? (
+                              <PieChart>
+                                <Pie
+                                  data={activeBranches}
+                                  dataKey="redemptions"
+                                  nameKey="branchName"
+                                  cx="50%"
+                                  cy="50%"
+                                  outerRadius={80}
+                                  label={(props: any) => {
+                                    // Only show label if percentage > 5%
+                                    const percentage = ((props.percent || 0) * 100);
+                                    return percentage > 5 ? `${props.branchName} ${percentage.toFixed(0)}%` : '';
+                                  }}
+                                >
+                                  {activeBranches.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={getChartColor("corporate", index)} />
+                                  ))}
+                                </Pie>
+                                <Tooltip
+                                  formatter={(value: any, name: any) => [`${value} redemptions`, name]}
+                                />
+                                <Legend
+                                  layout="horizontal"
+                                  verticalAlign="bottom"
+                                  align="center"
+                                  wrapperStyle={{ paddingTop: '20px' }}
+                                  formatter={(value: string) => {
+                                    // Truncate long branch names in legend
+                                    return value.length > 15 ? value.substring(0, 15) + '...' : value;
+                                  }}
+                                />
+                              </PieChart>
+                            ) : (
+                              <div className="flex h-full items-center justify-center text-muted-foreground">
+                                No redemption data available
+                              </div>
+                            );
+                          })()}
+                        </ResponsiveContainer>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </>
+              )}
             </>
           )}
 

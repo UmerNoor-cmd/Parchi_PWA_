@@ -24,7 +24,7 @@ export function AccountCreation({ role = 'admin', corporateId, emailPrefix }: Ac
   const colors = DASHBOARD_COLORS(role === 'corporate' ? 'corporate' : 'admin')
   const { toast } = useToast()
   const [showPassword, setShowPassword] = useState(false)
-  
+
   // Form states
   const [corporateData, setCorporateData] = useState({
     name: "",
@@ -37,7 +37,7 @@ export function AccountCreation({ role = 'admin', corporateId, emailPrefix }: Ac
     logo: null as File | null,
     logoUrl: ""
   })
-  
+
   const [isUploading, setIsUploading] = useState(false)
   const [isLogoUploading, setIsLogoUploading] = useState(false)
   const [isBranchUploading, setIsBranchUploading] = useState(false)
@@ -85,7 +85,7 @@ export function AccountCreation({ role = 'admin', corporateId, emailPrefix }: Ac
     for (let i = 0; i < 12; i++) {
       password += chars.charAt(Math.floor(Math.random() * chars.length))
     }
-    
+
     if (type === 'corporate') {
       setCorporateData(prev => ({ ...prev, password }))
     } else {
@@ -101,11 +101,11 @@ export function AccountCreation({ role = 'admin', corporateId, emailPrefix }: Ac
     try {
       const businessName = corporateData.name || "temp-upload"
       const url = await SupabaseStorageService.uploadCorporateLogo(file, businessName)
-      
-      setCorporateData(prev => ({ 
-        ...prev, 
+
+      setCorporateData(prev => ({
+        ...prev,
         logo: file,
-        logoUrl: url 
+        logoUrl: url
       }))
     } catch (error) {
       console.error("Error uploading logo:", error)
@@ -117,10 +117,10 @@ export function AccountCreation({ role = 'admin', corporateId, emailPrefix }: Ac
   const handleCorporateSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsUploading(true)
-    
+
     try {
-      if (!corporateData.name || !corporateData.emailPrefix || !corporateData.contactEmail || 
-          !corporateData.password || !corporateData.contact) {
+      if (!corporateData.name || !corporateData.emailPrefix || !corporateData.contactEmail ||
+        !corporateData.password || !corporateData.contact) {
         toast({
           variant: "destructive",
           title: "Validation Error",
@@ -177,10 +177,10 @@ export function AccountCreation({ role = 'admin', corporateId, emailPrefix }: Ac
       console.error("Error creating corporate account:", error)
       if (error && typeof error === 'object' && 'statusCode' in error) {
         const apiError = error as ApiError
-        const errorMessage = Array.isArray(apiError.message) 
-          ? apiError.message.join(', ') 
+        const errorMessage = Array.isArray(apiError.message)
+          ? apiError.message.join(', ')
           : apiError.message || 'Failed to create corporate account'
-        
+
         toast({
           variant: "destructive",
           title: `Error ${apiError.statusCode}`,
@@ -201,10 +201,10 @@ export function AccountCreation({ role = 'admin', corporateId, emailPrefix }: Ac
   const handleBranchSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsBranchUploading(true)
-    
+
     try {
-      if (!branchData.name || !branchData.emailPrefix || !branchData.password || 
-          !branchData.address || !branchData.city || !branchData.contact) {
+      if (!branchData.name || !branchData.emailPrefix || !branchData.password ||
+        !branchData.address || !branchData.city || !branchData.contact) {
         toast({
           variant: "destructive",
           title: "Validation Error",
@@ -263,10 +263,10 @@ export function AccountCreation({ role = 'admin', corporateId, emailPrefix }: Ac
       console.error("Error creating branch account:", error)
       if (error && typeof error === 'object' && 'statusCode' in error) {
         const apiError = error as ApiError
-        const errorMessage = Array.isArray(apiError.message) 
-          ? apiError.message.join(', ') 
+        const errorMessage = Array.isArray(apiError.message)
+          ? apiError.message.join(', ')
           : apiError.message || 'Failed to create branch account'
-        
+
         toast({
           variant: "destructive",
           title: `Error ${apiError.statusCode}`,
@@ -297,20 +297,20 @@ export function AccountCreation({ role = 'admin', corporateId, emailPrefix }: Ac
             {role === 'admin' && (
               <div className="space-y-2 md:col-span-2 lg:col-span-3">
                 <Label htmlFor="branch-corporate">Linked Corporate Account</Label>
-                <Select 
-                  value={branchData.linkedCorporate} 
+                <Select
+                  value={branchData.linkedCorporate}
                   onValueChange={(value) => setBranchData(prev => ({ ...prev, linkedCorporate: value }))}
                   disabled={merchantsLoading || corporateAccounts.length === 0}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder={
-                      merchantsLoading 
-                        ? "Loading corporations..." 
+                      merchantsLoading
+                        ? "Loading corporations..."
                         : merchantsError
-                        ? "Error loading corporations"
-                        : corporateAccounts.length === 0 
-                        ? "No corporations available" 
-                        : "Select a corporate entity"
+                          ? "Error loading corporations"
+                          : corporateAccounts.length === 0
+                            ? "No corporations available"
+                            : "Select a corporate entity"
                     } />
                   </SelectTrigger>
                   <SelectContent>
@@ -324,9 +324,9 @@ export function AccountCreation({ role = 'admin', corporateId, emailPrefix }: Ac
 
             <div className="space-y-2">
               <Label htmlFor="branch-name">Branch Name</Label>
-              <Input 
-                id="branch-name" 
-                placeholder="e.g. Downtown Branch" 
+              <Input
+                id="branch-name"
+                placeholder="e.g. Downtown Branch"
                 value={branchData.name}
                 onChange={(e) => setBranchData(prev => ({ ...prev, name: e.target.value }))}
                 required
@@ -339,9 +339,9 @@ export function AccountCreation({ role = 'admin', corporateId, emailPrefix }: Ac
                 <div className="bg-muted px-3 py-2 border border-r-0 rounded-l-md text-sm text-muted-foreground whitespace-nowrap">
                   {getCorporateSlug()}
                 </div>
-                <Input 
-                  id="branch-email" 
-                  placeholder="downtown" 
+                <Input
+                  id="branch-email"
+                  placeholder="downtown"
                   className="rounded-none border-x-0"
                   value={branchData.emailPrefix}
                   onChange={(e) => setBranchData(prev => ({ ...prev, emailPrefix: e.target.value }))}
@@ -357,9 +357,9 @@ export function AccountCreation({ role = 'admin', corporateId, emailPrefix }: Ac
               <Label htmlFor="branch-password">Password</Label>
               <div className="flex gap-2">
                 <div className="relative flex-1">
-                  <Input 
-                    id="branch-password" 
-                    type={showPassword ? "text" : "password"} 
+                  <Input
+                    id="branch-password"
+                    type={showPassword ? "text" : "password"}
                     value={branchData.password}
                     onChange={(e) => setBranchData(prev => ({ ...prev, password: e.target.value }))}
                     required
@@ -374,9 +374,9 @@ export function AccountCreation({ role = 'admin', corporateId, emailPrefix }: Ac
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </Button>
                 </div>
-                <Button 
-                  type="button" 
-                  variant="outline" 
+                <Button
+                  type="button"
+                  variant="outline"
                   onClick={() => generatePassword('branch')}
                   className="gap-2"
                 >
@@ -388,19 +388,20 @@ export function AccountCreation({ role = 'admin', corporateId, emailPrefix }: Ac
 
             <div className="space-y-2">
               <Label htmlFor="branch-contact">Contact Phone</Label>
-              <Input 
-                id="branch-contact" 
-                placeholder="+92 300 1234567" 
+              <Input
+                id="branch-contact"
+                placeholder="03001234567"
                 value={branchData.contact}
-                onChange={(e) => setBranchData(prev => ({ ...prev, contact: e.target.value }))}
+                onChange={(e) => setBranchData(prev => ({ ...prev, contact: e.target.value.replace(/\D/g, '') }))}
+                maxLength={11}
               />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="branch-city">City</Label>
-              <Input 
-                id="branch-city" 
-                placeholder="e.g. Karachi" 
+              <Input
+                id="branch-city"
+                placeholder="e.g. Karachi"
                 value={branchData.city}
                 onChange={(e) => setBranchData(prev => ({ ...prev, city: e.target.value }))}
                 required
@@ -409,9 +410,9 @@ export function AccountCreation({ role = 'admin', corporateId, emailPrefix }: Ac
 
             <div className="space-y-2 md:col-span-2 lg:col-span-3">
               <Label htmlFor="branch-address">Address</Label>
-              <Input 
-                id="branch-address" 
-                placeholder="Complete branch address" 
+              <Input
+                id="branch-address"
+                placeholder="Complete branch address"
                 value={branchData.address}
                 onChange={(e) => setBranchData(prev => ({ ...prev, address: e.target.value }))}
                 required
@@ -420,9 +421,9 @@ export function AccountCreation({ role = 'admin', corporateId, emailPrefix }: Ac
 
             <div className="space-y-2">
               <Label htmlFor="branch-lat">Latitude (Optional)</Label>
-              <Input 
-                id="branch-lat" 
-                placeholder="e.g. 24.8607" 
+              <Input
+                id="branch-lat"
+                placeholder="e.g. 24.8607"
                 value={branchData.latitude}
                 onChange={(e) => setBranchData(prev => ({ ...prev, latitude: e.target.value }))}
               />
@@ -430,9 +431,9 @@ export function AccountCreation({ role = 'admin', corporateId, emailPrefix }: Ac
 
             <div className="space-y-2">
               <Label htmlFor="branch-long">Longitude (Optional)</Label>
-              <Input 
-                id="branch-long" 
-                placeholder="e.g. 67.0011" 
+              <Input
+                id="branch-long"
+                placeholder="e.g. 67.0011"
                 value={branchData.longitude}
                 onChange={(e) => setBranchData(prev => ({ ...prev, longitude: e.target.value }))}
               />
@@ -440,9 +441,9 @@ export function AccountCreation({ role = 'admin', corporateId, emailPrefix }: Ac
           </div>
 
           <div className="flex justify-end pt-4">
-            <Button 
-              type="submit" 
-              className="w-full md:w-auto" 
+            <Button
+              type="submit"
+              className="w-full md:w-auto"
               style={{ backgroundColor: colors.primary }}
               disabled={isBranchUploading}
             >
@@ -499,9 +500,9 @@ export function AccountCreation({ role = 'admin', corporateId, emailPrefix }: Ac
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="corp-name">Business Name</Label>
-                    <Input 
-                      id="corp-name" 
-                      placeholder="e.g. Tech Solutions Ltd" 
+                    <Input
+                      id="corp-name"
+                      placeholder="e.g. Tech Solutions Ltd"
                       value={corporateData.name}
                       onChange={(e) => setCorporateData(prev => ({ ...prev, name: e.target.value }))}
                       required
@@ -511,9 +512,9 @@ export function AccountCreation({ role = 'admin', corporateId, emailPrefix }: Ac
                   <div className="space-y-2">
                     <Label htmlFor="corp-email">Email Address</Label>
                     <div className="flex items-center">
-                      <Input 
-                        id="corp-email" 
-                        placeholder="admin" 
+                      <Input
+                        id="corp-email"
+                        placeholder="admin"
                         className="rounded-r-none border-r-0"
                         value={corporateData.emailPrefix}
                         onChange={(e) => setCorporateData(prev => ({ ...prev, emailPrefix: e.target.value }))}
@@ -529,9 +530,9 @@ export function AccountCreation({ role = 'admin', corporateId, emailPrefix }: Ac
                     <Label htmlFor="corp-password">Password</Label>
                     <div className="flex gap-2">
                       <div className="relative flex-1">
-                        <Input 
-                          id="corp-password" 
-                          type={showPassword ? "text" : "password"} 
+                        <Input
+                          id="corp-password"
+                          type={showPassword ? "text" : "password"}
                           value={corporateData.password}
                           onChange={(e) => setCorporateData(prev => ({ ...prev, password: e.target.value }))}
                           required
@@ -546,9 +547,9 @@ export function AccountCreation({ role = 'admin', corporateId, emailPrefix }: Ac
                           {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </Button>
                       </div>
-                      <Button 
-                        type="button" 
-                        variant="outline" 
+                      <Button
+                        type="button"
+                        variant="outline"
                         onClick={() => generatePassword('corporate')}
                         className="gap-2"
                       >
@@ -560,10 +561,10 @@ export function AccountCreation({ role = 'admin', corporateId, emailPrefix }: Ac
 
                   <div className="space-y-2">
                     <Label htmlFor="corp-contact-email">Contact Email</Label>
-                    <Input 
-                      id="corp-contact-email" 
+                    <Input
+                      id="corp-contact-email"
                       type="email"
-                      placeholder="contact@business.com" 
+                      placeholder="contact@business.com"
                       value={corporateData.contactEmail}
                       onChange={(e) => setCorporateData(prev => ({ ...prev, contactEmail: e.target.value }))}
                       required
@@ -574,9 +575,9 @@ export function AccountCreation({ role = 'admin', corporateId, emailPrefix }: Ac
                     <Label htmlFor="corp-logo">Business Logo</Label>
                     <div className="flex items-center gap-4">
                       <div className="relative">
-                        <Input 
-                          id="corp-logo" 
-                          type="file" 
+                        <Input
+                          id="corp-logo"
+                          type="file"
                           accept="image/*"
                           onChange={handleLogoUpload}
                           className="cursor-pointer"
@@ -600,20 +601,21 @@ export function AccountCreation({ role = 'admin', corporateId, emailPrefix }: Ac
 
                   <div className="space-y-2">
                     <Label htmlFor="corp-contact">Contact Phone</Label>
-                    <Input 
-                      id="corp-contact" 
-                      placeholder="+92 300 1234567" 
+                    <Input
+                      id="corp-contact"
+                      placeholder="03001234567"
                       value={corporateData.contact}
-                      onChange={(e) => setCorporateData(prev => ({ ...prev, contact: e.target.value }))}
+                      onChange={(e) => setCorporateData(prev => ({ ...prev, contact: e.target.value.replace(/\D/g, '') }))}
+                      maxLength={11}
                       required
                     />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="corp-reg">Registration Number</Label>
-                    <Input 
-                      id="corp-reg" 
-                      placeholder="Business Registration No." 
+                    <Input
+                      id="corp-reg"
+                      placeholder="Business Registration No."
                       value={corporateData.regNumber}
                       onChange={(e) => setCorporateData(prev => ({ ...prev, regNumber: e.target.value }))}
                     />
@@ -621,9 +623,9 @@ export function AccountCreation({ role = 'admin', corporateId, emailPrefix }: Ac
 
                   <div className="space-y-2">
                     <Label htmlFor="corp-category">Category</Label>
-                    <Input 
-                      id="corp-category" 
-                      placeholder="e.g. Retail, Food, Tech" 
+                    <Input
+                      id="corp-category"
+                      placeholder="e.g. Retail, Food, Tech"
                       value={corporateData.category}
                       onChange={(e) => setCorporateData(prev => ({ ...prev, category: e.target.value }))}
                     />

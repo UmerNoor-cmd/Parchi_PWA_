@@ -116,7 +116,7 @@ export function CorporateProfile() {
     try {
       // Prepare update data - only include fields that have changed
       const updateData: any = {}
-      
+
       if (formData.businessName !== merchant?.businessName) {
         updateData.businessName = formData.businessName
       }
@@ -161,6 +161,10 @@ export function CorporateProfile() {
   }
 
   const handleInputChange = (field: string, value: string) => {
+    // Enforce number-only for phone
+    if (field === 'contactPhone') {
+      value = value.replace(/\D/g, '')
+    }
     setFormData((prev) => ({ ...prev, [field]: value }))
     // Clear error for this field when user starts typing
     if (errors[field]) {
@@ -180,10 +184,10 @@ export function CorporateProfile() {
     try {
       const businessName = formData.businessName || merchant?.businessName || "temp-upload"
       const url = await SupabaseStorageService.uploadCorporateLogo(file, businessName)
-      
-      setFormData(prev => ({ 
-        ...prev, 
-        logoPath: url 
+
+      setFormData(prev => ({
+        ...prev,
+        logoPath: url
       }))
       toast.success("Logo uploaded successfully")
     } catch (error) {
@@ -202,10 +206,10 @@ export function CorporateProfile() {
     try {
       const businessName = formData.businessName || merchant?.businessName || "temp-upload"
       const url = await SupabaseStorageService.uploadCorporateBanner(file, businessName)
-      
-      setFormData(prev => ({ 
-        ...prev, 
-        bannerUrl: url 
+
+      setFormData(prev => ({
+        ...prev,
+        bannerUrl: url
       }))
       toast.success("Banner uploaded successfully")
     } catch (error) {
@@ -352,7 +356,8 @@ export function CorporateProfile() {
                     id="contactPhone"
                     value={formData.contactPhone}
                     onChange={(e) => handleInputChange("contactPhone", e.target.value)}
-                    placeholder="+92 300 1234567"
+                    placeholder="03001234567"
+                    maxLength={11}
                   />
                 </div>
               </div>
@@ -551,8 +556,8 @@ export function CorporateProfile() {
                           merchant.verificationStatus === "approved"
                             ? "default"
                             : merchant.verificationStatus === "rejected"
-                            ? "destructive"
-                            : "secondary"
+                              ? "destructive"
+                              : "secondary"
                         }
                       >
                         {merchant.verificationStatus || "Pending"}
