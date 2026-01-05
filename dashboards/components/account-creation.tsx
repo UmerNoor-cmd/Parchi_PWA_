@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -56,6 +56,16 @@ export function AccountCreation({ role = 'admin', corporateId, emailPrefix }: Ac
 
   // Fetch real corporate accounts from API
   const { merchants: corporateAccounts, loading: merchantsLoading, error: merchantsError } = useMerchants()
+
+  // Sync corporateId with form state when it becomes available
+  useEffect(() => {
+    if (role === 'corporate' && corporateId) {
+      setBranchData(prev => ({
+        ...prev,
+        linkedCorporate: corporateId
+      }))
+    }
+  }, [role, corporateId])
 
   if (merchantsError && role === 'admin') {
     console.error("Failed to fetch merchants:", merchantsError)
@@ -293,9 +303,9 @@ export function AccountCreation({ role = 'admin', corporateId, emailPrefix }: Ac
       </CardHeader>
       <CardContent>
         <form onSubmit={handleBranchSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {role === 'admin' && (
-              <div className="space-y-2 md:col-span-2 lg:col-span-3">
+              <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="branch-corporate">Linked Corporate Account</Label>
                 <Select
                   value={branchData.linkedCorporate}
@@ -342,7 +352,7 @@ export function AccountCreation({ role = 'admin', corporateId, emailPrefix }: Ac
                 <Input
                   id="branch-email"
                   placeholder="downtown"
-                  className="rounded-none border-x-0"
+                  className="rounded-none border-x-0 flex-1 min-w-0"
                   value={branchData.emailPrefix}
                   onChange={(e) => setBranchData(prev => ({ ...prev, emailPrefix: e.target.value }))}
                   required
@@ -408,7 +418,7 @@ export function AccountCreation({ role = 'admin', corporateId, emailPrefix }: Ac
               />
             </div>
 
-            <div className="space-y-2 md:col-span-2 lg:col-span-3">
+            <div className="space-y-2 md:col-span-2">
               <Label htmlFor="branch-address">Address</Label>
               <Input
                 id="branch-address"
