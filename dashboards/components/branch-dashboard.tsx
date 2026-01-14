@@ -352,23 +352,23 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
                     </CardTitle>
                     <CardDescription>Enter Parchi ID to process redemption</CardDescription>
                   </CardHeader>
-                  <CardContent className="pt-6 space-y-6">
-                    <div className="space-y-2">
-                      <label className="text-sm font-semibold" style={{ color: colors.primary }}>Student Parchi ID</label>
-                      <div className="flex gap-2">
-                        <div className="flex items-center border rounded-md overflow-hidden bg-background">
-                          <span className="px-3 py-3 text-lg font-mono font-semibold bg-muted/50 border-r" style={{ color: colors.primary }}>
+                  <CardContent className="pt-0 space-y-4">
+                    <div className="flex flex-col items-center justify-center space-y-4 pt-4">
+                      <label className="text-lg font-semibold" style={{ color: colors.primary }}>Student Parchi ID</label>
+                      <div className="flex justify-center w-full">
+                        <div className="flex items-center border-2 rounded-xl overflow-hidden bg-background shadow-sm w-full max-w-md transition-all focus-within:scale-[1.02] focus-within:shadow-md" style={{ borderColor: `${colors.primary}30` }}>
+                          <span className="px-6 py-4 text-3xl font-mono font-bold bg-muted/30 border-r" style={{ color: colors.primary }}>
                             PK-
                           </span>
                           <Input
-                            placeholder="Enter numbers only (e.g., 12345)"
+                            placeholder="12345"
                             value={parchiIdInput}
                             onChange={(e) => {
                               // Only allow numbers
                               const numbersOnly = e.target.value.replace(/\D/g, '')
                               setParchiIdInput(numbersOnly)
                             }}
-                            className="text-lg font-mono h-12 border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                            className="text-3xl font-mono h-20 border-0 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/30 tracking-widest text-center"
                             onKeyDown={(e) => {
                               if (e.key === 'Enter' && parchiIdInput) {
                                 handleRedemptionClick()
@@ -380,32 +380,34 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
                     </div>
 
                     {parchiIdInput && (
-                      <div className="flex gap-2 pt-4 border-t animate-in fade-in slide-in-from-top-2">
-                        <Button
-                          onClick={handleRedemptionClick}
-                          className="flex-1 gap-2 h-12 text-lg"
-                          size="lg"
-                          style={{ backgroundColor: colors.primary }}
-                          disabled={isLoadingStudent}
-                        >
-                          {isLoadingStudent ? (
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                          ) : (
-                            <CheckCircle className="w-5 h-5" />
-                          )}
-                          Process Redemption
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={() => {
-                            setParchiIdInput("")
-                            setApplicableOffer(null)
-                          }}
-                          className="px-6 h-12"
-                          disabled={isLoadingStudent}
-                        >
-                          Clear
-                        </Button>
+                      <div className="flex justify-center pt-6 animate-in fade-in slide-in-from-top-2">
+                        <div className="flex gap-3 w-full max-w-md">
+                          <Button
+                            onClick={handleRedemptionClick}
+                            className="flex-1 gap-2 h-14 text-xl shadow-md transition-all hover:scale-[1.02]"
+                            size="lg"
+                            style={{ backgroundColor: colors.primary }}
+                            disabled={isLoadingStudent}
+                          >
+                            {isLoadingStudent ? (
+                              <Loader2 className="w-6 h-6 animate-spin" />
+                            ) : (
+                              <CheckCircle className="w-6 h-6" />
+                            )}
+                            Redeem
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              setParchiIdInput("")
+                              setApplicableOffer(null)
+                            }}
+                            className="px-6 h-14 text-lg border-2 hover:bg-muted"
+                            disabled={isLoadingStudent}
+                          >
+                            Clear
+                          </Button>
+                        </div>
                       </div>
                     )}
                   </CardContent>
