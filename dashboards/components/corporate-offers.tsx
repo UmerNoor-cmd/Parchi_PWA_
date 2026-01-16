@@ -509,12 +509,24 @@ export function CorporateOffers() {
               <div className="space-y-2">
                 <Label>Offer Image</Label>
                 <div className="flex items-center gap-4">
-                  <Input
+                  <input
                     type="file"
                     accept="image/*"
                     onChange={handleImageUpload}
                     disabled={isImageUploading}
+                    className="hidden"
+                    id="offer-image-upload"
                   />
+                  <Button
+                    type="button"
+                    variant="default"
+                    onClick={() => document.getElementById('offer-image-upload')?.click()}
+                    disabled={isImageUploading}
+                    className="bg-primary text-primary-foreground hover:bg-primary/90"
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    {isImageUploading ? 'Uploading...' : 'Choose File'}
+                  </Button>
                   {isImageUploading && <Loader2 className="h-4 w-4 animate-spin" />}
                 </div>
                 {formData.imageUrl && (
@@ -836,12 +848,24 @@ export function CorporateOffers() {
               <div className="space-y-2">
                 <Label>Bonus Image</Label>
                 <div className="flex items-center gap-4">
-                  <Input
+                  <input
                     type="file"
                     accept="image/*"
                     onChange={handleBonusImageUpload}
                     disabled={isImageUploading}
+                    className="hidden"
+                    id="bonus-image-upload"
                   />
+                  <Button
+                    type="button"
+                    variant="default"
+                    onClick={() => document.getElementById('bonus-image-upload')?.click()}
+                    disabled={isImageUploading}
+                    className="bg-primary text-primary-foreground hover:bg-primary/90"
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    {isImageUploading ? 'Uploading...' : 'Choose File'}
+                  </Button>
                   {isImageUploading && <Loader2 className="h-4 w-4 animate-spin" />}
                 </div>
                 {bonusSettings.imageUrl && (
@@ -983,12 +1007,24 @@ export function CorporateOffers() {
             <div className="space-y-2">
               <Label>Bonus Image</Label>
               <div className="flex items-center gap-4">
-                <Input
+                <input
                   type="file"
                   accept="image/*"
                   onChange={handleGlobalBonusImageUpload}
                   disabled={isImageUploading}
+                  className="hidden"
+                  id="global-bonus-image-upload"
                 />
+                <Button
+                  type="button"
+                  variant="default"
+                  onClick={() => document.getElementById('global-bonus-image-upload')?.click()}
+                  disabled={isImageUploading}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90"
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  {isImageUploading ? 'Uploading...' : 'Choose File'}
+                </Button>
                 {isImageUploading && <Loader2 className="h-4 w-4 animate-spin" />}
               </div>
               {globalBonusSettings.imageUrl && (
