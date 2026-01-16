@@ -532,7 +532,7 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
                   className="w-36 h-36 border-4 border-background shadow-lg cursor-pointer hover:opacity-90 transition-opacity"
                   onClick={() => setIsImagePreviewOpen(true)}
                 >
-                  <AvatarImage src={studentDetails.profilePicture || ""} />
+                  <AvatarImage src={studentDetails.verificationSelfie || ""} />
                   <AvatarFallback className="text-3xl bg-muted">
                     {studentDetails.firstName[0]}{studentDetails.lastName[0]}
                   </AvatarFallback>
@@ -636,9 +636,9 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
             </DialogDescription>
           </DialogHeader>
           <div className="flex items-center justify-center p-4">
-            {studentDetails?.profilePicture ? (
+            {studentDetails?.verificationSelfie ? (
               <img
-                src={studentDetails.profilePicture}
+                src={studentDetails.verificationSelfie}
                 alt={`${studentDetails.firstName} ${studentDetails.lastName}`}
                 className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-lg"
               />
