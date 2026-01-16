@@ -368,7 +368,8 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
                               const numbersOnly = e.target.value.replace(/\D/g, '')
                               setParchiIdInput(numbersOnly)
                             }}
-                            className="text-3xl font-mono h-20 border-0 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/30 tracking-widest text-center"
+                            className="!text-5xl font-mono h-20 border-0 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/30 tracking-widest text-center"
+                            style={{ fontSize: '3rem' }}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter' && parchiIdInput) {
                                 handleRedemptionClick()

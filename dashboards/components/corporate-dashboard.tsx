@@ -1,4 +1,7 @@
+"use client"
+
 import { useState, useEffect } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import {
@@ -38,7 +41,17 @@ import { toast } from "sonner"
 import { Spinner } from "@/components/ui/spinner"
 
 export function CorporateDashboard({ onLogout }: { onLogout: () => void }) {
-  const [activeTab, setActiveTab] = useState("overview")
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  
+  // Get initial tab from URL or default to "overview"
+  const getTabFromUrl = () => {
+    const tab = searchParams.get("tab")
+    const validTabs = ["overview", "offers", "branches", "reports", "profile"]
+    return tab && validTabs.includes(tab) ? tab : "overview"
+  }
+  
+  const [activeTab, setActiveTab] = useState(getTabFromUrl)
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [analytics, setAnalytics] = useState<DashboardAnalytics[]>([])
   const [branchPerformance, setBranchPerformance] = useState<BranchPerformance[]>([])
@@ -46,6 +59,22 @@ export function CorporateDashboard({ onLogout }: { onLogout: () => void }) {
   const [isLoading, setIsLoading] = useState(true)
 
   const colors = DASHBOARD_COLORS("corporate")
+
+  // Sync activeTab with URL parameter on mount and when URL changes (e.g., browser back/forward)
+  useEffect(() => {
+    const tab = searchParams.get("tab")
+    const validTabs = ["overview", "offers", "branches", "reports", "profile"]
+    const tabFromUrl = tab && validTabs.includes(tab) ? tab : "overview"
+    setActiveTab(tabFromUrl)
+  }, [searchParams])
+
+  // Update URL when activeTab changes
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab)
+    const params = new URLSearchParams(searchParams.toString())
+    params.set("tab", tab)
+    router.push(`/corporate?${params.toString()}`, { scroll: false })
+  }
 
   useEffect(() => {
     const fetchData = async () => {
@@ -77,7 +106,7 @@ export function CorporateDashboard({ onLogout }: { onLogout: () => void }) {
 
   return (
     <div className="flex min-h-screen bg-background">
-      <CorporateSidebar activeTab={activeTab} onTabChange={setActiveTab} onLogout={onLogout} />
+      <CorporateSidebar activeTab={activeTab} onTabChange={handleTabChange} onLogout={onLogout} />
 
       <main className="flex-1 overflow-y-auto">
         <div className="p-4 md:p-8">
@@ -94,7 +123,7 @@ export function CorporateDashboard({ onLogout }: { onLogout: () => void }) {
                   <SheetTitle className="sr-only">Corporate Menu</SheetTitle>
                   <SheetDescription className="sr-only">Navigation</SheetDescription>
                   <CorporateSidebarContent activeTab={activeTab} onTabChange={(tab) => {
-                    setActiveTab(tab)
+                    handleTabChange(tab)
                     document.dispatchEvent(new KeyboardEvent('keydown', { 'key': 'Escape' }));
                   }} onLogout={onLogout} />
                 </SheetContent>
