@@ -198,7 +198,7 @@ export function CorporateBranches() {
                               <DropdownMenuItem onClick={() => openEditModal(branch)}>
                                 <Edit className="mr-2 h-4 w-4" /> Edit Details
                               </DropdownMenuItem>
-                              <DropdownMenuItem>View Performance</DropdownMenuItem>
+
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
                                 className={branch.is_active ? "text-destructive" : "text-green-600"}
@@ -249,7 +249,6 @@ export function CorporateBranches() {
                           <DropdownMenuItem onClick={() => openEditModal(branch)}>
                             <Edit className="mr-2 h-4 w-4" /> Edit Details
                           </DropdownMenuItem>
-                          <DropdownMenuItem>View Performance</DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             className={branch.is_active ? "text-destructive" : "text-green-600"}
