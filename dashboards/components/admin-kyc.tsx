@@ -31,7 +31,7 @@ export function AdminKYC() {
   const { toast } = useToast()
 
   const { students: pendingStudents, loading: pendingLoading, error: pendingError, pagination: pendingPagination, refetch: refetchPending } = usePendingStudents(pendingPage, 10)
-  
+
   // Debounce search query to prevent excessive API calls
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -43,7 +43,7 @@ export function AdminKYC() {
     }, 300)
     return () => clearTimeout(timeoutId)
   }, [searchQuery, debouncedSearch])
-  
+
   // Memoize filters object to prevent unnecessary re-renders
   const allStudentsFilters = useMemo(() => ({
     status: statusFilter,
@@ -51,7 +51,7 @@ export function AdminKYC() {
     limit: 10,
     search: debouncedSearch.trim() || undefined
   }), [statusFilter, allPage, debouncedSearch])
-  
+
   const { students: allStudents, loading: allLoading, error: allError, pagination: allPagination, refetch: refetchAll } = useAllStudents(allStudentsFilters)
   const { student: studentDetail, loading: detailLoading, error: detailError, refetch: refetchDetail } = useStudentDetail(selectedStudentId)
   const { approveReject, loading: approveRejectLoading, error: approveRejectError } = useApproveRejectStudent()
@@ -60,6 +60,11 @@ export function AdminKYC() {
   useEffect(() => {
     setAllPage(1)
   }, [statusFilter])
+
+  const handleRefresh = () => {
+    refetchPending()
+    refetchAll()
+  }
 
   const handleReview = (studentId: string) => {
     setSelectedStudentId(studentId)
@@ -122,7 +127,7 @@ export function AdminKYC() {
   // Server-side search is now handled by the API, but keep client-side filtering as fallback
   // This will be removed once backend search is fully implemented
   const filteredAllStudents = allStudents.filter((student) =>
-    !searchQuery.trim() || 
+    !searchQuery.trim() ||
     `${student.firstName} ${student.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
     student.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
     student.parchiId.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -153,6 +158,14 @@ export function AdminKYC() {
           <h2 className="text-2xl font-bold tracking-tight">Student KYC</h2>
           <p className="text-muted-foreground">Manage student verifications and records</p>
         </div>
+        <Button
+          variant="outline"
+          onClick={handleRefresh}
+          disabled={pendingLoading || allLoading}
+        >
+          <RefreshCw className={`mr-2 h-4 w-4 ${pendingLoading || allLoading ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
       </div>
 
       <Tabs defaultValue="pending" className="space-y-4">
@@ -428,7 +441,7 @@ export function AdminKYC() {
               {studentDetail ? `Verify the student ID and selfie match for ${studentDetail.firstName} ${studentDetail.lastName}.` : 'Loading student details...'}
             </DialogDescription>
           </DialogHeader>
-          
+
           {detailLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -444,16 +457,16 @@ export function AdminKYC() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
               <div className="space-y-2">
                 <Label>Student ID Card (Front)</Label>
-                <div 
+                <div
                   className="border rounded-lg p-2 bg-muted/20 cursor-pointer hover:bg-muted/30 transition-colors relative group"
-                  onClick={() => setExpandedImage({ 
-                    url: studentDetail.kyc.studentIdCardFrontPath, 
-                    alt: "Student ID Front" 
+                  onClick={() => setExpandedImage({
+                    url: studentDetail.kyc.studentIdCardFrontPath,
+                    alt: "Student ID Front"
                   })}
                 >
-                  <img 
-                    src={studentDetail.kyc.studentIdCardFrontPath} 
-                    alt="Student ID Front" 
+                  <img
+                    src={studentDetail.kyc.studentIdCardFrontPath}
+                    alt="Student ID Front"
                     className="w-full h-auto rounded-md object-contain max-h-[300px]"
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = '/placeholder.svg?height=300&width=500'
@@ -464,19 +477,19 @@ export function AdminKYC() {
                   </div>
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <Label>Student ID Card (Back)</Label>
-                <div 
+                <div
                   className="border rounded-lg p-2 bg-muted/20 cursor-pointer hover:bg-muted/30 transition-colors relative group"
-                  onClick={() => setExpandedImage({ 
-                    url: studentDetail.kyc.studentIdCardBackPath, 
-                    alt: "Student ID Back" 
+                  onClick={() => setExpandedImage({
+                    url: studentDetail.kyc.studentIdCardBackPath,
+                    alt: "Student ID Back"
                   })}
                 >
-                  <img 
-                    src={studentDetail.kyc.studentIdCardBackPath} 
-                    alt="Student ID Back" 
+                  <img
+                    src={studentDetail.kyc.studentIdCardBackPath}
+                    alt="Student ID Back"
                     className="w-full h-auto rounded-md object-contain max-h-[300px]"
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = '/placeholder.svg?height=300&width=500'
@@ -487,19 +500,19 @@ export function AdminKYC() {
                   </div>
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <Label>Selfie</Label>
-                <div 
+                <div
                   className="border rounded-lg p-2 bg-muted/20 cursor-pointer hover:bg-muted/30 transition-colors relative group"
-                  onClick={() => setExpandedImage({ 
-                    url: studentDetail.kyc.selfieImagePath, 
-                    alt: "Selfie" 
+                  onClick={() => setExpandedImage({
+                    url: studentDetail.kyc.selfieImagePath,
+                    alt: "Selfie"
                   })}
                 >
-                  <img 
-                    src={studentDetail.kyc.selfieImagePath} 
-                    alt="Selfie" 
+                  <img
+                    src={studentDetail.kyc.selfieImagePath}
+                    alt="Selfie"
                     className="w-full h-auto rounded-md object-contain max-h-[300px]"
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = '/placeholder.svg?height=300&width=300'
@@ -535,7 +548,7 @@ export function AdminKYC() {
                 <div>
                   <Label className="text-muted-foreground">Submitted At</Label>
                   <p className="font-medium">
-                    {studentDetail.kyc.submittedAt 
+                    {studentDetail.kyc.submittedAt
                       ? new Date(studentDetail.kyc.submittedAt).toLocaleString()
                       : 'N/A'}
                   </p>
@@ -561,15 +574,15 @@ export function AdminKYC() {
           )}
 
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button 
-              variant="destructive" 
+            <Button
+              variant="destructive"
               onClick={handleRejectClick}
               disabled={approveRejectLoading || !studentDetail}
             >
               <X className="mr-2 h-4 w-4" />
               Reject
             </Button>
-            <Button 
+            <Button
               onClick={handleApprove}
               disabled={approveRejectLoading || !studentDetail}
             >
@@ -616,8 +629,8 @@ export function AdminKYC() {
             </div>
           </div>
           <DialogFooter>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => {
                 setIsRejectDialogOpen(false)
                 setRejectionNotes("")
@@ -626,8 +639,8 @@ export function AdminKYC() {
             >
               Cancel
             </Button>
-            <Button 
-              variant="destructive" 
+            <Button
+              variant="destructive"
               onClick={handleConfirmReject}
               disabled={approveRejectLoading || !selectedStudentId}
             >
@@ -656,9 +669,9 @@ export function AdminKYC() {
         <DialogContent className="max-w-5xl max-h-[95vh] p-0">
           {expandedImage && (
             <div className="relative">
-              <img 
-                src={expandedImage.url} 
-                alt={expandedImage.alt} 
+              <img
+                src={expandedImage.url}
+                alt={expandedImage.alt}
                 className="w-full h-auto max-h-[90vh] object-contain rounded-lg"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = '/placeholder.svg?height=600&width=800'

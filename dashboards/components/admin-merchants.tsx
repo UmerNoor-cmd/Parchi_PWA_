@@ -452,9 +452,7 @@ export function AdminMerchants() {
                               <DropdownMenuLabel>Actions</DropdownMenuLabel>
                               <DropdownMenuItem onClick={() => openEditModal(merchant)}>
                                 <Edit className="mr-2 h-4 w-4" /> Edit Details
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>View Dashboard</DropdownMenuItem>
-                              <DropdownMenuSeparator />
+                              </DropdownMenuItem>                              <DropdownMenuSeparator />
                               <DropdownMenuItem
                                 className="text-destructive"
                                 onClick={() => handleToggleStatus(merchant)}
