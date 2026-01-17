@@ -143,7 +143,19 @@ export function AdminMerchants() {
     if (!editingMerchant) return
     try {
       setIsSaving(true)
-      await updateCorporateMerchant(editingMerchant.id, editForm)
+      setIsSaving(true)
+
+      // Convert empty strings to null for optional fields
+      const updateData = {
+        ...editForm,
+        businessRegistrationNumber: editForm.businessRegistrationNumber || null,
+        logoPath: editForm.logoPath || null,
+        category: editForm.category || null,
+        bannerUrl: editForm.bannerUrl || null,
+        termsAndConditions: editForm.termsAndConditions || null,
+      }
+
+      await updateCorporateMerchant(editingMerchant.id, updateData)
       toast({ title: "Success", description: "Merchant updated successfully" })
       setIsEditOpen(false)
       refetch()

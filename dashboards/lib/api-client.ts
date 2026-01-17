@@ -272,13 +272,13 @@ export interface UpdateBranchRequest {
 
 export interface UpdateMerchantRequest {
   businessName?: string
-  businessRegistrationNumber?: string
+  businessRegistrationNumber?: string | null
   contactEmail?: string
   contactPhone?: string
-  logoPath?: string
-  category?: string
-  bannerUrl?: string
-  termsAndConditions?: string
+  logoPath?: string | null
+  category?: string | null
+  bannerUrl?: string | null
+  termsAndConditions?: string | null
   isActive?: boolean
   verificationStatus?: 'pending' | 'approved' | 'rejected' | 'expired'
 }
