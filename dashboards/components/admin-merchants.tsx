@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Building2, Store, MoreHorizontal, Search, Loader2, AlertCircle, RefreshCw, Edit, Upload, X, Image as ImageIcon } from "lucide-react"
+import { Plus, Building2, Store, MoreHorizontal, Search, Loader2, AlertCircle, RefreshCw, Edit, Upload, X, Image as ImageIcon, GripVertical } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useMerchants } from "@/hooks/use-merchants"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -196,6 +196,45 @@ export function AdminMerchants() {
       loadBrands()
     }
   }, [isFeaturedBrandsOpen])
+
+  const [draggedBrandId, setDraggedBrandId] = useState<string | null>(null)
+
+  const handleDragStart = (e: React.DragEvent, id: string) => {
+    setDraggedBrandId(id)
+    e.dataTransfer.effectAllowed = "move"
+    // Set a transparent image or just use default ghost
+    // e.dataTransfer.setDragImage(e.target as Element, 0, 0)
+    e.dataTransfer.setData("text/plain", id)
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = "move"
+  }
+
+  const handleDrop = (e: React.DragEvent, targetId: string) => {
+    e.preventDefault()
+    if (!draggedBrandId || draggedBrandId === targetId) return
+
+    const currentIndex = featuredBrands.findIndex(b => b.brandId === draggedBrandId)
+    const targetIndex = featuredBrands.findIndex(b => b.brandId === targetId)
+
+    if (currentIndex === -1 || targetIndex === -1) return
+
+    const updated = [...featuredBrands]
+    // Remove from old index
+    const [moved] = updated.splice(currentIndex, 1)
+    // Insert at new index
+    updated.splice(targetIndex, 0, moved)
+
+    const reordered = updated.map((b, index) => ({
+      ...b,
+      order: index + 1
+    }))
+
+    setFeaturedBrandsList(reordered)
+    setDraggedBrandId(null)
+  }
 
   const loadBrands = async () => {
     setIsLoadingBrands(true)
@@ -775,9 +814,17 @@ export function AdminMerchants() {
                       return (
                         <div
                           key={featured.brandId}
-                          className="flex items-center justify-between p-3 border rounded-lg bg-muted/50"
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, featured.brandId)}
+                          onDragOver={handleDragOver}
+                          onDrop={(e) => handleDrop(e, featured.brandId)}
+                          className={`flex items-center justify-between p-3 border rounded-lg bg-muted/50 transition-colors ${draggedBrandId === featured.brandId ? "opacity-50 border-dashed border-primary" : ""
+                            }`}
                         >
                           <div className="flex items-center gap-3 flex-1">
+                            <div className="cursor-grab active:cursor-grabbing hover:bg-muted p-1 rounded">
+                              <GripVertical className="h-5 w-5 text-muted-foreground" />
+                            </div>
                             <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground font-bold text-sm">
                               {featured.order}
                             </div>
@@ -804,21 +851,7 @@ export function AdminMerchants() {
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Select
-                              value={featured.order.toString()}
-                              onValueChange={(val) => handleReorderFeaturedBrand(featured.brandId, parseInt(val))}
-                            >
-                              <SelectTrigger className="w-20">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {[1, 2, 3, 4, 5, 6].map(num => (
-                                  <SelectItem key={num} value={num.toString()}>
-                                    Position {num}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                            {/* Drag handle replaces Select for reordering */}
                             <Button
                               variant="ghost"
                               size="icon"
