@@ -1074,29 +1074,45 @@ export interface OfferPerformance {
 
 // Dashboard API Functions
 
-export const getDashboardStats = async (): Promise<DashboardStats> => {
-  const response = await apiRequest('/merchants/dashboard/stats', {
+export const getDashboardStats = async (startDate?: Date, endDate?: Date): Promise<DashboardStats> => {
+  const queryParams = new URLSearchParams();
+  if (startDate) queryParams.append('startDate', startDate.toISOString());
+  if (endDate) queryParams.append('endDate', endDate.toISOString());
+
+  const response = await apiRequest(`/merchants/dashboard/stats?${queryParams.toString()}`, {
     method: 'GET',
   });
   return response.data;
 };
 
-export const getDashboardAnalytics = async (): Promise<DashboardAnalytics[]> => {
-  const response = await apiRequest('/merchants/dashboard/analytics', {
+export const getDashboardAnalytics = async (startDate?: Date, endDate?: Date): Promise<DashboardAnalytics[]> => {
+  const queryParams = new URLSearchParams();
+  if (startDate) queryParams.append('startDate', startDate.toISOString());
+  if (endDate) queryParams.append('endDate', endDate.toISOString());
+
+  const response = await apiRequest(`/merchants/dashboard/analytics?${queryParams.toString()}`, {
     method: 'GET',
   });
   return response.data;
 };
 
-export const getBranchPerformance = async (): Promise<BranchPerformance[]> => {
-  const response = await apiRequest('/merchants/dashboard/branch-performance', {
+export const getBranchPerformance = async (startDate?: Date, endDate?: Date): Promise<BranchPerformance[]> => {
+  const queryParams = new URLSearchParams();
+  if (startDate) queryParams.append('startDate', startDate.toISOString());
+  if (endDate) queryParams.append('endDate', endDate.toISOString());
+
+  const response = await apiRequest(`/merchants/dashboard/branch-performance?${queryParams.toString()}`, {
     method: 'GET',
   });
   return response.data;
 };
 
-export const getOfferPerformance = async (): Promise<OfferPerformance[]> => {
-  const response = await apiRequest('/merchants/dashboard/offer-performance', {
+export const getOfferPerformance = async (startDate?: Date, endDate?: Date): Promise<OfferPerformance[]> => {
+  const queryParams = new URLSearchParams();
+  if (startDate) queryParams.append('startDate', startDate.toISOString());
+  if (endDate) queryParams.append('endDate', endDate.toISOString());
+
+  const response = await apiRequest(`/merchants/dashboard/offer-performance?${queryParams.toString()}`, {
     method: 'GET',
   });
   return response.data;
