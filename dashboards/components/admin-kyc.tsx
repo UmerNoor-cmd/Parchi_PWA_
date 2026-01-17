@@ -30,7 +30,7 @@ export function AdminKYC() {
   const [debouncedSearch, setDebouncedSearch] = useState("")
   const { toast } = useToast()
 
-  const { students: pendingStudents, loading: pendingLoading, error: pendingError, pagination: pendingPagination, refetch: refetchPending } = usePendingStudents(pendingPage, 10)
+  const { students: pendingStudents, loading: pendingLoading, error: pendingError, pagination: pendingPagination, refetch: refetchPending } = usePendingStudents(pendingPage, 12)
 
   // Debounce search query to prevent excessive API calls
   useEffect(() => {
@@ -48,7 +48,7 @@ export function AdminKYC() {
   const allStudentsFilters = useMemo(() => ({
     status: statusFilter,
     page: allPage,
-    limit: 10,
+    limit: 12,
     search: debouncedSearch.trim() || undefined
   }), [statusFilter, allPage, debouncedSearch])
 
