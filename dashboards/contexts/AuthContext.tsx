@@ -40,9 +40,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const login = async (email: string, password: string): Promise<User> => {
-    const response = await authService.login({ email, password });
-    setUser(response.data.user);
-    return response.data.user;
+    // 1. Perform login to get token
+    await authService.login({ email, password });
+
+    // 2. Fetch full profile to ensure we have all details (like merchant_id)
+    // The login response might be partial or missing deep relations
+    const profileResponse = await authService.getProfile();
+
+    // 3. Update state with full profile
+    setUser(profileResponse.data);
+
+    return profileResponse.data;
   };
 
   const logout = async () => {
