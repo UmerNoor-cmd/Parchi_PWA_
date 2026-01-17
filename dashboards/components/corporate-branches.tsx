@@ -22,7 +22,7 @@ export function CorporateBranches() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { toast } = useToast()
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
 
   // Edit Modal State
   const [isEditOpen, setIsEditOpen] = useState(false)
@@ -111,8 +111,9 @@ export function CorporateBranches() {
           <h2 className="text-2xl font-bold tracking-tight">My Branches</h2>
           <p className="text-muted-foreground">Manage your branch locations</p>
         </div>
-        <Button onClick={() => setIsCreateOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" /> Add Branch
+        <Button onClick={() => setIsCreateOpen(true)} disabled={authLoading || !user?.merchant?.id}>
+          {authLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
+          Add Branch
         </Button>
       </div>
 
