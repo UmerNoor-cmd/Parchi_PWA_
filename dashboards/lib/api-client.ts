@@ -790,6 +790,7 @@ export interface StudentsFilter {
   page?: number;
   limit?: number;
   search?: string; // Server-side search query
+  institute?: string;
 }
 
 // ========== Student KYC API Functions ==========
@@ -824,6 +825,9 @@ export const getAllStudents = async (
   if (filters?.limit) queryParams.append('limit', filters.limit.toString());
   if (filters?.search && filters.search.trim()) {
     queryParams.append('search', filters.search.trim());
+  }
+  if (filters?.institute && filters.institute.trim()) {
+    queryParams.append('institute', filters.institute.trim());
   }
 
   const endpoint = `/admin/students${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;

@@ -8,11 +8,12 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Check, X, Search, Eye, MoreHorizontal, Loader2, AlertCircle, RefreshCw, ChevronLeft, ChevronRight, ZoomIn } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
 import { useToast } from "@/hooks/use-toast"
 import { usePendingStudents, useAllStudents, useStudentDetail, useApproveRejectStudent } from "@/hooks/use-kyc"
 import type { Student } from "@/lib/api-client"
@@ -27,30 +28,34 @@ export function AdminKYC() {
   const [allPage, setAllPage] = useState(1)
   const [statusFilter, setStatusFilter] = useState<'pending' | 'approved' | 'rejected' | 'expired' | undefined>(undefined)
   const [searchQuery, setSearchQuery] = useState("")
+  const [instituteQuery, setInstituteQuery] = useState("")
   const [debouncedSearch, setDebouncedSearch] = useState("")
+  const [debouncedInstitute, setDebouncedInstitute] = useState("")
   const { toast } = useToast()
 
   const { students: pendingStudents, loading: pendingLoading, error: pendingError, pagination: pendingPagination, refetch: refetchPending } = usePendingStudents(pendingPage, 12)
 
-  // Debounce search query to prevent excessive API calls
+  // Debounce search and institute queries
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
+    const timer = setTimeout(() => {
       setDebouncedSearch(searchQuery)
-      // Reset to page 1 when search changes
-      if (searchQuery !== debouncedSearch) {
+      setDebouncedInstitute(instituteQuery)
+      // Reset to page 1 when search or institute changes
+      if (searchQuery !== debouncedSearch || instituteQuery !== debouncedInstitute) {
         setAllPage(1)
       }
-    }, 300)
-    return () => clearTimeout(timeoutId)
-  }, [searchQuery, debouncedSearch])
+    }, 500) // Increased debounce time for both
+    return () => clearTimeout(timer)
+  }, [searchQuery, instituteQuery, debouncedSearch, debouncedInstitute]) // Added debounced values to dependencies to trigger page reset correctly
 
   // Memoize filters object to prevent unnecessary re-renders
   const allStudentsFilters = useMemo(() => ({
     status: statusFilter,
     page: allPage,
     limit: 12,
-    search: debouncedSearch.trim() || undefined
-  }), [statusFilter, allPage, debouncedSearch])
+    search: debouncedSearch.trim() || undefined,
+    institute: debouncedInstitute.trim() || undefined
+  }), [statusFilter, allPage, debouncedSearch, debouncedInstitute])
 
   const { students: allStudents, loading: allLoading, error: allError, pagination: allPagination, refetch: refetchAll } = useAllStudents(allStudentsFilters)
   const { student: studentDetail, loading: detailLoading, error: detailError, refetch: refetchDetail } = useStudentDetail(selectedStudentId)
@@ -148,7 +153,55 @@ export function AdminKYC() {
   }
 
   const getStatusText = (status: string) => {
-    return status.charAt(0).toUpperCase() + status.slice(1)
+    switch (status) {
+      case 'pending': return 'Pending'
+      case 'approved': return 'Approved'
+      case 'rejected': return 'Rejected'
+      case 'expired': return 'Expired'
+      default: return status
+    }
+  }
+
+  // Generate pagination items logic
+  const generatePaginationItems = (currentPage: number, totalPages: number) => {
+    const items: (number | null)[] = []
+    
+    // Always show first page
+    items.push(1)
+
+    // Calculate start and end of visible pages around current
+    let start = Math.max(2, currentPage - 1)
+    let end = Math.min(totalPages - 1, currentPage + 1)
+
+    // Adjust if near start or end to keep consistent number of items if possible
+    if (currentPage <= 3) {
+      end = Math.min(totalPages - 1, 4)
+    }
+    if (currentPage >= totalPages - 2) {
+      start = Math.max(2, totalPages - 3)
+    }
+
+    // Add ellipsis before start if needed
+    if (start > 2) {
+      items.push(null)
+    }
+
+    // Add pages in range
+    for (let i = start; i <= end; i++) {
+      items.push(i)
+    }
+
+    // Add ellipsis after end if needed
+    if (end < totalPages - 1) {
+      items.push(null)
+    }
+
+    // Always show last page if more than 1 page
+    if (totalPages > 1) {
+      items.push(totalPages)
+    }
+
+    return items
   }
 
   return (
@@ -300,6 +353,13 @@ export function AdminKYC() {
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
+                <div className="relative flex-1 max-w-sm">
+                  <Input
+                    placeholder="Filter by institute..."
+                    value={instituteQuery}
+                    onChange={(e) => setInstituteQuery(e.target.value)}
+                  />
+                </div>
                 <div className="flex gap-2">
                   <Button
                     variant={statusFilter === undefined ? "default" : "outline"}
@@ -348,7 +408,7 @@ export function AdminKYC() {
                       <TableHeader>
                         <TableRow>
                           <TableHead>Name</TableHead>
-                          <TableHead>University</TableHead>
+                          <TableHead>Institute</TableHead>
                           <TableHead>Parchi ID</TableHead>
                           <TableHead>Email</TableHead>
                           <TableHead>Email Status</TableHead>
@@ -398,32 +458,40 @@ export function AdminKYC() {
                   </div>
 
                   {allPagination && allPagination.pages > 1 && (
-                    <div className="flex items-center justify-between mt-4">
-                      <div className="text-sm text-muted-foreground">
-                        Page {allPagination.page} of {allPagination.pages} ({allPagination.total} total)
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setAllPage(p => Math.max(1, p - 1))
-                          }}
-                          disabled={!allPagination.hasPrev || allLoading}
-                        >
-                          <ChevronLeft className="h-4 w-4" /> Previous
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setAllPage(p => Math.min(allPagination.pages, p + 1))
-                          }}
-                          disabled={!allPagination.hasNext || allLoading}
-                        >
-                          Next <ChevronRight className="h-4 w-4" />
-                        </Button>
-                      </div>
+                    <div className="mt-4">
+                      <Pagination>
+                        <PaginationContent>
+                          <PaginationItem>
+                            <PaginationPrevious
+                              onClick={() => setAllPage(p => Math.max(1, p - 1))}
+                              className={!allPagination.hasPrev || allLoading ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                            />
+                          </PaginationItem>
+                          
+                          {generatePaginationItems(allPagination.page, allPagination.pages).map((p, i) => (
+                            <PaginationItem key={i}>
+                              {p === null ? (
+                                <PaginationEllipsis />
+                              ) : (
+                                <PaginationLink
+                                  isActive={allPagination.page === p}
+                                  onClick={() => setAllPage(p)}
+                                  className="cursor-pointer"
+                                >
+                                  {p}
+                                </PaginationLink>
+                              )}
+                            </PaginationItem>
+                          ))}
+
+                          <PaginationItem>
+                            <PaginationNext
+                              onClick={() => setAllPage(p => Math.min(allPagination.pages, p + 1))}
+                              className={!allPagination.hasNext || allLoading ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                            />
+                          </PaginationItem>
+                        </PaginationContent>
+                      </Pagination>
                     </div>
                   )}
                 </>
