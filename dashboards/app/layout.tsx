@@ -50,6 +50,8 @@ export const metadata: Metadata = {
   },
 }
 
+import { Toaster as SonnerToaster } from "@/components/ui/sonner"
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -62,6 +64,7 @@ export default function RootLayout({
           {children}
         </AuthProvider>
         <Toaster />
+        <SonnerToaster />
         <Analytics />
       </body>
     </html>

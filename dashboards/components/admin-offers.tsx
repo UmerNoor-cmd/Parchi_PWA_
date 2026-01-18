@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
-import { Plus, MoreHorizontal, Calendar, Loader2, Store, Pencil, Settings, Upload, ChevronDown, ChevronUp, X } from "lucide-react"
+import { Plus, MoreHorizontal, Calendar, Loader2, Store, Pencil, Settings, Upload, ChevronDown, ChevronUp, X, GripVertical } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import {
   getOffers, createOffer, updateOffer, deleteOffer,
@@ -86,6 +86,7 @@ export function AdminOffers() {
   const [featuredOffers, setFeaturedOffersList] = useState<{ offerId: string; order: number }[]>([])
   const [isLoadingFeatured, setIsLoadingFeatured] = useState(false)
   const [isSavingFeatured, setIsSavingFeatured] = useState(false)
+  const [draggedOfferId, setDraggedOfferId] = useState<string | null>(null)
 
   // Form State
   const [formData, setFormData] = useState<Partial<CreateOfferRequest>>({
@@ -451,29 +452,37 @@ export function AdminOffers() {
     setFeaturedOffersList(updated)
   }
 
-  const handleReorderFeaturedOffer = (offerId: string, newOrder: number) => {
-    if (newOrder < 1 || newOrder > 6) return
+  const handleDragStart = (e: React.DragEvent, id: string) => {
+    setDraggedOfferId(id)
+    e.dataTransfer.effectAllowed = "move"
+    e.dataTransfer.setData("text/plain", id)
+  }
 
-    const currentIndex = featuredOffers.findIndex(o => o.offerId === offerId)
-    if (currentIndex === -1) return
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = "move"
+  }
+
+  const handleDrop = (e: React.DragEvent, targetId: string) => {
+    e.preventDefault()
+    if (!draggedOfferId || draggedOfferId === targetId) return
+
+    const currentIndex = featuredOffers.findIndex(o => o.offerId === draggedOfferId)
+    const targetIndex = featuredOffers.findIndex(o => o.offerId === targetId)
+
+    if (currentIndex === -1 || targetIndex === -1) return
 
     const updated = [...featuredOffers]
     const [moved] = updated.splice(currentIndex, 1)
+    updated.splice(targetIndex, 0, moved)
 
-    // Adjust other orders
-    updated.forEach(o => {
-      if (o.order >= newOrder && o.order < moved.order) {
-        o.order += 1
-      } else if (o.order <= newOrder && o.order > moved.order) {
-        o.order -= 1
-      }
-    })
+    const reordered = updated.map((o, index) => ({
+      ...o,
+      order: index + 1
+    }))
 
-    moved.order = newOrder
-    updated.push(moved)
-    updated.sort((a, b) => a.order - b.order)
-
-    setFeaturedOffersList(updated)
+    setFeaturedOffersList(reordered)
+    setDraggedOfferId(null)
   }
 
   const handleSaveFeaturedOffers = async () => {
@@ -1057,9 +1066,17 @@ export function AdminOffers() {
                       return (
                         <div
                           key={featured.offerId}
-                          className="flex items-center justify-between p-3 border rounded-lg bg-muted/50"
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, featured.offerId)}
+                          onDragOver={handleDragOver}
+                          onDrop={(e) => handleDrop(e, featured.offerId)}
+                          className={`flex items-center justify-between p-3 border rounded-lg bg-muted/50 transition-colors ${draggedOfferId === featured.offerId ? "opacity-50 border-dashed border-primary" : ""
+                            }`}
                         >
                           <div className="flex items-center gap-3 flex-1">
+                            <div className="cursor-grab active:cursor-grabbing hover:bg-muted p-1 rounded">
+                              <GripVertical className="h-5 w-5 text-muted-foreground" />
+                            </div>
                             <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground font-bold text-sm">
                               {featured.order}
                             </div>
@@ -1084,21 +1101,6 @@ export function AdminOffers() {
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Select
-                              value={featured.order.toString()}
-                              onValueChange={(val) => handleReorderFeaturedOffer(featured.offerId, parseInt(val))}
-                            >
-                              <SelectTrigger className="w-20">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {[1, 2, 3, 4, 5, 6].map(num => (
-                                  <SelectItem key={num} value={num.toString()}>
-                                    Position {num}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
                             <Button
                               variant="ghost"
                               size="icon"
