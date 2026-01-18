@@ -725,6 +725,8 @@ export interface StudentKYC {
   id: string;
   studentIdCardFrontPath: string;
   studentIdCardBackPath: string;
+  cnicFrontImagePath: string | null;
+  cnicBackImagePath: string | null;
   selfieImagePath: string;
   submittedAt: string | null;
   reviewedBy: string | null;

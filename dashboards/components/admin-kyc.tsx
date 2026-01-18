@@ -576,6 +576,68 @@ export function AdminKYC() {
               </div>
 
               <div className="space-y-2">
+                <Label>CNIC (Front)</Label>
+                <div
+                  className="border rounded-lg p-2 bg-muted/20 cursor-pointer hover:bg-muted/30 transition-colors relative group"
+                  onClick={() => studentDetail.kyc.cnicFrontImagePath && setExpandedImage({
+                    url: studentDetail.kyc.cnicFrontImagePath,
+                    alt: "CNIC Front"
+                  })}
+                >
+                  {studentDetail.kyc.cnicFrontImagePath ? (
+                    <>
+                      <img
+                        src={studentDetail.kyc.cnicFrontImagePath}
+                        alt="CNIC Front"
+                        className="w-full h-auto rounded-md object-contain max-h-[300px]"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = '/placeholder.svg?height=300&width=500'
+                        }}
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-md transition-colors">
+                        <ZoomIn className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
+                    </>
+                  ) : (
+                    <div className="h-[200px] flex items-center justify-center text-muted-foreground">
+                      No Image Available
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>CNIC (Back)</Label>
+                <div
+                  className="border rounded-lg p-2 bg-muted/20 cursor-pointer hover:bg-muted/30 transition-colors relative group"
+                  onClick={() => studentDetail.kyc.cnicBackImagePath && setExpandedImage({
+                    url: studentDetail.kyc.cnicBackImagePath,
+                    alt: "CNIC Back"
+                  })}
+                >
+                  {studentDetail.kyc.cnicBackImagePath ? (
+                    <>
+                      <img
+                        src={studentDetail.kyc.cnicBackImagePath}
+                        alt="CNIC Back"
+                        className="w-full h-auto rounded-md object-contain max-h-[300px]"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = '/placeholder.svg?height=300&width=500'
+                        }}
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-md transition-colors">
+                        <ZoomIn className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
+                    </>
+                  ) : (
+                    <div className="h-[200px] flex items-center justify-center text-muted-foreground">
+                      No Image Available
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-2">
                 <Label>Selfie</Label>
                 <div
                   className="border rounded-lg p-2 bg-muted/20 cursor-pointer hover:bg-muted/30 transition-colors relative group"
