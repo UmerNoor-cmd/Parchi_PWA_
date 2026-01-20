@@ -573,11 +573,12 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
                     <p className="text-sm text-muted-foreground mt-1">{applicableOffer?.description}</p>
                     <p className={`text-sm font-semibold mt-2 ${applicableOffer?.isBonus ? 'text-orange-600 text-base' : ''
                       }`} style={{ color: applicableOffer?.isBonus ? undefined : colors.primary }}>
-                      {applicableOffer?.discountType === 'item' && applicableOffer?.additionalItem ? (
-                        <span className="flex items-center gap-2">
+                      {applicableOffer?.additionalItem && (
+                        <span className="block flex items-center gap-2 mb-1">
                           <span>🎁 {applicableOffer.additionalItem}</span>
                         </span>
-                      ) : (
+                      )}
+                      {(applicableOffer?.discountValue > 0 || !applicableOffer?.additionalItem) && (
                         <span>
                           {applicableOffer?.discountValue}{applicableOffer?.discountType === 'percentage' ? '% OFF' : ' PKR OFF'}
                         </span>
