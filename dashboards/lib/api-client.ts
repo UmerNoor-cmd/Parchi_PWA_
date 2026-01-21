@@ -1385,3 +1385,94 @@ export const sendBroadcastNotification = async (data: BroadcastNotificationReque
   });
   return response.data;
 };
+
+export type QueueStatus = 'pending' | 'approved' | 'rejected' | 'sent';
+
+export interface NotificationQueueItem {
+  id: string;
+  title: string;
+  content: string;
+  image_url: string | null;
+  link_url: string | null;
+  target_topic: string;
+  status: QueueStatus;
+  suggested_by: string | null;
+  reviewed_by: string | null;
+  scheduled_for: string | null;
+  created_at: string;
+  updated_at: string;
+  users?: {
+    email: string;
+    role: string;
+  };
+}
+
+export interface GetQueueResponse {
+  status: number;
+  message: string;
+  data: NotificationQueueItem[];
+}
+
+export interface NotificationHistoryItem {
+  id: string;
+  title: string;
+  content: string;
+  image_url: string | null;
+  link_url: string | null;
+  type: string;
+  created_at: string;
+}
+
+export interface PaginationMeta {
+  total: number;
+  page: number;
+  last_page: number;
+}
+
+export interface GetHistoryResponse {
+  status: number;
+  message: string;
+  data: {
+    data: NotificationHistoryItem[];
+    meta: PaginationMeta;
+  };
+}
+
+/**
+ * Get notification queue
+ */
+export const getNotificationQueue = async (status?: string): Promise<GetQueueResponse> => {
+  const queryParams = new URLSearchParams();
+  if (status) queryParams.append('status', status);
+  
+  const endpoint = `/admin/notifications/queue${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+  const response = await apiRequest(endpoint, {
+    method: 'GET',
+  });
+  return response;
+};
+
+/**
+ * Get notification history
+ */
+export const getNotificationHistory = async (page: number = 1, limit: number = 10): Promise<GetHistoryResponse> => {
+  const queryParams = new URLSearchParams();
+  queryParams.append('page', page.toString());
+  queryParams.append('limit', limit.toString());
+  
+  const endpoint = `/admin/notifications/history?${queryParams.toString()}`;
+  const response = await apiRequest(endpoint, {
+    method: 'GET',
+  });
+  return response;
+};
+
+/**
+ * Send a notification from the queue
+ */
+export const sendQueueItem = async (id: string): Promise<{ message: string }> => {
+  const response = await apiRequest(`/admin/notifications/queue/${id}/send`, {
+    method: 'POST',
+  });
+  return response.data;
+};

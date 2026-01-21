@@ -528,6 +528,8 @@ model offers {
   end_time            DateTime?        @db.Time(0)
   featured_order      Int?
   redemption_strategy String?
+  additional_item     String?
+  notes               String?
   offer_branches      offer_branches[]
   users               public_users?    @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
   merchants           merchants        @relation(fields: [merchant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
@@ -602,6 +604,8 @@ model student_kyc {
   created_at                 DateTime?     @default(now()) @db.Timestamptz(6)
   student_id_card_front_path String?
   student_id_card_back_path  String?
+  cnic_back_image_path       String?
+  cnic_front_image_path      String?
   users                      public_users? @relation(fields: [reviewed_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
   students                   students      @relation(fields: [student_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
@@ -679,6 +683,7 @@ model public_users {
   audit_logs              audit_logs[]
   merchant_branches       merchant_branches?
   merchants               merchants?
+  notification_queue      notification_queue[]
   offers                  offers[]
   redemptions             redemptions[]
   student_kyc             student_kyc[]
@@ -726,6 +731,26 @@ model user_notification_reads {
 
   @@unique([notification_id, user_id], map: "unique_notification_user_read")
   @@index([user_id], map: "idx_user_reads_user_id")
+  @@schema("public")
+}
+
+model notification_queue {
+  id            String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  title         String        @db.VarChar(255)
+  content       String
+  image_url     String?
+  link_url      String?
+  target_topic  String        @default("students_all") @db.VarChar(100)
+  status        queue_status  @default(pending)
+  suggested_by  String?       @db.VarChar(100)
+  reviewed_by   String?       @db.Uuid
+  scheduled_for DateTime?     @db.Timestamptz(6)
+  created_at    DateTime?     @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime?     @default(now()) @db.Timestamptz(6)
+  users         public_users? @relation(fields: [reviewed_by], references: [id], onUpdate: NoAction, map: "fk_reviewer")
+
+  @@index([created_at], map: "idx_queue_created_at")
+  @@index([status], map: "idx_queue_status")
   @@schema("public")
 }
 
@@ -820,6 +845,15 @@ enum verification_status {
   approved
   rejected
   expired
+
+  @@schema("public")
+}
+
+enum queue_status {
+  pending
+  approved
+  rejected
+  sent
 
   @@schema("public")
 }
