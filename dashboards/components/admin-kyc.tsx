@@ -18,10 +18,13 @@ import { useToast } from "@/hooks/use-toast"
 import { usePendingStudents, useAllStudents, useStudentDetail, useApproveRejectStudent } from "@/hooks/use-kyc"
 import type { Student } from "@/lib/api-client"
 
+import { AdminInstitutesDialog } from "./admin-institutes-dialog"
+
 export function AdminKYC() {
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null)
   const [isReviewOpen, setIsReviewOpen] = useState(false)
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false)
+  const [isInstitutesDialogOpen, setIsInstitutesDialogOpen] = useState(false)
   const [rejectionNotes, setRejectionNotes] = useState("")
   const [expandedImage, setExpandedImage] = useState<{ url: string; alt: string } | null>(null)
   const [pendingPage, setPendingPage] = useState(1)
@@ -211,15 +214,22 @@ export function AdminKYC() {
           <h2 className="text-2xl font-bold tracking-tight">Student KYC</h2>
           <p className="text-muted-foreground">Manage student verifications and records</p>
         </div>
-        <Button
-          variant="outline"
-          onClick={handleRefresh}
-          disabled={pendingLoading || allLoading}
-        >
-          <RefreshCw className={`mr-2 h-4 w-4 ${pendingLoading || allLoading ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setIsInstitutesDialogOpen(true)}>
+            Manage Institutes
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleRefresh}
+            disabled={pendingLoading || allLoading}
+          >
+            <RefreshCw className={`mr-2 h-4 w-4 ${pendingLoading || allLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </div>
       </div>
+
+      <AdminInstitutesDialog open={isInstitutesDialogOpen} onOpenChange={setIsInstitutesDialogOpen} />
 
       <Tabs defaultValue="pending" className="space-y-4">
         <TabsList>

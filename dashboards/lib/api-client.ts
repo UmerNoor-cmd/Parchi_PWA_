@@ -1494,3 +1494,77 @@ export const sendQueueItem = async (id: string): Promise<{ message: string }> =>
   });
   return response.data;
 };
+
+// ========== Institutes API Types & Functions ==========
+
+export interface Institute {
+  id: string;
+  name: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Get all institutes (Admin)
+ */
+export const getInstitutes = async (): Promise<Institute[]> => {
+  const response = await apiRequest('/admin/institutes', {
+    method: 'GET',
+  });
+  // Transform snake_case from Prisma to camelCase
+  return response.map((inst: any) => ({
+    id: inst.id,
+    name: inst.name,
+    isActive: inst.is_active,
+    createdAt: inst.created_at,
+    updatedAt: inst.updated_at,
+  }));
+};
+
+/**
+ * Create institute
+ */
+export const createInstitute = async (name: string): Promise<Institute> => {
+  const response = await apiRequest('/admin/institutes', {
+    method: 'POST',
+    body: JSON.stringify({ name }),
+  });
+  return {
+    id: response.id,
+    name: response.name,
+    isActive: response.is_active,
+    createdAt: response.created_at,
+    updatedAt: response.updated_at,
+  };
+};
+
+/**
+ * Update institute
+ */
+export const updateInstitute = async (id: string, name?: string, isActive?: boolean): Promise<Institute> => {
+  const body: any = {};
+  if (name !== undefined) body.name = name;
+  if (isActive !== undefined) body.isActive = isActive;
+
+  const response = await apiRequest(`/admin/institutes/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(body),
+  });
+  return {
+    id: response.id,
+    name: response.name,
+    isActive: response.is_active,
+    createdAt: response.created_at,
+    updatedAt: response.updated_at,
+  };
+};
+
+/**
+ * Delete institute
+ */
+export const deleteInstitute = async (id: string): Promise<void> => {
+  await apiRequest(`/admin/institutes/${id}`, {
+    method: 'DELETE',
+  });
+};
