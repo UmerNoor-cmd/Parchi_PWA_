@@ -49,7 +49,7 @@ export function AdminOffers() {
   // Data State
   const [merchants, setMerchants] = useState<CorporateMerchant[]>([])
   const [expandedMerchants, setExpandedMerchants] = useState<string[]>([])
-  const [offers, setOffers] = useState<Offer[]>([])
+  const [offers, setOffers] = useState<Record<string, Offer[]>>({})
   const [branchAssignments, setBranchAssignments] = useState<{ [merchantId: string]: BranchWithAssignment[] }>({})
   const [loadingMerchants, setLoadingMerchants] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
@@ -95,7 +95,7 @@ export function AdminOffers() {
 
   // Featured Offers State
   const [isFeaturedOffersOpen, setIsFeaturedOffersOpen] = useState(false)
-  const [featuredOffers, setFeaturedOffersList] = useState<{ offerId: string; order: number }[]>([])
+  const [featuredOffers, setFeaturedOffersList] = useState<{ offer: Offer; order: number }[]>([])
   const [isLoadingFeatured, setIsLoadingFeatured] = useState(false)
   const [isSavingFeatured, setIsSavingFeatured] = useState(false)
   const [draggedOfferId, setDraggedOfferId] = useState<string | null>(null)
@@ -116,9 +116,8 @@ export function AdminOffers() {
       const merchantsRes = await getCorporateMerchants()
       setMerchants(merchantsRes.data)
 
-      // Fetch all offers
-      const offersRes = await getOffers()
-      setOffers(offersRes.data.items || [])
+      // Removed global offers fetch
+      setOffers({})
     } catch (error) {
       console.error("Failed to fetch data:", error)
       toast.error("Failed to load data")
@@ -144,6 +143,20 @@ export function AdminOffers() {
           await fetchMerchantBranches(merchantId)
         } finally {
           setLoadingMerchants(prev => prev.filter(id => id !== merchantId))
+        }
+      }
+
+      // Fetch offers if not already loaded
+      if (!offers[merchantId]) {
+        try {
+          const offersRes = await getOffers({ merchantId, limit: 100 })
+          setOffers(prev => ({
+            ...prev,
+            [merchantId]: offersRes.data.items || []
+          }))
+        } catch (error) {
+          console.error(`Failed to load offers for merchant ${merchantId}`, error)
+          toast.error("Failed to load offers")
         }
       }
     } else {
@@ -206,7 +219,7 @@ export function AdminOffers() {
 
   // Helper functions
   const getOffersByMerchant = (merchantId: string) => {
-    return offers.filter(o => o.merchantId === merchantId)
+    return offers[merchantId] || []
   }
 
   const getBranchesByMerchant = (merchantId: string) => {
@@ -281,6 +294,15 @@ export function AdminOffers() {
         toast.success("Offer created successfully")
       }
 
+      // Refresh specific merchant offers
+      if (payload.merchantId) {
+        const offersRes = await getOffers({ merchantId: payload.merchantId, limit: 100 })
+        setOffers(prev => ({
+          ...prev,
+          [payload.merchantId]: offersRes.data.items || []
+        }))
+      }
+
       setIsCreateOpen(false)
       setEditingOffer(null)
       setFormData({
@@ -290,7 +312,7 @@ export function AdminOffers() {
         validFrom: new Date().toISOString().split('T')[0],
         validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
       })
-      fetchData()
+      // fetchData() // Don't reload everything
     } catch (error) {
       toast.error(editingOffer ? "Failed to update offer" : "Failed to create offer")
     } finally {
@@ -329,7 +351,24 @@ export function AdminOffers() {
       try {
         await deleteOffer(offerId)
         toast.success("Offer deleted successfully")
-        fetchData()
+
+        // Find merchantId of deleted offer to refresh
+        // Since we don't have the offer object here easily without searching all merchants, 
+        // we can search our state
+        let merchantId = "";
+        for (const [mId, mOffers] of Object.entries(offers)) {
+          if (mOffers.some(o => o.id === offerId)) {
+            merchantId = mId;
+            break;
+          }
+        }
+
+        if (merchantId) {
+          setOffers(prev => ({
+            ...prev,
+            [merchantId]: prev[merchantId].filter(o => o.id !== offerId)
+          }))
+        }
       } catch (error) {
         toast.error("Failed to delete offer")
       }
@@ -448,8 +487,11 @@ export function AdminOffers() {
       // The backend 'getFeaturedOffers' endpoint returns sorted featured offers
       const featuredRes = await getFeaturedOffers()
 
+
+
+      // The API returns Offer[], but we need to map it to our internal structure
       const featured = featuredRes.data.map((o: Offer) => ({
-        offerId: o.id,
+        offer: o,
         order: o.featuredOrder || 999
       })).sort((a: any, b: any) => a.order - b.order)
 
@@ -462,24 +504,39 @@ export function AdminOffers() {
     }
   }
 
+  // Helper to get all loaded offers
+  const getAllLoadedOffers = () => {
+    return Object.values(offers).flat();
+  }
+
   const handleAddFeaturedOffer = (offerId: string) => {
     if (featuredOffers.length >= 6) {
       toast.error("You can only feature up to 6 offers")
       return
     }
 
-    if (featuredOffers.some(o => o.offerId === offerId)) {
+    if (featuredOffers.some(o => o.offer.id === offerId)) {
       toast.error("This offer is already featured")
       return
     }
 
+    // Find the offer object from loaded offers
+    const allOffers = getAllLoadedOffers()
+    const offerToAdd = allOffers.find(o => o.id === offerId)
+
+    if (!offerToAdd) {
+      toast.error("Offer details not found")
+      return
+    }
+
     const newOrder = featuredOffers.length + 1
-    setFeaturedOffersList([...featuredOffers, { offerId, order: newOrder }])
+    // Store full offer object
+    setFeaturedOffersList([...featuredOffers, { offer: offerToAdd, order: newOrder }])
   }
 
   const handleRemoveFeaturedOffer = (offerId: string) => {
     const updated = featuredOffers
-      .filter(o => o.offerId !== offerId)
+      .filter(o => o.offer.id !== offerId)
       .map((o, index) => ({ ...o, order: index + 1 }))
     setFeaturedOffersList(updated)
   }
@@ -499,8 +556,8 @@ export function AdminOffers() {
     e.preventDefault()
     if (!draggedOfferId || draggedOfferId === targetId) return
 
-    const currentIndex = featuredOffers.findIndex(o => o.offerId === draggedOfferId)
-    const targetIndex = featuredOffers.findIndex(o => o.offerId === targetId)
+    const currentIndex = featuredOffers.findIndex(o => o.offer.id === draggedOfferId)
+    const targetIndex = featuredOffers.findIndex(o => o.offer.id === targetId)
 
     if (currentIndex === -1 || targetIndex === -1) return
 
@@ -525,7 +582,13 @@ export function AdminOffers() {
 
     setIsSavingFeatured(true)
     try {
-      await setFeaturedOffers(featuredOffers)
+      // Map back to API expected format: { offerId, order }
+      const payload = featuredOffers.map(f => ({
+        offerId: f.offer.id,
+        order: f.order
+      }))
+
+      await setFeaturedOffers(payload)
       toast.success("Featured offers updated successfully")
       setIsFeaturedOffersOpen(false)
     } catch (error: any) {
@@ -1213,18 +1276,19 @@ export function AdminOffers() {
                       No offers selected. Add offers from the list below.
                     </div>
                   ) : (
+
                     featuredOffers.map((featured) => {
-                      const offer = offers.find(o => o.id === featured.offerId)
-                      if (!offer) return null
+                      const offer = featured.offer;
+                      // No need to find it, we have it in state
 
                       return (
                         <div
-                          key={featured.offerId}
+                          key={offer.id}
                           draggable
-                          onDragStart={(e) => handleDragStart(e, featured.offerId)}
+                          onDragStart={(e) => handleDragStart(e, offer.id)}
                           onDragOver={handleDragOver}
-                          onDrop={(e) => handleDrop(e, featured.offerId)}
-                          className={`flex items-center justify-between p-3 border rounded-lg bg-muted/50 transition-colors ${draggedOfferId === featured.offerId ? "opacity-50 border-dashed border-primary" : ""
+                          onDrop={(e) => handleDrop(e, offer.id)}
+                          className={`flex items-center justify-between p-3 border rounded-lg bg-muted/50 transition-colors ${draggedOfferId === offer.id ? "opacity-50 border-dashed border-primary" : ""
                             }`}
                         >
                           <div className="flex items-center gap-3 flex-1">
@@ -1259,7 +1323,7 @@ export function AdminOffers() {
                               variant="ghost"
                               size="icon"
                               className="h-9 w-9 text-destructive hover:text-destructive/90"
-                              onClick={() => handleRemoveFeaturedOffer(featured.offerId)}
+                              onClick={() => handleRemoveFeaturedOffer(offer.id)}
                             >
                               <X className="w-4 h-4" />
                             </Button>
@@ -1275,16 +1339,16 @@ export function AdminOffers() {
               <div className="space-y-2">
                 <Label>Available Active Offers</Label>
                 <div className="border rounded-lg p-4 max-h-[300px] overflow-y-auto">
-                  {offers
-                    .filter(o => o.status === 'active' && !featuredOffers.some(fo => fo.offerId === o.id))
+                  {getAllLoadedOffers()
+                    .filter(o => o.status === 'active' && !featuredOffers.some(fo => fo.offer.id === o.id))
                     .length === 0 ? (
                     <div className="text-center py-4 text-muted-foreground">
                       No matching active offers available
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 gap-2">
-                      {offers
-                        .filter(o => o.status === 'active' && !featuredOffers.some(fo => fo.offerId === o.id))
+                      {getAllLoadedOffers()
+                        .filter(o => o.status === 'active' && !featuredOffers.some(fo => fo.offer.id === o.id))
                         .map((offer) => (
                           <div
                             key={offer.id}
