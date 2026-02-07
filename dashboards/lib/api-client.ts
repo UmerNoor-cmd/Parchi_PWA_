@@ -642,10 +642,10 @@ export interface OfferAnalytics {
 /**
  * Update student status (active/inactive)
  */
-export const updateStudentStatus = async (id: string, isActive: boolean): Promise<Student> => {
+export const updateStudentStatus = async (id: string, isActive: boolean, reason?: string): Promise<Student> => {
   const response = await apiRequest(`/admin/students/${id}/status`, {
     method: 'PUT',
-    body: JSON.stringify({ isActive }),
+    body: JSON.stringify({ isActive, reason }),
   });
   return response.data;
 };

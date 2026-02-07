@@ -275,13 +275,14 @@ export function useUpdateStudentStatus() {
 
   const updateStatus = useCallback(async (
     id: string,
-    isActive: boolean
+    isActive: boolean,
+    reason?: string
   ): Promise<Student | null> => {
     try {
       setLoading(true)
       setError(null)
 
-      const result = await updateStudentStatus(id, isActive)
+      const result = await updateStudentStatus(id, isActive, reason)
       return result
     } catch (err) {
       console.error('Error updating student status:', err)

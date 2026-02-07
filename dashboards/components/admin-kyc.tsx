@@ -34,6 +34,10 @@ export function AdminKYC() {
   const [instituteQuery, setInstituteQuery] = useState("")
   const [debouncedSearch, setDebouncedSearch] = useState("")
   const [debouncedInstitute, setDebouncedInstitute] = useState("")
+  // New state for deactivation
+  const [isDeactivateDialogOpen, setIsDeactivateDialogOpen] = useState(false)
+  const [deactivationReason, setDeactivationReason] = useState("")
+  const [studentToDeactivate, setStudentToDeactivate] = useState<Student | null>(null)
   const { toast } = useToast()
 
   const { students: pendingStudents, loading: pendingLoading, error: pendingError, pagination: pendingPagination, refetch: refetchPending } = usePendingStudents(pendingPage, 12)
@@ -134,19 +138,47 @@ export function AdminKYC() {
   }
 
   const handleToggleStatus = async (student: Student) => {
-    const newStatus = !student.isActive
-    const result = await updateStatus(student.id, newStatus)
+    // If activating, just call update
+    if (!student.isActive) {
+      const result = await updateStatus(student.id, true)
+      if (result) {
+        toast({
+          title: "Success",
+          description: "Student activated successfully",
+        })
+        refetchAll()
+      } else {
+        toast({
+          title: "Error",
+          description: updateStatusError || "Failed to activate student",
+          variant: "destructive",
+        })
+      }
+    } else {
+      // If deactivating, open dialog
+      setStudentToDeactivate(student)
+      setIsDeactivateDialogOpen(true)
+    }
+  }
+
+  const handleConfirmDeactivate = async () => {
+    if (!studentToDeactivate) return
+
+    const result = await updateStatus(studentToDeactivate.id, false, deactivationReason)
 
     if (result) {
       toast({
         title: "Success",
-        description: `Student ${newStatus ? 'activated' : 'deactivated'} successfully`,
+        description: "Student deactivated successfully",
       })
+      setIsDeactivateDialogOpen(false)
+      setStudentToDeactivate(null)
+      setDeactivationReason("")
       refetchAll()
     } else {
       toast({
         title: "Error",
-        description: updateStatusError || `Failed to ${newStatus ? 'activate' : 'deactivate'} student`,
+        description: updateStatusError || "Failed to deactivate student",
         variant: "destructive",
       })
     }
@@ -883,6 +915,71 @@ export function AdminKYC() {
               </Button>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+      {/* Deactivation Dialog */}
+      <Dialog open={isDeactivateDialogOpen} onOpenChange={(open) => {
+        setIsDeactivateDialogOpen(open)
+        if (!open) {
+          setStudentToDeactivate(null)
+          setDeactivationReason("")
+        }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Deactivate Student Account</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to deactivate {studentToDeactivate?.firstName} {studentToDeactivate?.lastName}?
+              They will not be able to log in until reactivated.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="deactivation-reason">Reason for Deactivation</Label>
+              <Textarea
+                id="deactivation-reason"
+                placeholder="e.g., Suspicious activity, Violation of terms..."
+                value={deactivationReason}
+                onChange={(e) => setDeactivationReason(e.target.value)}
+                maxLength={500}
+                rows={4}
+                className="resize-none"
+              />
+              <p className="text-xs text-muted-foreground">
+                {deactivationReason.length}/500 characters
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsDeactivateDialogOpen(false)
+                setStudentToDeactivate(null)
+                setDeactivationReason("")
+              }}
+              disabled={updateStatusLoading}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmDeactivate}
+              disabled={updateStatusLoading || !deactivationReason.trim()}
+            >
+              {updateStatusLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deactivating...
+                </>
+              ) : (
+                <>
+                  <X className="mr-2 h-4 w-4" />
+                  Confirm Deactivation
+                </>
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
