@@ -15,7 +15,7 @@ import { Check, X, Search, Eye, MoreHorizontal, Loader2, AlertCircle, RefreshCw,
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
 import { useToast } from "@/hooks/use-toast"
-import { usePendingStudents, useAllStudents, useStudentDetail, useApproveRejectStudent } from "@/hooks/use-kyc"
+import { usePendingStudents, useAllStudents, useStudentDetail, useApproveRejectStudent, useUpdateStudentStatus } from "@/hooks/use-kyc"
 import type { Student } from "@/lib/api-client"
 
 import { AdminInstitutesDialog } from "./admin-institutes-dialog"
@@ -63,6 +63,7 @@ export function AdminKYC() {
   const { students: allStudents, loading: allLoading, error: allError, pagination: allPagination, refetch: refetchAll } = useAllStudents(allStudentsFilters)
   const { student: studentDetail, loading: detailLoading, error: detailError, refetch: refetchDetail } = useStudentDetail(selectedStudentId)
   const { approveReject, loading: approveRejectLoading, error: approveRejectError } = useApproveRejectStudent()
+  const { updateStatus, loading: updateStatusLoading, error: updateStatusError } = useUpdateStudentStatus()
 
   // Reset page when status filter changes
   useEffect(() => {
@@ -127,6 +128,25 @@ export function AdminKYC() {
       toast({
         title: "Error",
         description: approveRejectError || "Failed to reject student",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleToggleStatus = async (student: Student) => {
+    const newStatus = !student.isActive
+    const result = await updateStatus(student.id, newStatus)
+
+    if (result) {
+      toast({
+        title: "Success",
+        description: `Student ${newStatus ? 'activated' : 'deactivated'} successfully`,
+      })
+      refetchAll()
+    } else {
+      toast({
+        title: "Error",
+        description: updateStatusError || `Failed to ${newStatus ? 'activate' : 'deactivate'} student`,
         variant: "destructive",
       })
     }
@@ -444,6 +464,9 @@ export function AdminKYC() {
                               <Badge variant={getStatusVariant(student.verificationStatus)}>
                                 {getStatusText(student.verificationStatus)}
                               </Badge>
+                              {!student.isActive && student.verificationStatus === 'approved' && (
+                                <Badge variant="secondary" className="ml-2">Inactive</Badge>
+                              )}
                             </TableCell>
                             <TableCell className="text-right">
                               <DropdownMenu>
@@ -458,6 +481,16 @@ export function AdminKYC() {
                                   <DropdownMenuItem onClick={() => handleReview(student.id)}>
                                     <Eye className="mr-2 h-4 w-4" /> View Details
                                   </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  {student.isActive ? (
+                                    <DropdownMenuItem onClick={() => handleToggleStatus(student)} className="text-red-600">
+                                      <X className="mr-2 h-4 w-4" /> Deactivate Account
+                                    </DropdownMenuItem>
+                                  ) : (
+                                    <DropdownMenuItem onClick={() => handleToggleStatus(student)} className="text-green-600">
+                                      <Check className="mr-2 h-4 w-4" /> Activate Account
+                                    </DropdownMenuItem>
+                                  )}
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             </TableCell>

@@ -639,6 +639,17 @@ export interface OfferAnalytics {
   }[];
 }
 
+/**
+ * Update student status (active/inactive)
+ */
+export const updateStudentStatus = async (id: string, isActive: boolean): Promise<Student> => {
+  const response = await apiRequest(`/admin/students/${id}/status`, {
+    method: 'PUT',
+    body: JSON.stringify({ isActive }),
+  });
+  return response.data;
+};
+
 // Corporate Offers API Functions
 
 /**
@@ -779,6 +790,7 @@ export interface Student {
   updatedAt: string | null;
   cnic?: string;
   dateOfBirth?: string | null;
+  isActive: boolean;
   kyc?: StudentKYC | null;
 }
 

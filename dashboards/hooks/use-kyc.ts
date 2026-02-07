@@ -6,6 +6,7 @@ import {
   getAllStudents,
   getStudentDetailsForReview,
   approveRejectStudent,
+  updateStudentStatus,
   type Student,
   type StudentDetail,
   type StudentsFilter,
@@ -72,10 +73,10 @@ export function usePendingStudents(
       setPagination(paginationData)
     } catch (err) {
       console.error('Error fetching pending students:', err)
-      
+
       if (err && typeof err === 'object' && 'statusCode' in err) {
         const apiError = err as ApiError
-        
+
         if (apiError.statusCode === 401) {
           setError('Unauthorized - Please login again')
         } else if (apiError.statusCode === 403) {
@@ -134,10 +135,10 @@ export function useAllStudents(filters?: StudentsFilter): UseAllStudentsResult {
       setPagination(paginationData)
     } catch (err) {
       console.error('Error fetching students:', err)
-      
+
       if (err && typeof err === 'object' && 'statusCode' in err) {
         const apiError = err as ApiError
-        
+
         if (apiError.statusCode === 401) {
           setError('Unauthorized - Please login again')
         } else if (apiError.statusCode === 403) {
@@ -188,10 +189,10 @@ export function useStudentDetail(id: string | null): UseStudentDetailResult {
       setStudent(data)
     } catch (err) {
       console.error('Error fetching student details:', err)
-      
+
       if (err && typeof err === 'object' && 'statusCode' in err) {
         const apiError = err as ApiError
-        
+
         if (apiError.statusCode === 401) {
           setError('Unauthorized - Please login again')
         } else if (apiError.statusCode === 403) {
@@ -238,10 +239,10 @@ export function useApproveRejectStudent() {
       return result
     } catch (err) {
       console.error('Error approving/rejecting student:', err)
-      
+
       if (err && typeof err === 'object' && 'statusCode' in err) {
         const apiError = err as ApiError
-        
+
         if (apiError.statusCode === 401) {
           setError('Unauthorized - Please login again')
         } else if (apiError.statusCode === 403) {
@@ -263,6 +264,52 @@ export function useApproveRejectStudent() {
 
   return {
     approveReject,
+    loading,
+    error,
+  }
+}
+
+export function useUpdateStudentStatus() {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const updateStatus = useCallback(async (
+    id: string,
+    isActive: boolean
+  ): Promise<Student | null> => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      const result = await updateStudentStatus(id, isActive)
+      return result
+    } catch (err) {
+      console.error('Error updating student status:', err)
+
+      if (err && typeof err === 'object' && 'statusCode' in err) {
+        const apiError = err as ApiError
+
+        if (apiError.statusCode === 401) {
+          setError('Unauthorized - Please login again')
+        } else if (apiError.statusCode === 403) {
+          setError('Access forbidden - Admin access required')
+        } else {
+          const errorMessage = Array.isArray(apiError.message)
+            ? apiError.message.join(', ')
+            : apiError.message || 'Failed to update student status'
+          setError(errorMessage)
+        }
+      } else {
+        setError(err instanceof Error ? err.message : 'An error occurred while updating student status')
+      }
+      return null
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  return {
+    updateStatus,
     loading,
     error,
   }
