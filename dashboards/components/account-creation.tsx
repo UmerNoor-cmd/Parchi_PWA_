@@ -57,37 +57,37 @@ export function AccountCreation({ role = 'admin', corporateId, emailPrefix }: Ac
   // Fetch real corporate accounts from API
   const { merchants: corporateAccounts, loading: merchantsLoading, error: merchantsError } = useMerchants()
 
+  // Helper to generate slug from business name
+  const generateSlug = (businessName: string) => {
+    const slug = businessName
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+    return slug ? `${slug}-` : ""
+  }
+
   // Sync corporateId with form state when it becomes available
   useEffect(() => {
     if (role === 'corporate' && corporateId) {
+      // If we have access to corporate details (e.g. passed in props or fetched), we could auto-fill here.
+      // However, 'corporateId' is just an ID. If 'corporateAccounts' has it, we can use it.
+      const corporate = corporateAccounts.find(c => c.id === corporateId)
+      const initialSlug = corporate ? generateSlug(corporate.businessName) : ""
+
       setBranchData(prev => ({
         ...prev,
-        linkedCorporate: corporateId
+        linkedCorporate: corporateId,
+        emailPrefix: prev.emailPrefix || initialSlug // Only set if empty
       }))
     }
-  }, [role, corporateId])
+  }, [role, corporateId, corporateAccounts])
 
   if (merchantsError && role === 'admin') {
     console.error("Failed to fetch merchants:", merchantsError)
   }
 
-  const getCorporateSlug = () => {
-    if (emailPrefix) {
-      return `${emailPrefix}-`
-    }
 
-    const selectedId = role === 'corporate' && corporateId ? corporateId : branchData.linkedCorporate
-    const corporate = corporateAccounts.find(c => c.id === selectedId)
-    if (corporate) {
-      const slug = corporate.businessName
-        .toLowerCase()
-        .trim()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '')
-      return slug ? `${slug}-` : ""
-    }
-    return ""
-  }
 
   const generatePassword = (type: 'corporate' | 'branch') => {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*"
@@ -234,8 +234,7 @@ export function AccountCreation({ role = 'admin', corporateId, emailPrefix }: Ac
         return
       }
 
-      const corporateSlug = getCorporateSlug()
-      const email = `${corporateSlug}${branchData.emailPrefix}@parchipakistan.com`
+      const email = `${branchData.emailPrefix}@parchipakistan.com`
 
       const requestData = {
         name: branchData.name,
@@ -309,7 +308,15 @@ export function AccountCreation({ role = 'admin', corporateId, emailPrefix }: Ac
                 <Label htmlFor="branch-corporate">Linked Corporate Account</Label>
                 <Select
                   value={branchData.linkedCorporate}
-                  onValueChange={(value) => setBranchData(prev => ({ ...prev, linkedCorporate: value }))}
+                  onValueChange={(value) => {
+                    const corporate = corporateAccounts.find(c => c.id === value)
+                    const slug = corporate ? generateSlug(corporate.businessName) : ""
+                    setBranchData(prev => ({
+                      ...prev,
+                      linkedCorporate: value,
+                      emailPrefix: slug
+                    }))
+                  }}
                   disabled={merchantsLoading || corporateAccounts.length === 0}
                 >
                   <SelectTrigger>
@@ -346,13 +353,10 @@ export function AccountCreation({ role = 'admin', corporateId, emailPrefix }: Ac
             <div className="space-y-2">
               <Label htmlFor="branch-email">Email Address</Label>
               <div className="flex items-center">
-                <div className="bg-muted px-3 py-2 border border-r-0 rounded-l-md text-sm text-muted-foreground whitespace-nowrap">
-                  {getCorporateSlug()}
-                </div>
                 <Input
                   id="branch-email"
-                  placeholder="downtown"
-                  className="rounded-none border-x-0 flex-1 min-w-0"
+                  placeholder="yellow-taxi-pizza-downtown" // Example showing full format
+                  className="rounded-r-none border-r-0"
                   value={branchData.emailPrefix}
                   onChange={(e) => setBranchData(prev => ({ ...prev, emailPrefix: e.target.value }))}
                   required
