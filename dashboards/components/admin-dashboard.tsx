@@ -241,16 +241,9 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     }
   }
 
-  // Fetch on mount and set up auto-refresh
+  // Fetch on mount
   useEffect(() => {
     fetchStats()
-
-    // Auto-refresh every 60 seconds
-    const interval = setInterval(() => {
-      fetchStats()
-    }, 60000)
-
-    return () => clearInterval(interval)
   }, [])
 
   return (
@@ -515,7 +508,7 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           )}
 
           {activeTab === "account-creation" && <AccountCreation />}
-          
+
           {activeTab === "notifications" && <AdminNotifications />}
         </div>
       </main>
