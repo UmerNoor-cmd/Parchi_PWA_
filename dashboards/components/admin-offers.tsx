@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
-import { Plus, MoreHorizontal, Calendar, Loader2, Store, Pencil, Settings, Upload, ChevronDown, ChevronUp, X, GripVertical, Check } from "lucide-react"
+import { Plus, MoreHorizontal, Calendar, Loader2, Store, Pencil, Settings, Upload, ChevronDown, ChevronUp, X, GripVertical, Check, ChevronsUpDown } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Textarea } from "@/components/ui/textarea"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -27,6 +27,21 @@ import {
 } from "@/lib/api-client"
 import { SupabaseStorageService } from "@/lib/storage"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+
 
 interface BranchWithAssignment {
   id: string
@@ -57,6 +72,7 @@ export function AdminOffers() {
 
   // UI State
   const [isCreateOpen, setIsCreateOpen] = useState(false)
+  const [openMerchantSelect, setOpenMerchantSelect] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [editingOffer, setEditingOffer] = useState<Offer | null>(null)
   const [isImageUploading, setIsImageUploading] = useState(false)
@@ -981,20 +997,51 @@ export function AdminOffers() {
             {/* Merchant Selection */}
             <div className="space-y-2">
               <Label>Merchant *</Label>
-              <Select
-                value={formData.merchantId}
-                onValueChange={(val) => setFormData({ ...formData, merchantId: val })}
-                disabled={!!editingOffer}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select merchant" />
-                </SelectTrigger>
-                <SelectContent>
-                  {merchants.map(m => (
-                    <SelectItem key={m.id} value={m.id}>{m.businessName}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={openMerchantSelect} onOpenChange={setOpenMerchantSelect}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={openMerchantSelect}
+                    className="w-full justify-between"
+                    disabled={!!editingOffer}
+                  >
+                    {formData.merchantId
+                      ? merchants.find((merchant) => merchant.id === formData.merchantId)?.businessName
+                      : "Select merchant..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[400px] p-0">
+                  <Command>
+                    <CommandInput placeholder="Search merchant..." />
+                    <CommandList>
+                      <CommandEmpty>No merchant found.</CommandEmpty>
+                      {/* Check if merchants array is empty handled by CommandEmpty, but also good to have a group */}
+                      <CommandGroup heading="Merchants">
+                        {merchants.map((merchant) => (
+                          <CommandItem
+                            key={merchant.id}
+                            value={merchant.businessName}
+                            onSelect={() => {
+                              setFormData({ ...formData, merchantId: merchant.id })
+                              setOpenMerchantSelect(false)
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                formData.merchantId === merchant.id ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {merchant.businessName}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
             {/* Basic Info */}
