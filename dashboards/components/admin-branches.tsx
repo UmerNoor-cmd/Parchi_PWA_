@@ -7,7 +7,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, MoreHorizontal, Search, CheckCircle, XCircle, Edit, Key, AlertTriangle } from "lucide-react"
+import { Trash2, Plus, Search, Building2, MoreHorizontal, Pencil, Store, AlertTriangle, Loader2, CheckCircle, XCircle, Edit, Key } from "lucide-react"
+import { TestMerchantAlert } from "./test-merchant-alert"
+import { toast } from "sonner"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast"
@@ -243,7 +245,12 @@ export function AdminBranches() {
                   ) : (
                     filteredBranches.map((branch) => (
                       <TableRow key={branch.id}>
-                        <TableCell className="font-medium">{branch.merchant?.business_name || 'N/A'}</TableCell>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2">
+                            {branch.merchant?.business_name || 'N/A'}
+                            <TestMerchantAlert merchantName={branch.merchant?.business_name} />
+                          </div>
+                        </TableCell>
                         <TableCell>{branch.branch_name}</TableCell>
                         <TableCell>{branch.city}</TableCell>
                         <TableCell>{branch.contact_phone}</TableCell>
@@ -305,7 +312,10 @@ export function AdminBranches() {
                   <div key={branch.id} className="p-4 space-y-3">
                     <div className="flex justify-between items-start">
                       <div>
-                        <div className="font-medium text-base">{branch.merchant?.business_name || 'N/A'}</div>
+                        <div className="font-medium text-base flex items-center gap-2">
+                          {branch.merchant?.business_name || 'N/A'}
+                          <TestMerchantAlert merchantName={branch.merchant?.business_name} />
+                        </div>
                         <div className="text-sm text-muted-foreground">{branch.branch_name}</div>
                       </div>
                       <DropdownMenu>
@@ -366,6 +376,14 @@ export function AdminBranches() {
             <DialogDescription>Update branch information.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
+            {(editingBranch?.merchant?.business_name?.toLowerCase() === 'test merchant' || editingBranch?.merchant?.business_name?.toLowerCase() === 'tester merchant') && (
+              <div className="flex items-center gap-4 rounded-md bg-destructive/10 p-4 border border-destructive/20 mb-4">
+                <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
+                <div className="text-sm text-destructive font-medium">
+                  This branch belongs to a Test Merchant. It is not visible to students.
+                </div>
+              </div>
+            )}
             <div className="space-y-2">
               <Label>Branch Name</Label>
               <Input

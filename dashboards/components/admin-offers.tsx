@@ -12,7 +12,8 @@ import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Plus, MoreHorizontal, Calendar, Loader2, Store, Pencil, Settings, Upload, ChevronDown, ChevronUp, X, GripVertical, Check, ChevronsUpDown, Search, Filter, Eye } from "lucide-react"
+import { Plus, MoreHorizontal, Calendar, Loader2, Store, Pencil, Settings, Upload, ChevronDown, ChevronUp, X, GripVertical, Check, ChevronsUpDown, Search, Filter, Eye, Trash2, Building2, CheckCircle, XCircle, AlertCircle, EyeOff, FileText } from "lucide-react"
+import { TestMerchantAlert } from "./test-merchant-alert"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Textarea } from "@/components/ui/textarea"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -585,7 +586,13 @@ export function AdminOffers() {
                             <div>Until: {new Date(offer.validUntil).toLocaleDateString()}</div>
                           </div>
                         </TableCell>
-                        <TableCell>{getStatusBadge(offer.status)}</TableCell>
+                        <TableCell>
+                          <div className="flex flex-col gap-1">
+                            {getStatusBadge(offer.status)}
+                            { /* @ts-ignore */}
+                            <TestMerchantAlert merchantName={offer.merchant?.businessName || offer.merchant?.business_name} />
+                          </div>
+                        </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
                             {offer.status === 'pending_approval' && (
@@ -689,7 +696,10 @@ export function AdminOffers() {
               <CardHeader>
                 <div className="flex justify-between items-center">
                   <div>
-                    <CardTitle className="text-xl">{merchant.businessName}</CardTitle>
+                    <CardTitle className="text-xl flex items-center gap-2">
+                      {merchant.businessName}
+                      <TestMerchantAlert merchantName={merchant.businessName} />
+                    </CardTitle>
                     <CardDescription>{merchant.category || 'Uncategorized'}</CardDescription>
                   </div>
                   <Button variant="ghost" size="sm" onClick={() => toggleMerchant(merchant.id)}>

@@ -10,7 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Building2, Store, MoreHorizontal, Search, Loader2, AlertCircle, RefreshCw, Edit, Upload, X, Image as ImageIcon, GripVertical, Key } from "lucide-react"
+import { Trash2, Plus, Search, Building2, MoreHorizontal, Pencil, CheckCircle, XCircle, AlertCircle, Eye, EyeOff, Loader2, RefreshCw, Edit, Upload, X, Image as ImageIcon, GripVertical, Key } from "lucide-react"
+import { TestMerchantAlert } from "./test-merchant-alert"
+import { toast } from "sonner"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useMerchants } from "@/hooks/use-merchants"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -507,7 +509,10 @@ export function AdminMerchants() {
                           <div className="flex items-center gap-2">
                             <Building2 className="h-4 w-4 text-blue-500" />
                             <div>
-                              <div>{merchant.businessName}</div>
+                              <div className="flex items-center gap-2">
+                                {merchant.businessName}
+                                <TestMerchantAlert merchantName={merchant.businessName} />
+                              </div>
                               {merchant.businessRegistrationNumber && (
                                 <div className="text-xs text-muted-foreground">
                                   Reg: {merchant.businessRegistrationNumber}
@@ -577,7 +582,10 @@ export function AdminMerchants() {
                       <div className="flex items-center gap-2">
                         <Building2 className="h-5 w-5 text-blue-500 flex-shrink-0" />
                         <div>
-                          <div className="font-medium">{merchant.businessName}</div>
+                          <div className="font-medium flex items-center gap-2">
+                            {merchant.businessName}
+                            <TestMerchantAlert merchantName={merchant.businessName} />
+                          </div>
                           <div className="text-xs text-muted-foreground">{merchant.category || 'N/A'} • Fee: PKR {merchant.redemptionFee ?? 0}</div>
                         </div>
                       </div>
@@ -638,6 +646,15 @@ export function AdminMerchants() {
             <DialogDescription>Update corporate merchant information.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
+            {(editingMerchant?.businessName.toLowerCase() === 'test merchant' || editingMerchant?.businessName.toLowerCase() === 'tester merchant') && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Test Account Warning</AlertTitle>
+                <AlertDescription>
+                  This is a test merchant account. It is strictly for testing purposes and is NOT visible to students.
+                </AlertDescription>
+              </Alert>
+            )}
             <div className="space-y-2">
               <Label>Business Name</Label>
               <Input

@@ -34,6 +34,7 @@ import {
 import { Spinner } from "@/components/ui/spinner"
 import { addDays } from "date-fns"
 import { DASHBOARD_COLORS } from "@/lib/colors"
+import { TestMerchantAlert } from "./test-merchant-alert"
 
 export function AdminFinancials() {
     const [dateRange, setDateRange] = useState<DateRange | undefined>({
@@ -133,7 +134,7 @@ export function AdminFinancials() {
                                 {formatCurrency(data.grandTotalReceivables)}
                             </div>
                             <p className="text-xs text-muted-foreground mt-1">
-                                From {data.merchants.length} Corporate Partners
+                                From {data.merchants.length - 1} Corporate Partners (Excluding Tester Account)
                             </p>
                         </CardContent>
                     </Card>
@@ -163,6 +164,7 @@ export function AdminFinancials() {
                                             )}
                                             <Building2 className="h-4 w-4 text-blue-500" />
                                             {merchant.name}
+                                            <TestMerchantAlert merchantName={merchant.name} />
                                         </div>
                                         <div className="col-span-3 md:col-span-2 text-right text-sm">
                                             {merchant.totalRedemptions}
