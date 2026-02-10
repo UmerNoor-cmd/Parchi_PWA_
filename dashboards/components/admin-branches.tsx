@@ -219,8 +219,8 @@ export function AdminBranches() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>Merchant Name</TableHead>
                     <TableHead>Branch Name</TableHead>
-                    <TableHead>Corporate Merchant</TableHead>
                     <TableHead>City</TableHead>
                     <TableHead>Contact</TableHead>
                     <TableHead>Status</TableHead>
@@ -243,8 +243,8 @@ export function AdminBranches() {
                   ) : (
                     filteredBranches.map((branch) => (
                       <TableRow key={branch.id}>
-                        <TableCell className="font-medium">{branch.branch_name}</TableCell>
-                        <TableCell>{branch.merchant?.business_name || 'N/A'}</TableCell>
+                        <TableCell className="font-medium">{branch.merchant?.business_name || 'N/A'}</TableCell>
+                        <TableCell>{branch.branch_name}</TableCell>
                         <TableCell>{branch.city}</TableCell>
                         <TableCell>{branch.contact_phone}</TableCell>
                         <TableCell>
@@ -305,8 +305,8 @@ export function AdminBranches() {
                   <div key={branch.id} className="p-4 space-y-3">
                     <div className="flex justify-between items-start">
                       <div>
-                        <div className="font-medium text-base">{branch.branch_name}</div>
-                        <div className="text-sm text-muted-foreground">{branch.merchant?.business_name || 'N/A'}</div>
+                        <div className="font-medium text-base">{branch.merchant?.business_name || 'N/A'}</div>
+                        <div className="text-sm text-muted-foreground">{branch.branch_name}</div>
                       </div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
