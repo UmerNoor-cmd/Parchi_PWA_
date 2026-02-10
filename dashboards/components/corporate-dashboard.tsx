@@ -19,7 +19,7 @@ import {
   Pie,
   Cell,
 } from "recharts"
-import { TrendingUp, Users, DollarSign, ShoppingCart, Plus, Download, Menu } from "lucide-react"
+import { TrendingUp, Users, DollarSign, ShoppingCart, Plus, Download, Menu, FileText } from "lucide-react"
 import { CorporateSidebar, CorporateSidebarContent } from "./corporate-sidebar"
 import { CorporateOffers } from "./corporate-offers"
 import { CorporateBranches } from "./corporate-branches"
@@ -227,7 +227,33 @@ export function CorporateDashboard({ onLogout }: { onLogout: () => void }) {
       }
     }
     if (activeTab === "overview") fetchPayablesStats()
+    if (activeTab === "overview") fetchPayablesStats()
   }, [activeTab, payablesDateRange])
+
+  // Reports State & Fetching
+  const [reportDate, setReportDate] = useState<Date>(new Date())
+  const [reportData, setReportData] = useState<any>(null)
+  const [isReportLoading, setIsReportLoading] = useState(false)
+
+  useEffect(() => {
+    const fetchReport = async () => {
+      try {
+        setIsReportLoading(true)
+        // Calculate start and end of selected month
+        const startDate = new Date(reportDate.getFullYear(), reportDate.getMonth(), 1)
+        const endDate = new Date(reportDate.getFullYear(), reportDate.getMonth() + 1, 0, 23, 59, 59)
+
+        const response = await getCorporateRedemptionReport(startDate, endDate)
+        setReportData(response.data)
+      } catch (error) {
+        console.error("Failed to fetch report data", error)
+        toast.error("Failed to load report data")
+      } finally {
+        setIsReportLoading(false)
+      }
+    }
+    if (activeTab === "reports") fetchReport()
+  }, [activeTab, reportDate])
 
   return (
     <div className="flex min-h-screen bg-background">
