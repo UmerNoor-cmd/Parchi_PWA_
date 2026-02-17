@@ -223,6 +223,15 @@ export async function getCorporateMerchants(search?: string): Promise<CorporateM
 }
 
 /**
+ * Fetch all active brands for the landing page (Public)
+ */
+export async function getPublicBrands(): Promise<{ data: Partial<CorporateMerchant>[] }> {
+  return apiRequest('/merchants/public/brands', {
+    method: 'GET',
+  });
+}
+
+/**
  * Fetch corporate redemption report
  */
 export async function getCorporateRedemptionReport(
@@ -233,7 +242,7 @@ export async function getCorporateRedemptionReport(
     startDate: startDate.toISOString(),
     endDate: endDate.toISOString(),
   });
-  
+
   return apiRequest(`/merchants/dashboard/reports/redemptions?${queryParams}`, {
     method: 'GET',
   });
@@ -1439,7 +1448,7 @@ export const getAllAdminOffers = async (
     ...(status && { status }),
     ...(search && { search }),
   });
-  
+
   const response = await apiRequest(`/admin/offers?${queryParams}`);
   return response;
 };

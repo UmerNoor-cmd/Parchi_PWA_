@@ -1,23 +1,23 @@
 import Image from "next/image"
 
-// Mock Data for Merchant Showcase (Logos)
-// Ideally these would be real URLs, but we'll use placeholders with text for now
-const merchants = [
-    { name: "Gloria Jean's", logo: "/logos/gloria.png" }, // Placeholder paths, will fallback to text generator if needed
-    { name: "Subway", logo: "/logos/subway.png" },
-    { name: "OPTP", logo: "/logos/optp.png" },
-    { name: "Burger Lab", logo: "/logos/burgerlab.png" },
-    { name: "Pizza Hut", logo: "/logos/pizzahut.png" },
-    { name: "KFC", logo: "/logos/kfc.png" },
-    { name: "Dominos", logo: "/logos/dominos.png" },
-    { name: "Hardee's", logo: "/logos/hardees.png" },
-    { name: "Dunkin", logo: "/logos/dunkin.png" },
-    { name: "California Pizza", logo: "/logos/california.png" },
-    { name: "Chaaye Khana", logo: "/logos/chaaye.png" },
-    { name: "Broadway Pizza", logo: "/logos/broadway.png" },
-]
+// Define the Brand type based on the API response
+interface Brand {
+    id: string;
+    businessName: string;
+    logoPath: string | null;
+    category: string | null;
+    featuredOrder: number | null;
+}
 
-export function MerchantShowcaseSection() {
+interface MerchantShowcaseSectionProps {
+    brands?: Brand[];
+}
+
+export function MerchantShowcaseSection({ brands = [] }: MerchantShowcaseSectionProps) {
+    // API base URL for constructing image paths
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+    const baseUrl = apiBaseUrl.startsWith('http') ? apiBaseUrl : `http://${apiBaseUrl}`;
+
     return (
         <section className="w-full py-6 md:py-12 lg:py-16 bg-white">
             <div className="container px-4 md:px-6 mx-auto">
@@ -33,18 +33,30 @@ export function MerchantShowcaseSection() {
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-8 items-center justify-items-center opacity-80">
-                    {merchants.map((merchant, index) => (
-                        <div key={index} className="flex items-center justify-center w-32 h-20 relative grayscale hover:grayscale-0 transition-all duration-300 transform hover:scale-105">
-                            {/* 
-                  Using a placeholder service for logos since we don't have the actual files accessible 
-                  without digging into the app assets which might be complex to extract right now.
-                  In production, these would be proper <Image> tags with local assets.
-               */}
-                            <div className="w-full h-full flex items-center justify-center bg-gray-50 rounded-lg border border-gray-100 p-2">
-                                <span className="text-sm font-bold text-gray-400 text-center">{merchant.name}</span>
+                    {brands.length > 0 ? (
+                        brands.map((brand) => (
+                            <div key={brand.id} className="flex items-center justify-center w-32 h-20 relative">
+                                <div className="w-full h-full flex items-center justify-center bg-gray-50 rounded-lg border border-gray-100 p-2 overflow-hidden">
+                                    {brand.logoPath ? (
+                                        <div className="relative w-full h-full">
+                                            <Image
+                                                src={brand.logoPath.startsWith('http') ? brand.logoPath : `${baseUrl}/public/${brand.logoPath}`}
+                                                alt={brand.businessName}
+                                                fill
+                                                className="object-contain"
+                                                unoptimized
+                                            />
+                                        </div>
+                                    ) : (
+                                        <span className="text-sm font-bold text-gray-400 text-center">{brand.businessName}</span>
+                                    )}
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        ))
+                    ) : (
+                        // Fallback message if no brands are found
+                        <p className="col-span-full text-muted-foreground">Discover exclusive offers from our partner brands.</p>
+                    )}
                 </div>
             </div>
         </section>
