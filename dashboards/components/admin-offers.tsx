@@ -156,7 +156,8 @@ export function AdminOffers() {
     scheduleType: 'always',
     allowedDays: [0, 1, 2, 3, 4, 5, 6],
     validFrom: new Date().toISOString().split('T')[0],
-    validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    discountValue: 0
   })
 
   // --- OVERSIGHT EFFECTS ---
@@ -324,12 +325,18 @@ export function AdminOffers() {
     if (!file) return
     const title = formData.title || "untitled-offer"
     setIsImageUploading(true)
+    console.log("Starting image upload...", { file: file.name, size: file.size, type: file.type })
     try {
       const url = await SupabaseStorageService.uploadOfferImage(file, title)
+      console.log("Upload successful, URL:", url)
       setFormData(prev => ({ ...prev, imageUrl: url }))
       toast.success("Image uploaded successfully")
     } catch (error) {
-      toast.error("Failed to upload image")
+      console.error("Upload handler caught error:", error)
+      if (error instanceof Error) {
+        console.error("Error details:", error.message, error.stack)
+      }
+      toast.error("Failed to upload image. Check console for details.")
     } finally {
       setIsImageUploading(false)
     }
@@ -483,7 +490,7 @@ export function AdminOffers() {
           <DialogHeader>
             <DialogTitle>{editingOffer ? "Edit Offer" : "Create New Offer"}</DialogTitle>
             <DialogDescription>
-              {editingOffer ? "Modify existing offer details" : "Add a new offer to the platform"}
+              {editingOffer ? "Modify existing offer details" : "Add a new offer to the platform. It will be Active immediately."}
             </DialogDescription>
           </DialogHeader>
           {/* Create Offer Form Content (simplified for rewrite) */}
@@ -492,7 +499,6 @@ export function AdminOffers() {
               {/* Merchant Select */}
               <div className="col-span-2">
                 <Label>Merchant</Label>
-                {/* Simplified Select for brevity */}
                 <Select value={formData.merchantId} onValueChange={(val) => setFormData(p => ({ ...p, merchantId: val }))} disabled={!!editingOffer}>
                   <SelectTrigger><SelectValue placeholder="Select Merchant" /></SelectTrigger>
                   <SelectContent>
@@ -500,12 +506,248 @@ export function AdminOffers() {
                   </SelectContent>
                 </Select>
               </div>
-              {/* Title, Discount, Dates inputs... */}
-              <div className="col-span-2"><Label>Title</Label><Input value={formData.title} onChange={e => setFormData(p => ({ ...p, title: e.target.value }))} /></div>
-              <div><Label>Discount Value</Label><Input type="number" value={formData.discountValue} onChange={e => setFormData(p => ({ ...p, discountValue: Number(e.target.value) }))} /></div>
-              <div><Label>Min Order</Label><Input type="number" value={formData.minOrderValue} onChange={e => setFormData(p => ({ ...p, minOrderValue: Number(e.target.value) }))} /></div>
-              <div><Label>Valid From</Label><Input type="date" value={formData.validFrom} onChange={e => setFormData(p => ({ ...p, validFrom: e.target.value }))} /></div>
-              <div><Label>Valid Until</Label><Input type="date" value={formData.validUntil} onChange={e => setFormData(p => ({ ...p, validUntil: e.target.value }))} /></div>
+
+              {/* Offer Title & Type */}
+              <div className="grid grid-cols-2 gap-4 col-span-2">
+                <div className="space-y-2">
+                  <Label>Offer Title *</Label>
+                  <Input
+                    placeholder="e.g. Student Lunch Deal"
+                    value={formData.title || ''}
+                    onChange={(e) => setFormData(p => ({ ...p, title: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Discount Type</Label>
+                  <Select
+                    value={formData.discountType}
+                    onValueChange={(val: any) => setFormData(p => ({ ...p, discountType: val }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="percentage">Percentage (%)</SelectItem>
+                      <SelectItem value="fixed">Flat Amount (PKR)</SelectItem>
+                      <SelectItem value="item">Free Item</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Conditional Fields for Item or Value */}
+              <div className="grid grid-cols-2 gap-4 col-span-2">
+                {formData.discountType === 'item' ? (
+                  <div className="space-y-2 col-span-2">
+                    <Label>Additional Item *</Label>
+                    <Input
+                      placeholder="e.g. Free Drink, Extra Topping"
+                      value={formData.additionalItem || ''}
+                      onChange={(e) => setFormData(p => ({ ...p, additionalItem: e.target.value }))}
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <div className="space-y-2">
+                      <Label>Discount Value *</Label>
+                      <Input
+                        type="number"
+                        placeholder={formData.discountType === 'percentage' ? "e.g. 20" : "e.g. 500"}
+                        value={formData.discountValue || ''}
+                        onChange={(e) => setFormData(p => ({ ...p, discountValue: Number(e.target.value) }))}
+                      />
+                    </div>
+                    {formData.discountType === 'percentage' && (
+                      <div className="space-y-2">
+                        <Label>Max Discount Amount (Optional)</Label>
+                        <Input
+                          type="number"
+                          placeholder="e.g. 1000"
+                          value={formData.maxDiscountAmount || ''}
+                          onChange={(e) => setFormData(p => ({ ...p, maxDiscountAmount: Number(e.target.value) }))}
+                        />
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {/* Description */}
+              <div className="space-y-2 col-span-2">
+                <Label>Description</Label>
+                <Textarea
+                  placeholder="Describe the offer..."
+                  value={formData.description || ''}
+                  onChange={(e) => setFormData(p => ({ ...p, description: e.target.value }))}
+                />
+              </div>
+
+              {/* Scheduling */}
+              <div className="space-y-4 pt-4 border-t col-span-2">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-primary" />
+                  <h4 className="font-medium text-sm">Offer Availability & Schedule</h4>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Schedule Type</Label>
+                    <Select
+                      value={formData.scheduleType}
+                      onValueChange={(val: any) => setFormData(p => ({ ...p, scheduleType: val }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="always">Always Available</SelectItem>
+                        <SelectItem value="custom">Custom Schedule</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {formData.scheduleType === 'custom' && (
+                  <div className="space-y-4 pt-2 animate-in fade-in slide-in-from-top-1">
+                    <div className="space-y-2">
+                      <Label>Allowed Days</Label>
+                      <div className="flex flex-wrap gap-x-6 gap-y-2 p-3 border rounded-md bg-muted/30">
+                        {DAYS_OF_WEEK.map((day) => (
+                          <div key={day.value} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`day-${day.value}`}
+                              checked={formData.allowedDays?.includes(day.value)}
+                              onCheckedChange={(checked) => {
+                                const current = formData.allowedDays || []
+                                const updated = checked
+                                  ? [...current, day.value]
+                                  : current.filter(d => d !== day.value)
+                                setFormData(p => ({ ...p, allowedDays: updated }))
+                              }}
+                            />
+                            <Label htmlFor={`day-${day.value}`} className="text-sm font-normal cursor-pointer text-muted-foreground hover:text-foreground">
+                              {day.label}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Start Time</Label>
+                        <Input
+                          type="time"
+                          value={formData.startTime || ''}
+                          onChange={(e) => setFormData(p => ({ ...p, startTime: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>End Time</Label>
+                        <Input
+                          type="time"
+                          value={formData.endTime || ''}
+                          onChange={(e) => setFormData(p => ({ ...p, endTime: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Limits */}
+              <div className="grid grid-cols-2 gap-4 pt-4 border-t col-span-2">
+                <div className="space-y-2">
+                  <Label>Min Order Value (Optional)</Label>
+                  <Input
+                    type="number"
+                    placeholder="e.g. 1000"
+                    value={formData.minOrderValue || ''}
+                    onChange={(e) => setFormData(p => ({ ...p, minOrderValue: Number(e.target.value) }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Daily Limit (Optional)</Label>
+                  <Input
+                    type="number"
+                    placeholder="e.g. 50"
+                    value={formData.dailyLimit || ''}
+                    onChange={(e) => setFormData(p => ({ ...p, dailyLimit: Number(e.target.value) }))}
+                  />
+                </div>
+              </div>
+
+              {/* Date Range */}
+              <div className="grid grid-cols-2 gap-4 col-span-2">
+                <div className="space-y-2">
+                  <Label>Valid From *</Label>
+                  <Input
+                    type="date"
+                    value={formData.validFrom}
+                    onChange={(e) => setFormData(p => ({ ...p, validFrom: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Valid Until *</Label>
+                  <Input
+                    type="date"
+                    value={formData.validUntil}
+                    onChange={(e) => setFormData(p => ({ ...p, validUntil: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              {/* Notes and T&C */}
+              <div className="grid grid-cols-2 gap-4 col-span-2">
+                <div className="space-y-2">
+                  <Label>Internal Notes (Optional)</Label>
+                  <Textarea
+                    placeholder="Internal only notes..."
+                    className="h-20"
+                    value={formData.notes || ''}
+                    onChange={(e) => setFormData(p => ({ ...p, notes: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Terms & Conditions (Optional)</Label>
+                  <Textarea
+                    placeholder="Special usage terms..."
+                    className="h-20"
+                    value={formData.termsConditions || ''}
+                    onChange={(e) => setFormData(p => ({ ...p, termsConditions: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              {/* Image Upload */}
+              <div className="space-y-2 pt-4 border-t col-span-2">
+                <Label>Offer Image</Label>
+                <div className="flex items-center gap-4">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    disabled={isImageUploading}
+                    className="hidden"
+                    id="offer-image-upload"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => document.getElementById('offer-image-upload')?.click()}
+                    disabled={isImageUploading}
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    {isImageUploading ? 'Uploading...' : 'Choose File'}
+                  </Button>
+                  {isImageUploading && <Loader2 className="h-4 w-4 animate-spin" />}
+                </div>
+                {formData.imageUrl && (
+                  <div className="relative h-24 w-24 rounded-md overflow-hidden border mt-2">
+                    <img src={formData.imageUrl} alt="Preview" className="object-cover h-full w-full" />
+                  </div>
+                )}
+              </div>
             </div>
           </div>
           <DialogFooter>

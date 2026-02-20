@@ -10,9 +10,9 @@ export class SupabaseStorageService {
   static async uploadOfferImage(file: File, offerTitle: string): Promise<string> {
     try {
       // Create a clean filename from offer title
-      const cleanName = offerTitle.toLowerCase().replace(/[^a-z0-9]/g, '-')
+      const cleanName = offerTitle.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'offer'
       const timestamp = Date.now()
-      const extension = file.name.split('.').pop()
+      const extension = (file.name.split('.').pop() || 'jpg').toLowerCase()
       const filePath = `offers/${cleanName}-${timestamp}.${extension}`
 
       // Upload file to Supabase Storage
