@@ -1016,13 +1016,117 @@ export function AdminOffers() {
 
       {/* Bonus Settings Dialog (Simplified) */}
       <Dialog open={isBonusSettingsOpen} onOpenChange={setIsBonusSettingsOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader><DialogTitle>Bonus Settings - {selectedBranchName}</DialogTitle></DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="flex items-center gap-2"><Label>Min Redemptions</Label><Input type="number" value={bonusSettings.redemptionsRequired} onChange={e => setBonusSettings(p => ({ ...p, redemptionsRequired: Number(e.target.value) }))} /></div>
+            <div className="space-y-2 pt-4 border-t col-span-2">
+              <Label>Bonus Image (Optional)</Label>
+              <div className="flex items-center gap-4">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleBonusImageUpload}
+                  disabled={isImageUploading}
+                  className="hidden"
+                  id={`bonus-image-upload-${selectedBranchId}`}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => document.getElementById(`bonus-image-upload-${selectedBranchId}`)?.click()}
+                  disabled={isImageUploading}
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  {isImageUploading ? 'Uploading...' : 'Choose File'}
+                </Button>
+                {isImageUploading && <Loader2 className="h-4 w-4 animate-spin" />}
+              </div>
+              {bonusSettings.imageUrl && (
+                <div className="relative h-24 w-24 rounded-md overflow-hidden border mt-2">
+                  <img src={bonusSettings.imageUrl} alt="Preview" className="object-cover h-full w-full" />
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Redemptions Required</Label>
+              <Input type="number" value={bonusSettings.redemptionsRequired} onChange={e => setBonusSettings(p => ({ ...p, redemptionsRequired: Number(e.target.value) }))} />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Discount Type</Label>
+              <Select
+                value={bonusSettings.discountType}
+                onValueChange={(val: any) => setBonusSettings(p => ({ ...p, discountType: val }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="percentage">Percentage (%)</SelectItem>
+                  <SelectItem value="fixed">Flat Amount (PKR)</SelectItem>
+                  <SelectItem value="item">Free Item</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {bonusSettings.discountType === 'item' ? (
+              <div className="space-y-2">
+                <Label>Additional Item</Label>
+                <Input
+                  placeholder="e.g. Free Dessert"
+                  value={bonusSettings.additionalItem || ''}
+                  onChange={(e) => setBonusSettings(p => ({ ...p, additionalItem: e.target.value }))}
+                />
+              </div>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <Label>Discount Value</Label>
+                  <Input
+                    type="number"
+                    value={bonusSettings.discountValue || ''}
+                    onChange={(e) => setBonusSettings(p => ({ ...p, discountValue: Number(e.target.value) }))}
+                  />
+                </div>
+                {bonusSettings.discountType === 'percentage' && (
+                  <div className="space-y-2">
+                    <Label>Max Discount Amount (Optional)</Label>
+                    <Input
+                      type="number"
+                      placeholder="e.g. 1000"
+                      value={bonusSettings.maxDiscountAmount || ''}
+                      onChange={(e) => setBonusSettings(p => ({ ...p, maxDiscountAmount: Number(e.target.value) || null }))}
+                    />
+                  </div>
+                )}
+              </>
+            )}
+
+            <div className="space-y-2">
+              <Label>Validity Days (Optional)</Label>
+              <Input
+                type="number"
+                placeholder="e.g. 30"
+                value={bonusSettings.validityDays || ''}
+                onChange={e => setBonusSettings(p => ({ ...p, validityDays: Number(e.target.value) || null }))}
+              />
+            </div>
+
+            <div className="flex items-center space-x-2 pt-2">
+              <Switch
+                id={`bonus-active-${selectedBranchId}`}
+                checked={bonusSettings.isActive ?? true}
+                onCheckedChange={(checked) => setBonusSettings(p => ({ ...p, isActive: checked }))}
+              />
+              <Label htmlFor={`bonus-active-${selectedBranchId}`}>Active</Label>
+            </div>
+
           </div>
           <DialogFooter>
-            <Button onClick={handleSaveBonusSettings}>Save Settings</Button>
+            <Button onClick={handleSaveBonusSettings} disabled={isBonusSaving}>
+              {isBonusSaving ? "Saving..." : "Save Settings"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
