@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/accordion"
 import { Mail, Clock, ShieldCheck, HelpCircle, Info } from "lucide-react"
 
+
 export const metadata: Metadata = {
     title: "Support | Parchi",
     description: "Support and FAQs for Parchi Student App. Connect with us for help.",
