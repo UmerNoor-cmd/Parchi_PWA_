@@ -20,6 +20,7 @@ export function Footer() {
                         <h3 className="font-bold text-lg">Company</h3>
                         <ul className="space-y-2 text-sm text-blue-100">
                             <li><Link href="#" className="hover:text-white">About Us</Link></li>
+                            <li><Link href="/support" className="hover:text-white">Support</Link></li>
                             <li><Link href="#" className="hover:text-white">Careers</Link></li>
                             <li><Link href="#" className="hover:text-white">Contact</Link></li>
                         </ul>
