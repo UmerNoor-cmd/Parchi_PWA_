@@ -18,5 +18,7 @@ export default function AdminPage() {
     <ProtectedRoute allowedRoles={['admin']}>
       <AdminDashboard onLogout={handleLogout} />
     </ProtectedRoute>
+    //shuja
+
   )
 }
