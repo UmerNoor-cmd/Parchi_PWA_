@@ -150,6 +150,10 @@ export function AdminOffers() {
   const [isLoadingFeatured, setIsLoadingFeatured] = useState(false)
   const [isSavingFeatured, setIsSavingFeatured] = useState(false)
   const [draggedOfferId, setDraggedOfferId] = useState<string | null>(null)
+  const [featuredSearchQuery, setFeaturedSearchQuery] = useState("")
+  const [featuredSearchResults, setFeaturedSearchResults] = useState<Offer[]>([])
+  const [isFeaturedSearching, setIsFeaturedSearching] = useState(false)
+  const [featuredSearchOpen, setFeaturedSearchOpen] = useState(false)
 
   const [formData, setFormData] = useState<Partial<CreateOfferRequest>>({
     discountType: 'percentage',
@@ -466,6 +470,81 @@ export function AdminOffers() {
     if (!selectedBranchId) return; setIsBonusSaving(true);
     try { await updateBranchBonusSettings(selectedBranchId, bonusSettings); toast.success("Saved"); setIsBonusSettingsOpen(false); }
     catch (e) { toast.error("Save failed"); } finally { setIsBonusSaving(false); }
+  }
+
+  // --- FEATURED OFFERS HANDLERS ---
+
+  const handleOpenFeaturedOffers = async () => {
+    setIsFeaturedOffersOpen(true)
+    setIsLoadingFeatured(true)
+    try {
+      const response = await getFeaturedOffers()
+      const items: Offer[] = response.data ?? []
+      const sorted = [...items].sort((a, b) => (a.featuredOrder ?? 99) - (b.featuredOrder ?? 99))
+      setFeaturedOffersList(sorted.map((o, i) => ({ offer: o, order: i + 1 })))
+    } catch (e) {
+      toast.error("Failed to load featured offers")
+    } finally {
+      setIsLoadingFeatured(false)
+    }
+  }
+
+  const handleFeaturedSearch = async (query: string) => {
+    setFeaturedSearchQuery(query)
+    if (!query.trim()) { setFeaturedSearchResults([]); return }
+    setIsFeaturedSearching(true)
+    try {
+      const res = await getAllAdminOffers('active', 1, 20, query)
+      setFeaturedSearchResults(res?.data?.items ?? [])
+    } catch (e) {
+      setFeaturedSearchResults([])
+    } finally {
+      setIsFeaturedSearching(false)
+    }
+  }
+
+  const handleAddFeaturedOffer = (offer: Offer) => {
+    if (featuredOffers.find(f => f.offer.id === offer.id)) {
+      toast.error("Offer is already in the featured list")
+      return
+    }
+    setFeaturedOffersList(prev => [...prev, { offer, order: prev.length + 1 }])
+    setFeaturedSearchQuery("")
+    setFeaturedSearchResults([])
+    setFeaturedSearchOpen(false)
+  }
+
+  const handleRemoveFeaturedOffer = (offerId: string) => {
+    setFeaturedOffersList(prev => {
+      const updated = prev.filter(f => f.offer.id !== offerId)
+      return updated.map((f, i) => ({ ...f, order: i + 1 }))
+    })
+  }
+
+  const handleMoveFeaturedOffer = (offerId: string, direction: 'up' | 'down') => {
+    setFeaturedOffersList(prev => {
+      const idx = prev.findIndex(f => f.offer.id === offerId)
+      if (idx === -1) return prev
+      if (direction === 'up' && idx === 0) return prev
+      if (direction === 'down' && idx === prev.length - 1) return prev
+      const next = [...prev]
+      const swapIdx = direction === 'up' ? idx - 1 : idx + 1
+      ;[next[idx], next[swapIdx]] = [next[swapIdx], next[idx]]
+      return next.map((f, i) => ({ ...f, order: i + 1 }))
+    })
+  }
+
+  const handleSaveFeaturedOffers = async () => {
+    setIsSavingFeatured(true)
+    try {
+      await setFeaturedOffers(featuredOffers.map(f => ({ offerId: f.offer.id, order: f.order })))
+      toast.success("Featured offers saved successfully")
+      setIsFeaturedOffersOpen(false)
+    } catch (e) {
+      toast.error("Failed to save featured offers")
+    } finally {
+      setIsSavingFeatured(false)
+    }
   }
 
   // --- RENDER ---
@@ -923,10 +1002,11 @@ export function AdminOffers() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>Featured Offers</CardTitle>
-                  <CardDescription>Manage top featured offers</CardDescription>
+                  <CardDescription>Manage top featured offers shown on the student app home screen</CardDescription>
                 </div>
-                {/* Simplified Feature Offers Button */}
-                <Button variant="outline"><Settings className="mr-2 h-4 w-4" /> Manage Featured</Button>
+                <Button variant="outline" onClick={handleOpenFeaturedOffers}>
+                  <Settings className="mr-2 h-4 w-4" /> Manage Featured
+                </Button>
               </div>
             </CardHeader>
           </Card>
@@ -1015,8 +1095,7 @@ export function AdminOffers() {
       </Dialog>
 
       {/* Bonus Settings Dialog (Simplified) */}
-      <Dialog open={isBonusSettingsOpen} onOpenChange={setIsBonusSettingsOpen}>
-        <DialogContent className="max-w-md">
+      <Dialog open={isBonusSettingsOpen} onOpenChange={setIsBonusSettingsOpen}>        <DialogContent className="max-w-md">
           <DialogHeader><DialogTitle>Bonus Settings - {selectedBranchName}</DialogTitle></DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="space-y-2 pt-4 border-t col-span-2">
@@ -1126,6 +1205,168 @@ export function AdminOffers() {
           <DialogFooter>
             <Button onClick={handleSaveBonusSettings} disabled={isBonusSaving}>
               {isBonusSaving ? "Saving..." : "Save Settings"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Featured Offers Dialog */}
+      <Dialog open={isFeaturedOffersOpen} onOpenChange={setIsFeaturedOffersOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Manage Featured Offers</DialogTitle>
+            <DialogDescription>
+              Add and reorder offers shown in the featured section on the student app home screen.
+            </DialogDescription>
+          </DialogHeader>
+
+          {isLoadingFeatured ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : (
+            <div className="space-y-4 py-2">
+              {/* Search & Add */}
+              <div className="space-y-2">
+                <Label>Add an Offer</Label>
+                <Popover open={featuredSearchOpen} onOpenChange={setFeaturedSearchOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-between">
+                      <span className="text-muted-foreground">Search active offers to add...</span>
+                      <Search className="h-4 w-4 ml-2 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[520px] p-0" align="start">
+                    <Command shouldFilter={false}>
+                      <CommandInput
+                        placeholder="Search by offer title or merchant..."
+                        value={featuredSearchQuery}
+                        onValueChange={handleFeaturedSearch}
+                      />
+                      <CommandList>
+                        {isFeaturedSearching && (
+                          <div className="flex items-center justify-center py-4">
+                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                          </div>
+                        )}
+                        {!isFeaturedSearching && featuredSearchQuery && featuredSearchResults.length === 0 && (
+                          <CommandEmpty>No active offers found.</CommandEmpty>
+                        )}
+                        {!isFeaturedSearching && featuredSearchResults.length > 0 && (
+                          <CommandGroup heading="Active Offers">
+                            {featuredSearchResults.map(offer => (
+                              <CommandItem
+                                key={offer.id}
+                                value={offer.id}
+                                onSelect={() => handleAddFeaturedOffer(offer)}
+                                className="flex items-center gap-3 py-2"
+                              >
+                                {offer.imageUrl ? (
+                                  <img src={offer.imageUrl} alt="" className="h-8 w-8 rounded object-cover shrink-0" />
+                                ) : (
+                                  <div className="h-8 w-8 rounded bg-muted flex items-center justify-center shrink-0">
+                                    <Store className="h-4 w-4 text-muted-foreground" />
+                                  </div>
+                                )}
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-medium text-sm truncate">{offer.title}</div>
+                                  <div className="text-xs text-muted-foreground truncate">
+                                    {offer.merchant?.businessName} · {offer.discountType === 'percentage' ? `${offer.discountValue}% off` : offer.discountType === 'item' ? offer.additionalItem : `Rs. ${offer.discountValue} off`}
+                                  </div>
+                                </div>
+                                {featuredOffers.find(f => f.offer.id === offer.id) && (
+                                  <Badge variant="secondary" className="text-xs shrink-0">Added</Badge>
+                                )}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        )}
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              {/* Current Featured List */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>Featured Offers ({featuredOffers.length})</Label>
+                  {featuredOffers.length > 0 && (
+                    <span className="text-xs text-muted-foreground">Use arrows to reorder</span>
+                  )}
+                </div>
+
+                {featuredOffers.length === 0 ? (
+                  <div className="border rounded-lg p-8 text-center text-muted-foreground text-sm">
+                    No featured offers yet. Search above to add offers.
+                  </div>
+                ) : (
+                  <div className="border rounded-lg divide-y overflow-hidden">
+                    {featuredOffers.map((item, idx) => (
+                      <div key={item.offer.id} className="flex items-center gap-3 p-3 bg-card hover:bg-muted/30 transition-colors">
+                        {/* Order badge */}
+                        <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">
+                          {item.order}
+                        </div>
+
+                        {/* Image */}
+                        {item.offer.imageUrl ? (
+                          <img src={item.offer.imageUrl} alt="" className="h-10 w-10 rounded-md object-cover shrink-0" />
+                        ) : (
+                          <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center shrink-0">
+                            <Store className="h-5 w-5 text-muted-foreground" />
+                          </div>
+                        )}
+
+                        {/* Details */}
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-sm truncate">{item.offer.title}</div>
+                          <div className="text-xs text-muted-foreground truncate">
+                            {item.offer.merchant?.businessName} · {item.offer.discountType === 'percentage' ? `${item.offer.discountValue}% off` : item.offer.discountType === 'item' ? item.offer.additionalItem : `Rs. ${item.offer.discountValue} off`}
+                          </div>
+                        </div>
+
+                        {/* Reorder controls */}
+                        <div className="flex items-center gap-1 shrink-0">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0"
+                            disabled={idx === 0}
+                            onClick={() => handleMoveFeaturedOffer(item.offer.id, 'up')}
+                          >
+                            <ChevronUp className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0"
+                            disabled={idx === featuredOffers.length - 1}
+                            onClick={() => handleMoveFeaturedOffer(item.offer.id, 'down')}
+                          >
+                            <ChevronDown className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0 text-red-500 hover:text-red-600 hover:bg-red-50"
+                            onClick={() => handleRemoveFeaturedOffer(item.offer.id)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsFeaturedOffersOpen(false)}>Cancel</Button>
+            <Button onClick={handleSaveFeaturedOffers} disabled={isSavingFeatured || isLoadingFeatured}>
+              {isSavingFeatured ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saving...</> : "Save Featured Offers"}
             </Button>
           </DialogFooter>
         </DialogContent>
