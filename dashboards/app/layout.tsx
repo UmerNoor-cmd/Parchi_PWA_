@@ -1,13 +1,13 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Montserrat } from "next/font/google"
+import { Manrope } from "next/font/google"
 import localFont from "next/font/local"
 import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 import { AuthProvider } from "@/contexts/AuthContext"
 import { Toaster } from "@/components/ui/toaster"
 
-const montserrat = Montserrat({ subsets: ["latin"], variable: "--font-sans" })
+const manrope = Manrope({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], variable: "--font-sans" })
 
 const hagrid = localFont({
   src: [
@@ -59,7 +59,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${montserrat.variable} ${hagrid.variable} font-sans antialiased`}>
+      <body className={`${manrope.variable} ${hagrid.variable} font-sans antialiased`}>
         <AuthProvider>
           {children}
         </AuthProvider>

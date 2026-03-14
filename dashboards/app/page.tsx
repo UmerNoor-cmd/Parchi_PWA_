@@ -1,3 +1,4 @@
+import { AnimatedIntro } from "@/components/landing/AnimatedIntro"
 import { HeroSection } from "@/components/landing/HeroSection"
 import { HowItWorksSection } from "@/components/landing/HowItWorksSection"
 import { MerchantShowcaseSection } from "@/components/landing/MerchantShowcaseSection"
@@ -19,6 +20,7 @@ export default async function LandingPage() {
 
   return (
     <main className="flex flex-col min-h-screen">
+      <AnimatedIntro />
       <HeroSection />
       <HowItWorksSection />
       <MerchantShowcaseSection brands={brands} />
