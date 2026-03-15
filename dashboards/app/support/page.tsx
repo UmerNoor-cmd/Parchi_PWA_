@@ -7,7 +7,7 @@ import {
     AccordionItem,
     AccordionTrigger,
 } from "@/components/ui/accordion"
-import { Mail, Clock, ShieldCheck, HelpCircle, Info } from "lucide-react"
+import { Mail, Clock, ShieldCheck, HelpCircle, Info, Trash2 } from "lucide-react"
 
 
 export const metadata: Metadata = {
@@ -36,6 +36,10 @@ export default function SupportPage() {
         {
             question: "Is my data shared with brands?",
             answer: "No. We provide brands with anonymous, aggregated insights only. Your personal information is never sold or shared for marketing purposes."
+        },
+        {
+            question: "How do I delete my account?",
+            answer: "You can delete your account directly from the app. Go to Profile → tap 'Delete Account'. You will be asked to confirm before proceeding. This will permanently delete your account and all associated data."
         },
     ]
 
@@ -135,6 +139,16 @@ export default function SupportPage() {
                                 <span className="text-sm font-medium">Privacy Policy</span>
                                 <Info className="w-4 h-4 text-slate-500 group-hover:text-white" />
                             </Link>
+                            <div className="mt-3 border-t border-slate-700 pt-3">
+                                <p className="text-slate-400 text-xs mb-2">Data & Account</p>
+                                <Link
+                                    href="/account-deletion"
+                                    className="flex items-center justify-between p-3 bg-red-950/60 border border-red-800/40 rounded-xl hover:bg-red-900/60 transition-colors group"
+                                >
+                                    <span className="text-sm font-medium text-red-300">Delete My Account</span>
+                                    <Trash2 className="w-4 h-4 text-red-500 group-hover:text-red-300" />
+                                </Link>
+                            </div>
                         </section>
                     </div>
 
