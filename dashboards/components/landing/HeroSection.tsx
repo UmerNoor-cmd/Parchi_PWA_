@@ -78,16 +78,13 @@ export function HeroSection() {
                     {/* Shadow & Glow under phone */}
                     <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-4/5 h-20 bg-primary/20 blur-[60px] rounded-full -z-10" />
                     
-                    {/* Realistic Phone Frame */}
-                    <div className="relative z-10 w-full aspect-[9/19.5] rounded-[3rem] border-[10px] border-slate-900 bg-slate-900 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.5)] overflow-hidden">
-                        {/* Dynamic Island / Notch */}
-                        <div className="absolute top-4 left-1/2 -translate-x-1/2 w-24 h-6 bg-black rounded-full z-20" />
-                        
+                    <div className="relative z-10 w-full">
                         <Image
-                            src="/phone-mockup.png"
+                            src="/phone.png"
                             alt="Parchi App Interface"
-                            fill
-                            className="object-cover"
+                            width={828}
+                            height={1792}
+                            className="w-full h-auto drop-shadow-2xl"
                             priority
                         />
                     </div>
