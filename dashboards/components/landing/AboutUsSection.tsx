@@ -1,60 +1,145 @@
+const STATS = [
+    { num: "50", sup: "k+", label: "Students saving" },
+    { num: "200", sup: "+", label: "Partner restaurants" },
+    { num: "40", sup: "+", label: "Cities nationwide" },
+]
+
+const PILLARS = [
+    {
+        num: "01",
+        title: "Verified Exclusivity",
+        desc: "Parchi stays a sanctuary for students only. Our verification system ensures that — no exceptions.",
+    },
+    {
+        num: "02",
+        title: "National Reach",
+        desc: "From Karachi to Kashmir — one unified network that recognizes your student status everywhere you go.",
+    },
+    {
+        num: "03",
+        title: "Purpose-Driven",
+        desc: "Your student ID should be the most powerful card in your wallet. We built everything around that belief.",
+    },
+]
+
 export function AboutUsSection() {
     return (
-        <section className="w-full py-6 md:py-12 lg:py-16 bg-secondary">
-            <div className="container px-4 md:px-6 mx-auto">
-                <div className="grid gap-10 lg:grid-cols-[1fr_400px] lg:gap-12 xl:grid-cols-[1fr_600px]">
+        <section className="w-full overflow-hidden bg-background">
 
-                    <div className="flex flex-col justify-center space-y-4">
-                        <div className="space-y-2">
-                            <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl font-heading text-primary">
-                                The Student Identity, Reimagined.
-                            </h2>
-                        </div>
-                        <div className="space-y-4 text-muted-foreground md:text-lg">
-                            <p>
-                                Parchi is Pakistan’s first closed-loop ecosystem built exclusively for the student community. We don't just offer deals; we provide the digital infrastructure that connects the country’s most ambitious demographic directly to the nation’s leading brands.
-                            </p>
-                            <p>
-                                In a rapidly evolving economy, students are the primary drivers of growth, yet the gap between corporate giants and the campus lifestyle has always been wide. Parchi acts as the essential bridge. We simplify the exchange, ensuring that brands can reach students with precision, and students can access high-value utilities that were previously out of reach.
-                            </p>
-                        </div>
+            {/* ── BAND 1: Yellow hero ── */}
+            <div className="relative overflow-hidden bg-secondary px-6 pb-14 pt-16 md:px-14 md:pb-16 md:pt-20">
+                {/* Decorative circle */}
+                <div className="pointer-events-none absolute -bottom-20 -right-16 h-72 w-72 rounded-full border-[56px] border-black/[0.05]" />
 
-                        <div className="space-y-4 pt-6">
-                            <h3 className="text-xl font-bold text-primary font-heading">Why We Exist</h3>
-                            <ul className="space-y-3">
-                                <li className="flex gap-3">
-                                    <div className="mt-2 h-2 w-2 rounded-full bg-secondary shrink-0" />
-                                    <div>
-                                        <span className="font-bold text-gray-900">Verified Exclusivity:</span>
-                                        <p className="text-muted-foreground text-sm">Our verification system ensures that Parchi remains a sanctuary for students only.</p>
-                                    </div>
-                                </li>
-                                <li className="flex gap-3">
-                                    <div className="mt-2 h-2 w-2 rounded-full bg-secondary shrink-0" />
-                                    <div>
-                                        <span className="font-bold text-gray-900">National Reach:</span>
-                                        <p className="text-muted-foreground text-sm">From Karachi to Kashmir, we are building a unified network that recognizes and rewards your status as a student.</p>
-                                    </div>
-                                </li>
-                                <li className="flex gap-3">
-                                    <div className="mt-2 h-2 w-2 rounded-full bg-secondary shrink-0" />
-                                    <div>
-                                        <span className="font-bold text-gray-900">A Purpose-Driven Ecosystem:</span>
-                                        <p className="text-muted-foreground text-sm">We believe your student ID should be the most powerful card in your wallet.</p>
-                                    </div>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
+                <p className="mb-5 flex items-center gap-3 font-mono text-[9px] uppercase tracking-[0.22em] text-black/40">
+                    <span className="inline-block h-px w-7 bg-black/30" />
+                    Pakistan's first student ecosystem
+                </p>
 
-                    <div className="flex flex-col justify-center space-y-8 bg-white p-8 rounded-3xl shadow-lg border border-gray-100">
-                        <blockquote className="text-xl font-medium italic text-primary leading-relaxed">
-                            "This is more than an app. This is the new standard for the Pakistani student."
-                        </blockquote>
-                    </div>
+                <h2 className="mb-10 max-w-3xl font-heading text-[clamp(52px,8vw,96px)] font-extrabold leading-[0.92] tracking-[-0.04em] text-black">
+                    Your ID.<br />
+                    Your <span className="text-primary">Edge.</span>
+                </h2>
 
+                <div className="flex flex-wrap items-end justify-between gap-6">
+                    <p className="max-w-lg text-[15px] leading-[1.85] text-black/60">
+                        Parchi is Pakistan's first closed-loop ecosystem built exclusively for students —
+                        connecting the country's most ambitious demographic directly to the nation's leading
+                        brands. Not just deals. Infrastructure.
+                    </p>
+                    <span className="flex-shrink-0 rounded-sm bg-primary px-5 py-3 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-white">
+                        Est. 2024 · Karachi
+                    </span>
                 </div>
             </div>
+
+            {/* ── BAND 2: Midnight Stats ── */}
+            <div className="grid grid-cols-3 divide-x divide-white/5 bg-primary">
+                {STATS.map((s, i) => (
+                    <div key={i} className="flex flex-col items-center px-4 py-10 text-center md:px-14 md:py-16">
+                        <div className="font-heading text-[clamp(24px,5.5vw,62px)] font-extrabold leading-none tracking-[-0.04em] text-secondary">
+                            {s.num}
+                            <sup className="align-super text-[0.4em] text-white">{s.sup}</sup>
+                        </div>
+                        <div className="mx-auto mt-3 max-w-[80px] font-mono text-[9px] uppercase leading-tight tracking-[0.1em] text-white/40 md:max-w-none md:text-[11px]">
+                            {s.label}
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {/* ── BAND 3: Pillars ── */}
+            <div className="grid grid-cols-1 divide-y divide-border border-b border-border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+                {PILLARS.map((p, i) => (
+                    <div
+                        key={i}
+                        className="group relative overflow-hidden px-10 py-11 md:px-14"
+                    >
+                        {/* Hover accent line */}
+                        <div className="absolute left-0 right-0 top-0 h-[3px] origin-left scale-x-0 bg-primary transition-transform duration-300 group-hover:scale-x-100" />
+
+                        <span className="mb-5 block font-mono text-[10px] tracking-[0.14em] text-muted-foreground/50">
+                            {p.num}
+                        </span>
+                        <h3 className="mb-3 font-heading text-[17px] font-extrabold leading-[1.2] tracking-[-0.01em] text-foreground">
+                            {p.title}
+                        </h3>
+                        <p className="text-[13px] leading-[1.85] text-muted-foreground">
+                            {p.desc}
+                        </p>
+                    </div>
+                ))}
+            </div>
+
+            {/* ── BAND 4: Quote + pull stats ── */}
+            <div className="grid min-h-[260px] grid-cols-1 sm:grid-cols-2">
+
+                {/* Left: blue quote */}
+                <div className="flex flex-col justify-between gap-8 bg-primary px-10 py-12 md:px-14">
+                    <div>
+                        <div className="-mb-3 font-serif text-[72px] leading-none text-white/20">"</div>
+                        <p className="font-heading text-[clamp(18px,2.4vw,26px)] font-extrabold italic leading-[1.35] tracking-[-0.01em] text-white">
+                            More than an app.<br />
+                            The <span className="text-secondary">new standard</span><br />
+                            for the Pakistani student.
+                        </p>
+                    </div>
+                    <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-white/40">
+                        — Parchi Mission Statement
+                    </p>
+                </div>
+
+                {/* Right: yellow pull stats */}
+                <div className="flex flex-col justify-center bg-secondary px-8 py-12 md:px-14">
+                    <p className="mb-8 text-center font-mono text-[10px] uppercase tracking-[0.16em] text-black/40 md:text-left">
+                        Why it matters
+                    </p>
+
+                    <div className="grid grid-cols-2 gap-8 md:flex md:flex-col md:gap-7">
+                        <div className="flex flex-col items-center text-center md:items-start md:text-left">
+                            <div className="font-heading text-[clamp(28px,4vw,52px)] font-extrabold leading-none tracking-[-0.04em] text-black">
+                                ₨2<span className="text-primary">M+</span>
+                            </div>
+                            <div className="mt-2 max-w-[110px] text-[11px] leading-tight tracking-[0.02em] text-black/50 md:max-w-none md:text-[12px]">
+                                Saved by students this month alone
+                            </div>
+                        </div>
+
+                        <div className="hidden h-px w-10 bg-black/15 md:block" />
+
+                        <div className="flex flex-col items-center text-center md:items-start md:text-left">
+                            <div className="font-heading text-[clamp(28px,4vw,52px)] font-extrabold leading-none tracking-[-0.04em] text-black">
+                                1 <span className="text-primary">ID</span>
+                            </div>
+                            <div className="mt-2 max-w-[110px] text-[11px] leading-tight tracking-[0.02em] text-black/50 md:max-w-none md:text-[12px]">
+                                That's all it takes to start saving
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
         </section>
     )
 }
