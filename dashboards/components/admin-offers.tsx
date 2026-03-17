@@ -258,6 +258,8 @@ export function AdminOffers() {
         return <Badge className="bg-yellow-500 hover:bg-yellow-600">Pending</Badge>
       case 'rejected':
         return <Badge variant="destructive">Rejected</Badge>
+      case 'expired':
+        return <Badge className="bg-gray-400 hover:bg-gray-500 text-white">Expired</Badge>
       default:
         return <Badge variant="outline">{status}</Badge>
     }
@@ -852,6 +854,7 @@ export function AdminOffers() {
                 <TabsTrigger value="active" className="text-green-600">Accepted</TabsTrigger>
                 <TabsTrigger value="rejected" className="text-red-600">Rejected</TabsTrigger>
                 <TabsTrigger value="inactive">Inactive</TabsTrigger>
+                <TabsTrigger value="expired" className="text-gray-500">Expired</TabsTrigger>
               </TabsList>
             </Tabs>
             <div className="relative w-full sm:w-64">
