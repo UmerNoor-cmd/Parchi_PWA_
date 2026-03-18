@@ -768,8 +768,22 @@ export function CorporateOffers() {
                   {new Date(offer.validUntil).toLocaleDateString()}
                 </div>
                 <div className="flex items-center gap-2 mt-2">
-                  <Badge variant={offer.status === 'active' ? 'default' : offer.status === 'rejected' ? 'destructive' : 'secondary'} className={offer.status === 'pending_approval' ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100' : ''}>
-                    {offer.status === 'pending_approval' ? 'Pending Approval' : offer.status === 'active' ? 'Accepted' : offer.status.charAt(0).toUpperCase() + offer.status.slice(1)}
+                  <Badge
+                    variant={
+                      offer.status === 'active' ? 'default'
+                      : offer.status === 'rejected' ? 'destructive'
+                      : 'secondary'
+                    }
+                    className={
+                      offer.status === 'pending_approval' ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100'
+                      : offer.status === 'expired' ? 'bg-gray-200 text-gray-600 hover:bg-gray-200'
+                      : ''
+                    }
+                  >
+                    {offer.status === 'pending_approval' ? 'Pending Approval'
+                      : offer.status === 'active' ? 'Accepted'
+                      : offer.status === 'expired' ? 'Expired'
+                      : offer.status.charAt(0).toUpperCase() + offer.status.slice(1)}
                   </Badge>
                 </div>
               </div>
