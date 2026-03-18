@@ -62,7 +62,7 @@ function NotificationCompose() {
     title: "",
     content: "",
     linkUrl: "",
-    imageUrl: "",
+    imageUrl: "https://zjghfwnrzazmukykgyhh.supabase.co/storage/v1/object/public/logo/parchi-app-icon.png",
   })
   
   const [isUploading, setIsUploading] = useState(false)
@@ -127,7 +127,7 @@ function NotificationCompose() {
         title: "",
         content: "",
         linkUrl: "",
-        imageUrl: "",
+        imageUrl: "https://zjghfwnrzazmukykgyhh.supabase.co/storage/v1/object/public/logo/parchi-app-icon.png",
       })
     } catch (error) {
       console.error("Failed to send notification:", error)
