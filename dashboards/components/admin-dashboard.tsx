@@ -39,6 +39,7 @@ import { AccountCreation } from "./account-creation"
 import { AdminAuditLogs } from "./admin-audit-logs"
 import { AdminNotifications } from "./admin-notifications"
 import { AdminFinancials } from "./admin-financials"
+import { AdminAccountDeletion } from "./admin-account-deletion"
 import { getAdminDashboardStats, getTopPerformingMerchants, AdminDashboardStats } from "@/lib/api-client"
 import { toast } from "sonner"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -526,6 +527,8 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           {activeTab === "account-creation" && <AccountCreation />}
 
           {activeTab === "notifications" && <AdminNotifications />}
+
+          {activeTab === "account-deletions" && <AdminAccountDeletion />}
         </div>
       </main>
     </div>

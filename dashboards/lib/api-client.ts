@@ -111,6 +111,23 @@ export interface DeletionResponse {
   requestId: string;
 }
 
+export interface AdminDeletionRequest {
+  id: string;
+  identifier: string;
+  reason: string;
+  status: 'pending' | 'approved' | 'rejected';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminDeletionRequestsResponse {
+  data: AdminDeletionRequest[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 /**
  * Submit an account deletion request
  */
@@ -120,6 +137,41 @@ export async function createDeletionRequest(
   return apiRequest('/account-deletion', {
     method: 'POST',
     body: JSON.stringify(data),
+  });
+}
+
+/**
+ * Admin: Get all account deletion requests
+ */
+export async function getAdminDeletionRequests(
+  page: number = 1,
+  limit: number = 20,
+  status?: string,
+): Promise<AdminDeletionRequestsResponse> {
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+  if (status && status !== 'all') params.set('status', status);
+  return apiRequest(`/account-deletion?${params.toString()}`);
+}
+
+/**
+ * Admin: Approve or reject a deletion request
+ */
+export async function processAdminDeletionRequest(
+  id: string,
+  action: 'approve' | 'reject',
+): Promise<{ message: string; request: AdminDeletionRequest }> {
+  return apiRequest(`/account-deletion/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ action }),
+  });
+}
+
+/**
+ * Admin: Remove a deletion request record
+ */
+export async function deleteAdminDeletionRequest(id: string): Promise<{ message: string }> {
+  return apiRequest(`/account-deletion/${id}`, {
+    method: 'DELETE',
   });
 }
 
