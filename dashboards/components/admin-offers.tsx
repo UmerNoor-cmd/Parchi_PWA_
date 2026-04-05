@@ -946,9 +946,23 @@ export function AdminOffers() {
                                   setFormData({
                                     merchantId: offer.merchantId,
                                     title: offer.title,
+                                    description: offer.description || undefined,
                                     discountType: offer.discountType,
+                                    discountValue: offer.discountValue,
+                                    minOrderValue: offer.minOrderValue || undefined,
+                                    maxDiscountAmount: offer.maxDiscountAmount || undefined,
                                     validFrom: offer.validFrom.split('T')[0],
                                     validUntil: offer.validUntil.split('T')[0],
+                                    dailyLimit: offer.dailyLimit || undefined,
+                                    totalLimit: offer.totalLimit || undefined,
+                                    imageUrl: offer.imageUrl || undefined,
+                                    scheduleType: offer.scheduleType || 'always',
+                                    allowedDays: offer.allowedDays || [0, 1, 2, 3, 4, 5, 6],
+                                    startTime: offer.startTime || undefined,
+                                    endTime: offer.endTime || undefined,
+                                    additionalItem: offer.additionalItem || undefined,
+                                    notes: offer.notes || undefined,
+                                    termsConditions: offer.termsConditions || undefined,
                                   })
                                   setIsCreateOpen(true)
                                 }}>
