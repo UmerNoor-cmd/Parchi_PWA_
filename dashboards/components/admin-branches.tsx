@@ -95,6 +95,23 @@ export function AdminBranches() {
     }
   }
 
+  const handleToggleBranchStatus = async (branch: AdminBranch) => {
+    try {
+      await updateBranch(branch.id, { isActive: !branch.is_active })
+      toast({
+        title: "Success",
+        description: `Branch ${branch.is_active ? "deactivated" : "activated"} successfully`,
+      })
+      fetchBranches(searchQuery)
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update branch status",
+        variant: "destructive",
+      })
+    }
+  }
+
   const openRejectModal = (branch: AdminBranch) => {
     setBranchToReject(branch)
     setIsRejectOpen(true)
@@ -278,11 +295,17 @@ export function AdminBranches() {
                               <DropdownMenuItem onClick={() => openPasswordResetModal(branch)} disabled={!branch.user_id}>
                                 <Key className="mr-2 h-4 w-4 text-blue-600" /> Reset Password
                               </DropdownMenuItem>
-                              {!branch.is_active && (
-                                <DropdownMenuItem onClick={() => handleApprove(branch.id)}>
-                                  <CheckCircle className="mr-2 h-4 w-4 text-green-600" /> Approve
-                                </DropdownMenuItem>
-                              )}
+                              <DropdownMenuItem onClick={() => handleToggleBranchStatus(branch)}>
+                                {branch.is_active ? (
+                                  <>
+                                    <XCircle className="mr-2 h-4 w-4 text-orange-600" /> Deactivate
+                                  </>
+                                ) : (
+                                  <>
+                                    <CheckCircle className="mr-2 h-4 w-4 text-green-600" /> Activate
+                                  </>
+                                )}
+                              </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
                                 className="text-destructive"
@@ -336,11 +359,17 @@ export function AdminBranches() {
                           <DropdownMenuItem onClick={() => openPasswordResetModal(branch)} disabled={!branch.user_id}>
                             <Key className="mr-2 h-4 w-4 text-blue-600" /> Reset Password
                           </DropdownMenuItem>
-                          {!branch.is_active && (
-                            <DropdownMenuItem onClick={() => handleApprove(branch.id)}>
-                              <CheckCircle className="mr-2 h-4 w-4 text-green-600" /> Approve
-                            </DropdownMenuItem>
-                          )}
+                          <DropdownMenuItem onClick={() => handleToggleBranchStatus(branch)}>
+                            {branch.is_active ? (
+                              <>
+                                <XCircle className="mr-2 h-4 w-4 text-orange-600" /> Deactivate
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircle className="mr-2 h-4 w-4 text-green-600" /> Activate
+                              </>
+                            )}
+                          </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             className="text-destructive"
