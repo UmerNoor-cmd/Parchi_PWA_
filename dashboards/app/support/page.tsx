@@ -89,7 +89,7 @@ export default function SupportPage() {
                                 href="mailto:support@parchi.pk"
                                 className="block w-full py-3 px-4 bg-primary text-white text-center rounded-xl font-bold transition-transform active:scale-95 hover:bg-primary/90"
                             >
-                                Email: parchipakistan@gmail.com
+                                Email: info@parchipakistan.com
                             </a>
                             <div className="flex items-center gap-2 mt-4 text-sm text-slate-500">
                                 <Clock className="w-4 h-4" />
