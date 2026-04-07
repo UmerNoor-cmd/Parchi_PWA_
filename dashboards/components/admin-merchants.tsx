@@ -18,6 +18,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { updateCorporateMerchant, toggleCorporateMerchant, deleteCorporateMerchant, adminResetPassword, CorporateMerchant, getBrands, setFeaturedBrands, Brand, FeaturedBrand } from "@/lib/api-client"
 import { SupabaseStorageService } from "@/lib/storage"
 import { useToast } from "@/hooks/use-toast"
+import { MERCHANT_CATEGORIES, getSubcategoriesForCategory } from "@/lib/merchant-categories"
 
 export function AdminMerchants() {
   const [isCreateOpen, setIsCreateOpen] = useState(false)
@@ -45,6 +46,7 @@ export function AdminMerchants() {
     businessRegistrationNumber: "",
     logoPath: "",
     category: "",
+    subCategory: "",
     bannerUrl: "",
     termsAndConditions: "",
     redemptionFee: 0,
@@ -87,6 +89,7 @@ export function AdminMerchants() {
       businessRegistrationNumber: merchant.businessRegistrationNumber || "",
       logoPath: merchant.logoPath || "",
       category: merchant.category || "",
+      subCategory: merchant.subCategory || "",
       bannerUrl: merchant.bannerUrl || "",
       termsAndConditions: merchant.termsAndConditions || "",
       redemptionFee: merchant.redemptionFee || 0,
@@ -166,6 +169,7 @@ export function AdminMerchants() {
         businessRegistrationNumber: editForm.businessRegistrationNumber || null,
         logoPath: editForm.logoPath || null,
         category: editForm.category || null,
+        subCategory: editForm.subCategory || null,
         bannerUrl: editForm.bannerUrl || null,
         termsAndConditions: editForm.termsAndConditions || null,
         redemptionFee: Number(editForm.redemptionFee),
@@ -715,11 +719,46 @@ export function AdminMerchants() {
               </div>
               <div className="space-y-2">
                 <Label>Category</Label>
-                <Input
+                <Select
                   value={editForm.category}
-                  onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
-                  placeholder="e.g., Food & Beverage, Retail"
-                />
+                  onValueChange={(value) =>
+                    setEditForm({
+                      ...editForm,
+                      category: value,
+                      subCategory: "",
+                    })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MERCHANT_CATEGORIES.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Subcategory</Label>
+                <Select
+                  value={editForm.subCategory}
+                  onValueChange={(value) => setEditForm({ ...editForm, subCategory: value })}
+                  disabled={!editForm.category}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={editForm.category ? "Select subcategory" : "Select category first"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getSubcategoriesForCategory(editForm.category).map((subCategory) => (
+                      <SelectItem key={subCategory} value={subCategory}>
+                        {subCategory}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 

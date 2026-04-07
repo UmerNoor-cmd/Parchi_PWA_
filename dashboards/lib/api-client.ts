@@ -17,6 +17,7 @@ export interface CorporateSignupRequest {
   contact: string;
   regNumber?: string;
   category?: string;
+  subCategory?: string;
   email: string;
   logo_path: string;
 }
@@ -31,6 +32,7 @@ export interface CorporateSignupResponse {
     emailPrefix: string;
     contactEmail: string;
     category?: string;
+    subCategory?: string;
     verificationStatus: string;
     createdAt: string;
   };
@@ -52,6 +54,7 @@ export interface CorporateMerchant {
   contactPhone: string;
   logoPath: string | null;
   category: string | null;
+  subCategory: string | null;
   verificationStatus: string | null;
   verifiedAt: string | null;
   isActive: boolean | null;
@@ -380,6 +383,7 @@ export interface UpdateMerchantRequest {
   contactPhone?: string
   logoPath?: string | null
   category?: string | null
+  subCategory?: string | null
   bannerUrl?: string | null
   termsAndConditions?: string | null
   isActive?: boolean

@@ -13,6 +13,7 @@ import { SupabaseStorageService } from "@/lib/storage"
 import { corporateSignup, branchSignup, type ApiError } from "@/lib/api-client"
 import { useToast } from "@/hooks/use-toast"
 import { useMerchants } from "@/hooks/use-merchants"
+import { MERCHANT_CATEGORIES, getSubcategoriesForCategory } from "@/lib/merchant-categories"
 
 interface AccountCreationProps {
   role?: 'admin' | 'corporate'
@@ -34,6 +35,7 @@ export function AccountCreation({ role = 'admin', corporateId, emailPrefix }: Ac
     contact: "",
     regNumber: "",
     category: "",
+    subCategory: "",
     logo: null as File | null,
     logoUrl: ""
   })
@@ -162,6 +164,7 @@ export function AccountCreation({ role = 'admin', corporateId, emailPrefix }: Ac
         logo_path: corporateData.logoUrl,
         ...(corporateData.regNumber && { regNumber: corporateData.regNumber }),
         ...(corporateData.category && { category: corporateData.category }),
+        ...(corporateData.subCategory && { subCategory: corporateData.subCategory }),
       }
 
       const response = await corporateSignup(requestData)
@@ -179,6 +182,7 @@ export function AccountCreation({ role = 'admin', corporateId, emailPrefix }: Ac
         contact: "",
         regNumber: "",
         category: "",
+        subCategory: "",
         logo: null,
         logoUrl: ""
       })
@@ -637,12 +641,47 @@ export function AccountCreation({ role = 'admin', corporateId, emailPrefix }: Ac
 
                   <div className="space-y-2">
                     <Label htmlFor="corp-category">Category</Label>
-                    <Input
-                      id="corp-category"
-                      placeholder="e.g. Retail, Food, Tech"
+                    <Select
                       value={corporateData.category}
-                      onChange={(e) => setCorporateData(prev => ({ ...prev, category: e.target.value }))}
-                    />
+                      onValueChange={(value) =>
+                        setCorporateData(prev => ({
+                          ...prev,
+                          category: value,
+                          subCategory: "",
+                        }))
+                      }
+                    >
+                      <SelectTrigger id="corp-category">
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {MERCHANT_CATEGORIES.map((category) => (
+                          <SelectItem key={category} value={category}>
+                            {category}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="corp-subcategory">Subcategory</Label>
+                    <Select
+                      value={corporateData.subCategory}
+                      onValueChange={(value) => setCorporateData(prev => ({ ...prev, subCategory: value }))}
+                      disabled={!corporateData.category}
+                    >
+                      <SelectTrigger id="corp-subcategory">
+                        <SelectValue placeholder={corporateData.category ? "Select subcategory" : "Select category first"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getSubcategoriesForCategory(corporateData.category).map((subCategory) => (
+                          <SelectItem key={subCategory} value={subCategory}>
+                            {subCategory}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 
