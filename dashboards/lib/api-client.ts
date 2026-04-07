@@ -1017,18 +1017,18 @@ export interface StudentVerificationResponse {
   profilePicture: string | null;
   verificationSelfie: string | null;
   merchantLogoUrl?: string | null;
-  offer: {
+  offers: {
     id: string;
     title: string;
-    description: string;
+    description: string | null;
     discountType: string;
     discountValue: number;
-    maxDiscountAmount: number;
+    maxDiscountAmount: number | null;
     additionalItem?: string | null;
     isBonus: boolean;
-    merchant?: {
-      logoPath?: string | null;
-    };
+  }[];
+  merchant?: {
+    logoPath?: string | null;
   };
 }
 
@@ -1231,6 +1231,19 @@ export interface BonusSettings {
   imageUrl: string | null;
 }
 
+export interface LoyaltyProgram {
+  id: string;
+  merchantId: string;
+  offerId: string | null;
+  scope: 'merchant' | 'offer';
+  redemptionsRequired: number;
+  discountType: 'percentage' | 'fixed' | 'item';
+  discountValue: number;
+  maxDiscountAmount: number | null;
+  additionalItem: string | null;
+  isActive: boolean;
+}
+
 export const getBranchAssignments = async (): Promise<BranchAssignment[]> => {
   const response = await apiRequest('/merchants/branches/assignments', {
     method: 'GET',
@@ -1257,6 +1270,21 @@ export const updateBranchBonusSettings = async (branchId: string, settings: Bonu
     method: 'PUT',
     body: JSON.stringify(settings),
   });
+};
+
+export const getMerchantLoyaltyProgram = async (merchantId: string): Promise<LoyaltyProgram[]> => {
+  const response = await apiRequest(`/merchants/${merchantId}/loyalty`, {
+    method: 'GET',
+  });
+  return response.data;
+};
+
+export const updateMerchantLoyaltyProgram = async (merchantId: string, data: Partial<LoyaltyProgram>): Promise<LoyaltyProgram> => {
+  const response = await apiRequest(`/merchants/${merchantId}/loyalty`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+  return response.data;
 };
 
 // Dashboard API Types

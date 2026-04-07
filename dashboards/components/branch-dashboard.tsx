@@ -82,10 +82,9 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
     try {
       const fullParchiId = `PK-${parchiIdInput}`
       const student = await getStudentByParchiId(fullParchiId)
-      setStudentDetails(student)
-
-      if (student.offer) {
-        setApplicableOffer(student.offer)
+      if (student.offers && student.offers.length > 0) {
+        setStudentDetails(student)
+        setApplicableOffer(student.offers[0]) // Default to first offer
         setIsVerificationDialogOpen(true)
       } else {
         toast.error("No active offer found for this student")
@@ -607,34 +606,75 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
                   </div>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Applicable Offer</p>
+                  <p className="text-muted-foreground">{studentDetails.offers.length > 1 ? "Select Offer" : "Applicable Offer"}</p>
                   <div className="mt-1">
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium">{applicableOffer?.title}</p>
-                      {applicableOffer?.isBonus && (
-                        <Sparkles className="w-4 h-4 text-yellow-600" />
-                      )}
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-1">{applicableOffer?.description}</p>
-                    <p className={`text-sm font-semibold mt-2 ${applicableOffer?.isBonus ? 'text-orange-600 text-base' : ''
-                      }`} style={{ color: applicableOffer?.isBonus ? undefined : colors.primary }}>
-                      {applicableOffer?.additionalItem && (
-                        <span className="block flex items-center gap-2 mb-1">
-                          <span>🎁 {applicableOffer.additionalItem}</span>
-                        </span>
-                      )}
-                      {(applicableOffer?.discountValue > 0 || !applicableOffer?.additionalItem) && (
-                        <span>
-                          {applicableOffer?.discountValue}{applicableOffer?.discountType === 'percentage' ? '% OFF' : ' PKR OFF'}
-                        </span>
-                      )}
-                    </p>
+                    {studentDetails.offers.length > 1 ? (
+                      <div className="space-y-3">
+                        {studentDetails.offers.map((offer) => (
+                          <div 
+                            key={offer.id}
+                            onClick={() => setApplicableOffer(offer)}
+                            className={`p-3 rounded-md border-2 cursor-pointer transition-all ${
+                              applicableOffer?.id === offer.id 
+                                ? 'border-primary bg-primary/5' 
+                                : 'border-muted hover:border-muted-foreground/30'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <p className="font-semibold text-sm">{offer.title}</p>
+                                {offer.isBonus && <Sparkles className="w-3 h-3 text-yellow-600" />}
+                              </div>
+                              {applicableOffer?.id === offer.id && (
+                                <div className="h-5 w-5 rounded-full bg-primary flex items-center justify-center">
+                                  <CheckCircle className="h-3 w-3 text-white" />
+                                </div>
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{offer.description}</p>
+                            <div className="flex items-center justify-between mt-2">
+                              <p className="text-xs font-bold" style={{ color: colors.primary }}>
+                                {offer.discountType === 'item' ? offer.additionalItem : `${offer.discountValue}${offer.discountType === 'percentage' ? '% OFF' : ' PKR OFF'}`}
+                              </p>
+                              {offer.isBonus && (
+                                <Badge className="h-5 text-[10px] bg-yellow-500 hover:bg-yellow-500 text-white border-0">
+                                  BONUS
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium">{applicableOffer?.title}</p>
+                          {applicableOffer?.isBonus && (
+                            <Sparkles className="w-4 h-4 text-yellow-600" />
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">{applicableOffer?.description}</p>
+                        <p className={`text-sm font-semibold mt-2 ${applicableOffer?.isBonus ? 'text-orange-600 text-base' : ''
+                          }`} style={{ color: applicableOffer?.isBonus ? undefined : colors.primary }}>
+                          {applicableOffer?.additionalItem && (
+                            <span className="block flex items-center gap-2 mb-1">
+                              <span>🎁 {applicableOffer.additionalItem}</span>
+                            </span>
+                          )}
+                          {(applicableOffer?.discountValue > 0 || !applicableOffer?.additionalItem) && (
+                            <span>
+                              {applicableOffer?.discountValue}{applicableOffer?.discountType === 'percentage' ? '% OFF' : ' PKR OFF'}
+                            </span>
+                          )}
+                        </p>
+                        {applicableOffer?.isBonus && (
+                          <Badge className="mt-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white border-0">
+                            🎉 Bonus Unlocked!
+                          </Badge>
+                        )}
+                      </>
+                    )}
                   </div>
-                  {applicableOffer?.isBonus && (
-                    <Badge className="mt-2 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white border-0">
-                      🎉 Bonus Unlocked!
-                    </Badge>
-                  )}
                 </div>
               </div>
 

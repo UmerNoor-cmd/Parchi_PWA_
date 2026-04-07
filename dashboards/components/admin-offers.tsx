@@ -24,7 +24,8 @@ import {
   getBranches, AdminBranch,
   getBranchAssignments, assignBranchOffers,
   getBranchBonusSettings, updateBranchBonusSettings,
-  BranchAssignment, BonusSettings,
+  getMerchantLoyaltyProgram, updateMerchantLoyaltyProgram,
+  BranchAssignment, BonusSettings, LoyaltyProgram,
   getFeaturedOffers, setFeaturedOffers,
   getAllAdminOffers, reviewAdminOffer
 } from "@/lib/api-client"
@@ -112,44 +113,19 @@ export function AdminOffers() {
   const [editingOffer, setEditingOffer] = useState<Offer | null>(null)
   const [isImageUploading, setIsImageUploading] = useState(false)
 
-  // Bonus Settings State
-  const [isBonusSettingsOpen, setIsBonusSettingsOpen] = useState(false)
-  const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null)
-  const [selectedBranchName, setSelectedBranchName] = useState<string>("")
-  const [bonusSettings, setBonusSettings] = useState<BonusSettings>({
-    redemptionsRequired: 5,
-    discountType: 'percentage',
-    discountValue: 10,
-    maxDiscountAmount: null,
-    additionalItem: null,
-    validityDays: 30,
-    isActive: true,
-    imageUrl: null
-  })
-  const [isBonusLoading, setIsBonusLoading] = useState(false)
-  const [isBonusSaving, setIsBonusSaving] = useState(false)
-
-  // Global Bonus Settings State
-  const [isGlobalBonusOpen, setIsGlobalBonusOpen] = useState(false)
-  const [selectedMerchantId, setSelectedMerchantId] = useState<string | null>(null)
-  const [globalBonusSettings, setGlobalBonusSettings] = useState<BonusSettings>({
-    redemptionsRequired: 5,
-    discountType: 'percentage',
-    discountValue: 10,
-    maxDiscountAmount: null,
-    additionalItem: null,
-    validityDays: 30,
-    isActive: true,
-    imageUrl: null
-  })
-  const [isGlobalBonusSaving, setIsGlobalBonusSaving] = useState(false)
+  // New Loyalty Program State
+  const [isLoyaltyOpen, setIsLoyaltyOpen] = useState(false)
+  const [loyaltyPrograms, setLoyaltyPrograms] = useState<LoyaltyProgram[]>([])
+  const [selectedMerchantForLoyalty, setSelectedMerchantForLoyalty] = useState<CorporateMerchant | null>(null)
+  const [isLoyaltySaving, setIsLoyaltySaving] = useState(false)
+  const [isLoyaltyLoading, setIsLoyaltyLoading] = useState(false)
+  const [editingLoyalty, setEditingLoyalty] = useState<Partial<LoyaltyProgram> | null>(null)
 
   // Featured Offers State
   const [isFeaturedOffersOpen, setIsFeaturedOffersOpen] = useState(false)
   const [featuredOffers, setFeaturedOffersList] = useState<{ offer: Offer; order: number }[]>([])
   const [isLoadingFeatured, setIsLoadingFeatured] = useState(false)
   const [isSavingFeatured, setIsSavingFeatured] = useState(false)
-  const [draggedOfferId, setDraggedOfferId] = useState<string | null>(null)
   const [featuredSearchQuery, setFeaturedSearchQuery] = useState("")
   const [featuredSearchResults, setFeaturedSearchResults] = useState<Offer[]>([])
   const [isFeaturedSearching, setIsFeaturedSearching] = useState(false)
@@ -272,14 +248,6 @@ export function AdminOffers() {
 
     if (isExpanding) {
       setExpandedMerchants(prev => [...prev, merchantId])
-      if (!branchAssignments[merchantId]) {
-        setLoadingMerchants(prev => [...prev, merchantId])
-        try {
-          await fetchMerchantBranches(merchantId)
-        } finally {
-          setLoadingMerchants(prev => prev.filter(id => id !== merchantId))
-        }
-      }
 
       if (!offers[merchantId]) {
         try {
@@ -294,33 +262,6 @@ export function AdminOffers() {
       }
     } else {
       setExpandedMerchants(prev => prev.filter(id => id !== merchantId))
-    }
-  }
-
-  const fetchMerchantBranches = async (merchantId: string) => {
-    try {
-      const branches = await getBranches({ corporateAccountId: merchantId })
-      const assignments = await getBranchAssignments()
-      const assignmentMap = new Map<string, string | null>()
-      assignments.forEach(assignment => {
-        assignmentMap.set(assignment.id, assignment.standardOfferId)
-      })
-
-      setBranchAssignments(prev => ({
-        ...prev,
-        [merchantId]: branches.map(branch => {
-          const standardOfferId = assignmentMap.get(branch.id) || null
-          return {
-            id: branch.id,
-            branchName: branch.branch_name,
-            standardOfferId: standardOfferId,
-            originalOfferId: standardOfferId
-          }
-        })
-      }))
-    } catch (error) {
-      toast.error("Failed to load branches")
-      setBranchAssignments(prev => ({ ...prev, [merchantId]: [] }))
     }
   }
 
@@ -421,57 +362,38 @@ export function AdminOffers() {
     }
   }
 
-  const handleAssignmentChange = (merchantId: string, branchId: string, value: string) => {
-    setBranchAssignments(prev => ({
-      ...prev,
-      [merchantId]: prev[merchantId]?.map(a =>
-        a.id === branchId ? { ...a, standardOfferId: value === "none" ? null : value } : a
-      ) || []
-    }))
-  }
+  // --- LOYALTY PROGRAM HANDLERS ---
 
-  const handleSaveAssignment = async (merchantId: string, assignment: BranchWithAssignment) => {
-    if (!assignment.standardOfferId) {
-      toast.error("A standard offer is required")
-      return
-    }
+  const handleOpenLoyalty = async (merchant: CorporateMerchant) => {
+    setSelectedMerchantForLoyalty(merchant)
+    setIsLoyaltyOpen(true)
+    setIsLoyaltyLoading(true)
     try {
-      await assignBranchOffers(assignment.id, assignment.standardOfferId)
-      toast.success(`Offer assigned to ${assignment.branchName}`)
-      setBranchAssignments(prev => ({
-        ...prev,
-        [merchantId]: prev[merchantId]?.map(a =>
-          a.id === assignment.id ? { ...a, originalOfferId: a.standardOfferId } : a
-        ) || []
-      }))
-    } catch (error) {
-      toast.error("Failed to assign offer")
+      const programs = await getMerchantLoyaltyProgram(merchant.id)
+      setLoyaltyPrograms(programs)
+    } catch (e) {
+      toast.error("Failed to load loyalty settings")
+    } finally {
+      setIsLoyaltyLoading(false)
     }
   }
 
-  // ... (Bonus Settings & Featured Offer Handlers omitted for brevity, keeping only essential for Oversight implementation context) 
-  // Wait, I should include them to keep the file valid. I'll include mocked/simplified versions or basic implementations if possible to save tokens/complexity, 
-  // BUT user asked for "new section/page", so I should try to preserve existing logic.
-  // I will include the existing logic for completeness.
-
-  const handleOpenBonusSettings = async (branchId: string, branchName: string) => {
-    setSelectedBranchId(branchId); setSelectedBranchName(branchName); setIsBonusSettingsOpen(true); setIsBonusLoading(true);
+  const handleSaveLoyalty = async () => {
+    if (!selectedMerchantForLoyalty || !editingLoyalty) return
+    setIsLoyaltySaving(true)
     try {
-      const settings = await getBranchBonusSettings(branchId); setBonusSettings(settings as any);
-    } catch (e) { setBonusSettings({ redemptionsRequired: 5, discountType: 'percentage', discountValue: 10, maxDiscountAmount: null, additionalItem: null, validityDays: 30, isActive: true, imageUrl: null }); }
-    finally { setIsBonusLoading(false); }
-  }
-
-  const handleBonusImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]; if (!file) return; setIsImageUploading(true);
-    try { const url = await SupabaseStorageService.uploadOfferImage(file, `bonus-${selectedBranchId}`); setBonusSettings(prev => ({ ...prev, imageUrl: url })); toast.success("Image uploaded"); }
-    catch (e) { toast.error("Upload failed"); } finally { setIsImageUploading(false); }
-  }
-
-  const handleSaveBonusSettings = async () => {
-    if (!selectedBranchId) return; setIsBonusSaving(true);
-    try { await updateBranchBonusSettings(selectedBranchId, bonusSettings); toast.success("Saved"); setIsBonusSettingsOpen(false); }
-    catch (e) { toast.error("Save failed"); } finally { setIsBonusSaving(false); }
+      // Exclude id and merchantId as they are not allowed by the backend DTO
+      const { id, merchantId, ...updateData } = editingLoyalty as any;
+      await updateMerchantLoyaltyProgram(selectedMerchantForLoyalty.id, updateData)
+      toast.success("Loyalty program saved successfully")
+      const updated = await getMerchantLoyaltyProgram(selectedMerchantForLoyalty.id)
+      setLoyaltyPrograms(updated)
+      setEditingLoyalty(null)
+    } catch (e) {
+      toast.error("Failed to save loyalty program")
+    } finally {
+      setIsLoyaltySaving(false)
+    }
   }
 
   // --- FEATURED OFFERS HANDLERS ---
@@ -558,7 +480,6 @@ export function AdminOffers() {
           <h2 className="text-3xl font-bold tracking-tight">Offers Management</h2>
           <p className="text-muted-foreground">Oversight and configuration for all platform offers</p>
         </div>
-        {/* Create Offer Button available globally or in config tab? */}
         {activeTab === 'management' && (
           <Button onClick={() => setIsCreateOpen(true)}>
             <Plus className="mr-2 h-4 w-4" /> Create Offer
@@ -574,10 +495,8 @@ export function AdminOffers() {
               {editingOffer ? "Modify existing offer details" : "Add a new offer to the platform. It will be Active immediately."}
             </DialogDescription>
           </DialogHeader>
-          {/* Create Offer Form Content (simplified for rewrite) */}
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-2 gap-4">
-              {/* Merchant Select */}
               <div className="col-span-2">
                 <Label>Merchant</Label>
                 <Select value={formData.merchantId} onValueChange={(val) => setFormData(p => ({ ...p, merchantId: val }))} disabled={!!editingOffer}>
@@ -588,7 +507,6 @@ export function AdminOffers() {
                 </Select>
               </div>
 
-              {/* Offer Title & Type */}
               <div className="grid grid-cols-2 gap-4 col-span-2">
                 <div className="space-y-2">
                   <Label>Offer Title *</Label>
@@ -616,7 +534,6 @@ export function AdminOffers() {
                 </div>
               </div>
 
-              {/* Conditional Fields for Item or Value */}
               <div className="grid grid-cols-2 gap-4 col-span-2">
                 {formData.discountType === 'item' ? (
                   <div className="space-y-2 col-span-2">
@@ -653,7 +570,6 @@ export function AdminOffers() {
                 )}
               </div>
 
-              {/* Description */}
               <div className="space-y-2 col-span-2">
                 <Label>Description</Label>
                 <Textarea
@@ -663,7 +579,6 @@ export function AdminOffers() {
                 />
               </div>
 
-              {/* Scheduling */}
               <div className="space-y-4 pt-4 border-t col-span-2">
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-primary" />
@@ -736,7 +651,6 @@ export function AdminOffers() {
                 )}
               </div>
 
-              {/* Limits */}
               <div className="grid grid-cols-2 gap-4 pt-4 border-t col-span-2">
                 <div className="space-y-2">
                   <Label>Min Order Value (Optional)</Label>
@@ -758,7 +672,6 @@ export function AdminOffers() {
                 </div>
               </div>
 
-              {/* Date Range */}
               <div className="grid grid-cols-2 gap-4 col-span-2">
                 <div className="space-y-2">
                   <Label>Valid From *</Label>
@@ -778,7 +691,6 @@ export function AdminOffers() {
                 </div>
               </div>
 
-              {/* Notes and T&C */}
               <div className="grid grid-cols-2 gap-4 col-span-2">
                 <div className="space-y-2">
                   <Label>Internal Notes (Optional)</Label>
@@ -800,7 +712,6 @@ export function AdminOffers() {
                 </div>
               </div>
 
-              {/* Image Upload */}
               <div className="space-y-2 pt-4 border-t col-span-2">
                 <Label>Offer Image</Label>
                 <div className="flex items-center gap-4">
@@ -1014,7 +925,7 @@ export function AdminOffers() {
           </div>
         </TabsContent>
 
-        {/* --- CONFIGURATION TAB (Existing functionality) --- */}
+        {/* --- CONFIGURATION TAB --- */}
         <TabsContent value="management" className="space-y-6">
           <Card>
             <CardHeader>
@@ -1041,9 +952,14 @@ export function AdminOffers() {
                     </CardTitle>
                     <CardDescription>{merchant.category || 'Uncategorized'}</CardDescription>
                   </div>
-                  <Button variant="ghost" size="sm" onClick={() => toggleMerchant(merchant.id)}>
-                    {expandedMerchants.includes(merchant.id) ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={() => handleOpenLoyalty(merchant)}>
+                      <Settings className="h-4 w-4 mr-2" /> Loyalty Settings
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => toggleMerchant(merchant.id)}>
+                      {expandedMerchants.includes(merchant.id) ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               {expandedMerchants.includes(merchant.id) && (
@@ -1052,36 +968,95 @@ export function AdminOffers() {
                     <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
                   ) : (
                     <div className="space-y-6">
-                      {/* Branch Configuration Table */}
+                      {/* Merchant-wide Loyalty Summary */}
+                      <div className="bg-muted/30 p-4 rounded-lg border border-primary/10">
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="text-lg font-semibold flex items-center gap-2">
+                            <Settings className="h-4 w-4 text-primary" /> Loyalty Programs
+                          </h3>
+                          <Button variant="outline" size="sm" onClick={() => handleOpenLoyalty(merchant)}>
+                            Manage Loyalty
+                          </Button>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {loyaltyPrograms.filter(p => p.merchantId === merchant.id).length === 0 ? (
+                            <p className="text-sm text-muted-foreground italic col-span-full">No loyalty programs active for this merchant.</p>
+                          ) : (
+                            loyaltyPrograms.filter(p => p.merchantId === merchant.id).map(program => (
+                              <div key={program.id} className="bg-card p-3 rounded border shadow-sm flex flex-col gap-1">
+                                <div className="flex justify-between items-start">
+                                  <Badge variant="outline" className="capitalize">{program.scope}</Badge>
+                                  <Badge variant={program.isActive ? "default" : "secondary"}>
+                                    {program.isActive ? "Active" : "Inactive"}
+                                  </Badge>
+                                </div>
+                                <div className="text-sm font-medium mt-1">
+                                  {program.scope === 'merchant' ? 'Whole Merchant' : 
+                                    offers[merchant.id]?.find(o => o.id === program.offerId)?.title || 'Offer Reward'}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {program.redemptionsRequired} redemptions → {
+                                    program.discountType === 'percentage' ? `${program.discountValue}% Off` :
+                                    program.discountType === 'fixed' ? `Rs. ${program.discountValue} Off` :
+                                    program.additionalItem || 'Free Item'
+                                  }
+                                </div>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Merchant Offers Section */}
                       <div>
-                        <h3 className="text-lg font-semibold mb-4">Branch Configuration</h3>
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-lg font-semibold">Merchant Offers</h3>
+                          <Button size="sm" onClick={() => { setFormData(p => ({ ...p, merchantId: merchant.id })); setIsCreateOpen(true); }}>
+                            <Plus className="h-4 w-4 mr-1" /> New Offer
+                          </Button>
+                        </div>
                         <Table>
-                          <TableHeader><TableRow><TableHead>Branch Name</TableHead><TableHead>Standard Offer</TableHead><TableHead>Actions</TableHead></TableRow></TableHeader>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Offer Title</TableHead>
+                              <TableHead>Type</TableHead>
+                              <TableHead>Value</TableHead>
+                              <TableHead>Status</TableHead>
+                              <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
                           <TableBody>
-                            {branchAssignments[merchant.id]?.map(branch => (
-                              <TableRow key={branch.id}>
-                                <TableCell>{branch.branchName}</TableCell>
-                                <TableCell>
-                                  <Select value={branch.standardOfferId || "none"} onValueChange={(val) => handleAssignmentChange(merchant.id, branch.id, val)}>
-                                    <SelectTrigger className="w-[200px]"><SelectValue placeholder="Select offer" /></SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="none">No Standard Offer</SelectItem>
-                                      {getOffersByMerchant(merchant.id).filter(o => o.status === 'active').map(o => (
-                                        <SelectItem key={o.id} value={o.id}>{o.title}</SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </TableCell>
-                                <TableCell>
-                                  <div className="flex gap-2">
-                                    {branch.standardOfferId !== branch.originalOfferId && (
-                                      <Button size="sm" onClick={() => handleSaveAssignment(merchant.id, branch)}>Save</Button>
-                                    )}
-                                    <Button size="sm" variant="outline" onClick={() => handleOpenBonusSettings(branch.id, branch.branchName)}>Bonus Settings</Button>
-                                  </div>
+                            {getOffersByMerchant(merchant.id).length === 0 ? (
+                              <TableRow>
+                                <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                                  No offers found for this merchant.
                                 </TableCell>
                               </TableRow>
-                            ))}
+                            ) : (
+                              getOffersByMerchant(merchant.id).map(offer => (
+                                <TableRow key={offer.id}>
+                                  <TableCell className="font-medium">{offer.title}</TableCell>
+                                  <TableCell className="capitalize">{offer.discountType}</TableCell>
+                                  <TableCell>
+                                    {offer.discountType === 'percentage' ? `${offer.discountValue}%` : 
+                                     offer.discountType === 'item' ? offer.additionalItem : `Rs. ${offer.discountValue}`}
+                                  </TableCell>
+                                  <TableCell>{getStatusBadge(offer.status)}</TableCell>
+                                  <TableCell className="text-right">
+                                    <div className="flex justify-end gap-2">
+                                      <Button variant="ghost" size="sm" onClick={() => { setEditingOffer(offer); setFormData({ ...offer }); setIsCreateOpen(true); }}>
+                                        <Pencil className="h-4 w-4" />
+                                      </Button>
+                                      {offer.status === 'pending_approval' && (
+                                        <Button variant="outline" size="sm" onClick={() => { setSelectedOfferForReview(offer); setIsReviewDialogOpen(true); }}>
+                                          Review
+                                        </Button>
+                                      )}
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              ))
+                            )}
                           </TableBody>
                         </Table>
                       </div>
@@ -1111,122 +1086,6 @@ export function AdminOffers() {
             <Button variant="destructive" onClick={() => selectedOfferForReview && handleReviewOffer(selectedOfferForReview.id, 'rejected', rejectionReason)}>Reject Offer</Button>
           </DialogFooter>
         </DialogContent>
-      </Dialog>
-
-      {/* Bonus Settings Dialog (Simplified) */}
-      <Dialog open={isBonusSettingsOpen} onOpenChange={setIsBonusSettingsOpen}>        <DialogContent className="max-w-md">
-        <DialogHeader><DialogTitle>Bonus Settings - {selectedBranchName}</DialogTitle></DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="space-y-2 pt-4 border-t col-span-2">
-            <Label>Bonus Image (Optional)</Label>
-            <div className="flex items-center gap-4">
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleBonusImageUpload}
-                disabled={isImageUploading}
-                className="hidden"
-                id={`bonus-image-upload-${selectedBranchId}`}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => document.getElementById(`bonus-image-upload-${selectedBranchId}`)?.click()}
-                disabled={isImageUploading}
-              >
-                <Upload className="h-4 w-4 mr-2" />
-                {isImageUploading ? 'Uploading...' : 'Choose File'}
-              </Button>
-              {isImageUploading && <Loader2 className="h-4 w-4 animate-spin" />}
-            </div>
-            {bonusSettings.imageUrl && (
-              <div className="relative h-24 w-24 rounded-md overflow-hidden border mt-2">
-                <img src={bonusSettings.imageUrl} alt="Preview" className="object-cover h-full w-full" />
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label>Redemptions Required</Label>
-            <Input type="number" value={bonusSettings.redemptionsRequired} onChange={e => setBonusSettings(p => ({ ...p, redemptionsRequired: Number(e.target.value) }))} />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Discount Type</Label>
-            <Select
-              value={bonusSettings.discountType}
-              onValueChange={(val: any) => setBonusSettings(p => ({ ...p, discountType: val }))}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="percentage">Percentage (%)</SelectItem>
-                <SelectItem value="fixed">Flat Amount (PKR)</SelectItem>
-                <SelectItem value="item">Free Item</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {bonusSettings.discountType === 'item' ? (
-            <div className="space-y-2">
-              <Label>Additional Item</Label>
-              <Input
-                placeholder="e.g. Free Dessert"
-                value={bonusSettings.additionalItem || ''}
-                onChange={(e) => setBonusSettings(p => ({ ...p, additionalItem: e.target.value }))}
-              />
-            </div>
-          ) : (
-            <>
-              <div className="space-y-2">
-                <Label>Discount Value</Label>
-                <Input
-                  type="number"
-                  value={bonusSettings.discountValue || ''}
-                  onChange={(e) => setBonusSettings(p => ({ ...p, discountValue: Number(e.target.value) }))}
-                />
-              </div>
-              {bonusSettings.discountType === 'percentage' && (
-                <div className="space-y-2">
-                  <Label>Max Discount Amount (Optional)</Label>
-                  <Input
-                    type="number"
-                    placeholder="e.g. 1000"
-                    value={bonusSettings.maxDiscountAmount || ''}
-                    onChange={(e) => setBonusSettings(p => ({ ...p, maxDiscountAmount: Number(e.target.value) || null }))}
-                  />
-                </div>
-              )}
-            </>
-          )}
-
-          <div className="space-y-2">
-            <Label>Validity Days (Optional)</Label>
-            <Input
-              type="number"
-              placeholder="e.g. 30"
-              value={bonusSettings.validityDays || ''}
-              onChange={e => setBonusSettings(p => ({ ...p, validityDays: Number(e.target.value) || null }))}
-            />
-          </div>
-
-          <div className="flex items-center space-x-2 pt-2">
-            <Switch
-              id={`bonus-active-${selectedBranchId}`}
-              checked={bonusSettings.isActive ?? true}
-              onCheckedChange={(checked) => setBonusSettings(p => ({ ...p, isActive: checked }))}
-            />
-            <Label htmlFor={`bonus-active-${selectedBranchId}`}>Active</Label>
-          </div>
-
-        </div>
-        <DialogFooter>
-          <Button onClick={handleSaveBonusSettings} disabled={isBonusSaving}>
-            {isBonusSaving ? "Saving..." : "Save Settings"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
       </Dialog>
 
       {/* Featured Offers Dialog */}
@@ -1387,6 +1246,211 @@ export function AdminOffers() {
             <Button onClick={handleSaveFeaturedOffers} disabled={isSavingFeatured || isLoadingFeatured}>
               {isSavingFeatured ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saving...</> : "Save Featured Offers"}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Merchant Loyalty Settings Dialog */}
+      <Dialog open={isLoyaltyOpen} onOpenChange={setIsLoyaltyOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Loyalty Settings - {selectedMerchantForLoyalty?.businessName}</DialogTitle>
+            <DialogDescription>
+              Configure loyalty bonuses for this merchant. Bonuses can be merchant-wide or per-offer.
+            </DialogDescription>
+          </DialogHeader>
+
+          {isLoyaltyLoading ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : (
+            <div className="space-y-6 py-4">
+              <div className="border rounded-md">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Scope</TableHead>
+                      <TableHead>Target</TableHead>
+                      <TableHead>Req. Redemptions</TableHead>
+                      <TableHead>Reward</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {loyaltyPrograms.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                          No loyalty programs configured
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      loyaltyPrograms.map(program => (
+                        <TableRow key={program.id}>
+                          <TableCell className="capitalize">{program.scope}</TableCell>
+                          <TableCell>
+                            {program.scope === 'merchant' ? 'Whole Merchant' : 
+                              offers[selectedMerchantForLoyalty?.id || '']?.find(o => o.id === program.offerId)?.title || 'Selected Offer'}
+                          </TableCell>
+                          <TableCell>{program.redemptionsRequired}</TableCell>
+                          <TableCell>
+                            {program.discountType === 'percentage' ? `${program.discountValue}% Off` :
+                             program.discountType === 'fixed' ? `Rs. ${program.discountValue} Off` :
+                             program.additionalItem || 'Free Item'}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={program.isActive ? "default" : "secondary"}>
+                              {program.isActive ? "Active" : "Inactive"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button variant="ghost" size="sm" onClick={() => setEditingLoyalty(program)}>
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {!editingLoyalty && (
+                <Button onClick={() => setEditingLoyalty({ 
+                  scope: 'merchant', 
+                  redemptionsRequired: 5, 
+                  discountType: 'percentage', 
+                  discountValue: 10,
+                  isActive: true 
+                })}>
+                  <Plus className="h-4 w-4 mr-2" /> Add Loyalty Program
+                </Button>
+              )}
+
+              {editingLoyalty && (
+                <Card className="border-primary/50">
+                  <CardHeader className="py-3 px-4 flex-row items-center justify-between space-y-0">
+                    <CardTitle className="text-sm font-bold">
+                      {editingLoyalty.id ? "Edit Program" : "New Loyalty Program"}
+                    </CardTitle>
+                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => setEditingLoyalty(null)}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </CardHeader>
+                  <CardContent className="p-4 space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Scope</Label>
+                        <Select 
+                          value={editingLoyalty.scope} 
+                          onValueChange={(val: any) => setEditingLoyalty(p => ({ ...p, scope: val, offerId: val === 'merchant' ? null : p?.offerId }))}
+                        >
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="merchant">Merchant-wide</SelectItem>
+                            <SelectItem value="offer">Per-Offer</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {editingLoyalty.scope === 'offer' && (
+                        <div className="space-y-2">
+                          <Label>Select Offer</Label>
+                          <Select 
+                            value={editingLoyalty.offerId || ""} 
+                            onValueChange={(val) => setEditingLoyalty(p => ({ ...p, offerId: val }))}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Pick an offer" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {offers[selectedMerchantForLoyalty?.id || '']?.map(o => (
+                                <SelectItem key={o.id} value={o.id}>{o.title}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+
+                      <div className="space-y-2">
+                        <Label>Redemptions Required</Label>
+                        <Input 
+                          type="number" 
+                          value={editingLoyalty.redemptionsRequired} 
+                          onChange={(e) => setEditingLoyalty(p => ({ ...p, redemptionsRequired: Number(e.target.value) }))} 
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Discount Type</Label>
+                        <Select 
+                          value={editingLoyalty.discountType} 
+                          onValueChange={(val: any) => setEditingLoyalty(p => ({ ...p, discountType: val }))}
+                        >
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="percentage">Percentage (%)</SelectItem>
+                            <SelectItem value="fixed">Flat Amount (PKR)</SelectItem>
+                            <SelectItem value="item">Free Item</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {editingLoyalty.discountType === 'item' ? (
+                        <div className="space-y-2 col-span-2">
+                          <Label>Additional Item</Label>
+                          <Input 
+                            placeholder="e.g. Free Dessert"
+                            value={editingLoyalty.additionalItem || ""} 
+                            onChange={(e) => setEditingLoyalty(p => ({ ...p, additionalItem: e.target.value }))} 
+                          />
+                        </div>
+                      ) : (
+                        <>
+                          <div className="space-y-2">
+                            <Label>Discount Value</Label>
+                            <Input 
+                              type="number" 
+                              value={editingLoyalty.discountValue} 
+                              onChange={(e) => setEditingLoyalty(p => ({ ...p, discountValue: Number(e.target.value) }))} 
+                            />
+                          </div>
+                          {editingLoyalty.discountType === 'percentage' && (
+                            <div className="space-y-2">
+                              <Label>Max Discount (Optional)</Label>
+                              <Input 
+                                type="number" 
+                                value={editingLoyalty.maxDiscountAmount || ""} 
+                                onChange={(e) => setEditingLoyalty(p => ({ ...p, maxDiscountAmount: Number(e.target.value) || null }))} 
+                              />
+                            </div>
+                          )}
+                        </>
+                      )}
+
+                      <div className="flex items-center gap-2 col-span-2">
+                        <Switch 
+                          checked={editingLoyalty.isActive} 
+                          onCheckedChange={(val) => setEditingLoyalty(p => ({ ...p, isActive: val }))} 
+                        />
+                        <Label>Active</Label>
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-2 pt-2">
+                      <Button variant="outline" size="sm" onClick={() => setEditingLoyalty(null)}>Cancel</Button>
+                      <Button size="sm" onClick={handleSaveLoyalty} disabled={isLoyaltySaving}>
+                        {isLoyaltySaving ? "Saving..." : "Save Program"}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsLoyaltyOpen(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
