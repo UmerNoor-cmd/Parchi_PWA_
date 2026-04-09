@@ -40,6 +40,7 @@ import { AdminAuditLogs } from "./admin-audit-logs"
 import { AdminNotifications } from "./admin-notifications"
 import { AdminFinancials } from "./admin-financials"
 import { AdminAccountDeletion } from "./admin-account-deletion"
+import { AdminSystemConfig } from "./admin-system-config"
 import { getAdminDashboardStats, getTopPerformingMerchants, AdminDashboardStats } from "@/lib/api-client"
 import { toast } from "sonner"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -510,25 +511,15 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
 
           {activeTab === "logs" && <AdminAuditLogs />}
 
-          {activeTab === "settings" && (
-            <Card>
-              <CardHeader>
-                <CardTitle>System Settings</CardTitle>
-                <CardDescription>Configure platform parameters</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-muted-foreground">
-                  <p>Settings configuration coming soon</p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+
 
           {activeTab === "account-creation" && <AccountCreation />}
 
           {activeTab === "notifications" && <AdminNotifications />}
 
           {activeTab === "account-deletions" && <AdminAccountDeletion />}
+
+          {activeTab === "system-config" && <AdminSystemConfig />}
         </div>
       </main>
     </div>

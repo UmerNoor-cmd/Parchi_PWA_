@@ -178,6 +178,42 @@ export async function deleteAdminDeletionRequest(id: string): Promise<{ message:
   });
 }
 
+export interface AppConfig {
+  id: string;
+  min_android_build_number: number;
+  min_ios_build_number: number;
+  force_update_title: string;
+  force_update_message: string;
+  is_under_maintenance: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UpdateAppConfigDto {
+  min_android_build_number?: number;
+  min_ios_build_number?: number;
+  force_update_title?: string;
+  force_update_message?: string;
+  is_under_maintenance?: boolean;
+}
+
+/**
+ * Fetch system configuration
+ */
+export async function getAppConfig(): Promise<{ data: AppConfig }> {
+  return apiRequest('/admin/config');
+}
+
+/**
+ * Update system configuration
+ */
+export async function updateAppConfig(data: UpdateAppConfigDto): Promise<{ data: AppConfig }> {
+  return apiRequest('/admin/config', {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
+}
+
 export async function apiRequest(
   endpoint: string,
   options: RequestInit = {}
