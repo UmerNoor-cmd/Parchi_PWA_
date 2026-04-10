@@ -13,11 +13,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Check, X, Search, Eye, MoreHorizontal, Loader2, AlertCircle, RefreshCw, ChevronLeft, ChevronRight, ZoomIn, Trash2, Save } from "lucide-react"
+import { Check, X, Search, Eye, MoreHorizontal, Loader2, AlertCircle, RefreshCw, ChevronLeft, ChevronRight, ZoomIn, Trash2, Save, Mail } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
 import { useToast } from "@/hooks/use-toast"
-import { usePendingStudents, useAllStudents, useStudentDetail, useApproveRejectStudent, useUpdateStudentStatus, useDeleteStudent, useUpdateStudentAdmin } from "@/hooks/use-kyc"
+import { usePendingStudents, useAllStudents, useStudentDetail, useApproveRejectStudent, useUpdateStudentStatus, useDeleteStudent, useUpdateStudentAdmin, useVerifyStudentEmail } from "@/hooks/use-kyc"
 import type { Student, UpdateStudentAdminRequest } from "@/lib/api-client"
 
 import { AdminInstitutesDialog } from "./admin-institutes-dialog"
@@ -36,6 +36,7 @@ export function AdminKYC() {
   const [instituteQuery, setInstituteQuery] = useState("")
   const [debouncedSearch, setDebouncedSearch] = useState("")
   const [debouncedInstitute, setDebouncedInstitute] = useState("")
+  const [emailVerifiedFilter, setEmailVerifiedFilter] = useState<boolean | undefined>(undefined)
   // New state for deactivation
   const [isDeactivateDialogOpen, setIsDeactivateDialogOpen] = useState(false)
   const [deactivationReason, setDeactivationReason] = useState("")
@@ -65,8 +66,9 @@ export function AdminKYC() {
     page: allPage,
     limit: 12,
     search: debouncedSearch.trim() || undefined,
-    institute: debouncedInstitute.trim() || undefined
-  }), [statusFilter, allPage, debouncedSearch, debouncedInstitute])
+    institute: debouncedInstitute.trim() || undefined,
+    emailVerified: emailVerifiedFilter
+  }), [statusFilter, allPage, debouncedSearch, debouncedInstitute, emailVerifiedFilter])
 
   const { students: allStudents, loading: allLoading, error: allError, pagination: allPagination, refetch: refetchAll } = useAllStudents(allStudentsFilters)
   const { student: studentDetail, loading: detailLoading, error: detailError, refetch: refetchDetail } = useStudentDetail(selectedStudentId)
@@ -74,6 +76,7 @@ export function AdminKYC() {
   const { updateStatus, loading: updateStatusLoading, error: updateStatusError } = useUpdateStudentStatus()
   const { removeStudent, loading: deleteStudentLoading, error: deleteStudentError } = useDeleteStudent()
   const { save: saveStudentProfile, loading: saveProfileLoading, error: saveProfileError } = useUpdateStudentAdmin()
+  const { verifyEmail, loading: verifyEmailLoading } = useVerifyStudentEmail()
 
   const [profileDraft, setProfileDraft] = useState({
     firstName: "",
@@ -306,6 +309,26 @@ export function AdminKYC() {
       toast({
         title: "Error",
         description: saveProfileError || "Failed to save profile",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleVerifyEmail = async (studentId: string) => {
+    const result = await verifyEmail(studentId)
+    if (result) {
+      toast({
+        title: "Email Verified",
+        description: "Student email has been manually verified.",
+      })
+      refetchAll()
+      if (selectedStudentId === studentId) {
+        refetchDetail()
+      }
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to verify student email.",
         variant: "destructive",
       })
     }
@@ -551,32 +574,54 @@ export function AdminKYC() {
                 </div>
                 <div className="flex gap-2">
                   <Button
-                    variant={statusFilter === undefined ? "default" : "outline"}
+                    variant={statusFilter === undefined && emailVerifiedFilter === undefined ? "default" : "outline"}
                     size="sm"
-                    onClick={() => setStatusFilter(undefined)}
+                    onClick={() => {
+                      setStatusFilter(undefined)
+                      setEmailVerifiedFilter(undefined)
+                    }}
                   >
                     All
                   </Button>
                   <Button
                     variant={statusFilter === 'pending' ? "default" : "outline"}
                     size="sm"
-                    onClick={() => setStatusFilter('pending')}
+                    onClick={() => {
+                      setStatusFilter('pending')
+                      setEmailVerifiedFilter(undefined)
+                    }}
                   >
                     Pending
                   </Button>
                   <Button
                     variant={statusFilter === 'approved' ? "default" : "outline"}
                     size="sm"
-                    onClick={() => setStatusFilter('approved')}
+                    onClick={() => {
+                      setStatusFilter('approved')
+                      setEmailVerifiedFilter(undefined)
+                    }}
                   >
                     Approved
                   </Button>
                   <Button
                     variant={statusFilter === 'rejected' ? "default" : "outline"}
                     size="sm"
-                    onClick={() => setStatusFilter('rejected')}
+                    onClick={() => {
+                      setStatusFilter('rejected')
+                      setEmailVerifiedFilter(undefined)
+                    }}
                   >
                     Rejected
+                  </Button>
+                  <Button
+                    variant={emailVerifiedFilter === false ? "destructive" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      setEmailVerifiedFilter(emailVerifiedFilter === false ? undefined : false)
+                      setStatusFilter(undefined)
+                    }}
+                  >
+                    Unverified
                   </Button>
                 </div>
               </div>
@@ -653,6 +698,14 @@ export function AdminKYC() {
                                   <DropdownMenuItem onClick={() => handleDeleteClick(student)} className="text-red-600">
                                     <Trash2 className="mr-2 h-4 w-4" /> Delete Student
                                   </DropdownMenuItem>
+                                  {!student.emailConfirmed && (
+                                    <>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem onClick={() => handleVerifyEmail(student.id)} className="text-blue-600">
+                                        <Mail className="mr-2 h-4 w-4" /> Verify Email
+                                      </DropdownMenuItem>
+                                    </>
+                                  )}
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             </TableCell>
@@ -769,6 +822,19 @@ export function AdminKYC() {
                       <Badge variant={studentDetail.emailConfirmed ? "default" : "destructive"} className="text-xs">
                         {studentDetail.emailConfirmed ? "Verified" : "Unverified"}
                       </Badge>
+                      {!studentDetail.emailConfirmed && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-xs"
+                          onClick={() => handleVerifyEmail(studentDetail.id)}
+                          disabled={verifyEmailLoading}
+                        >
+                          {verifyEmailLoading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Mail className="h-3 w-3 mr-1" />}
+                          Verify manually
+                        </Button>
+                      )}
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -1048,6 +1114,20 @@ export function AdminKYC() {
           )}
 
           <DialogFooter className="gap-2 sm:gap-0">
+            {!studentDetail?.emailConfirmed && (
+              <Button
+                variant="secondary"
+                onClick={() => handleVerifyEmail(studentDetail!.id)}
+                disabled={verifyEmailLoading || !studentDetail}
+              >
+                {verifyEmailLoading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Mail className="mr-2 h-4 w-4" />
+                )}
+                Verify Email
+              </Button>
+            )}
             <Button
               variant="destructive"
               onClick={handleRejectClick}

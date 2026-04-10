@@ -999,6 +999,7 @@ export interface StudentsFilter {
   limit?: number;
   search?: string; // Server-side search query
   institute?: string;
+  emailVerified?: boolean;
 }
 
 // ========== Student KYC API Functions ==========
@@ -1036,6 +1037,9 @@ export const getAllStudents = async (
   }
   if (filters?.institute && filters.institute.trim()) {
     queryParams.append('institute', filters.institute.trim());
+  }
+  if (filters?.emailVerified !== undefined) {
+    queryParams.append('emailVerified', filters.emailVerified.toString());
   }
 
   const endpoint = `/admin/students${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
@@ -1182,6 +1186,16 @@ export const approveRejectStudent = async (
   const response = await apiRequest(`/admin/students/${id}/approve-reject`, {
     method: 'PUT',
     body: JSON.stringify(data),
+  });
+  return response.data;
+};
+
+/**
+ * Admin: Manually verify a student's email (bypass)
+ */
+export const verifyStudentEmail = async (id: string): Promise<Student> => {
+  const response = await apiRequest(`/admin/students/${id}/verify-email`, {
+    method: 'PUT',
   });
   return response.data;
 };
