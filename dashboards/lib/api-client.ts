@@ -1070,6 +1070,7 @@ export interface StudentVerificationResponse {
   merchant?: {
     logoPath?: string | null;
   };
+  lastBranchRedemptionAt?: string | null;
 }
 
 /**

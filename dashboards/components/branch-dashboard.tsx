@@ -28,6 +28,15 @@ import { toast } from "sonner"
 
 const colors = DASHBOARD_COLORS("branch")
 
+const isSameDayAsToday = (dateString?: string | null | Date) => {
+  if (!dateString) return false;
+  const date = new Date(dateString);
+  const today = new Date();
+  return date.getDate() === today.getDate() &&
+    date.getMonth() === today.getMonth() &&
+    date.getFullYear() === today.getFullYear();
+};
+
 export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
   const [activeTab, setActiveTab] = useState("redeem")
   const [parchiIdInput, setParchiIdInput] = useState("")
@@ -171,6 +180,10 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
       }
     }
   }
+
+  const hasRedeemedToday = studentDetails?.lastBranchRedemptionAt 
+    ? isSameDayAsToday(studentDetails.lastBranchRedemptionAt) 
+    : false;
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -684,6 +697,13 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
                   <p>Warning: This student is not verified.</p>
                 </div>
               )}
+
+              {hasRedeemedToday && (
+                <div className="flex items-center gap-2 p-3 bg-amber-50 text-amber-600 rounded-md text-sm border border-amber-200">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  <p>This student has already redeemed an offer at this branch today.</p>
+                </div>
+              )}
             </div>
           )}
 
@@ -701,19 +721,21 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
               )}
               Reject
             </Button>
-            <Button
-              onClick={handleConfirmRedemption}
-              className="flex-1"
-              style={{ backgroundColor: colors.primary }}
-              disabled={isCreatingRedemption}
-            >
-              {isCreatingRedemption ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <CheckCircle className="w-4 h-4 mr-2" />
-              )}
-              Approve & Redeem
-            </Button>
+            {!hasRedeemedToday && (
+              <Button
+                onClick={handleConfirmRedemption}
+                className="flex-1"
+                style={{ backgroundColor: colors.primary }}
+                disabled={isCreatingRedemption}
+              >
+                {isCreatingRedemption ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                )}
+                Approve & Redeem
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
