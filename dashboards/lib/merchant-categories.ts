@@ -1,5 +1,5 @@
 export const MERCHANT_CATEGORY_MAP: Record<string, string[]> = {
-  "Food & Beverage": ["Fast Food", "Cafe", "Restaurant", "Bakery", "Desserts"],
+  "Food & Beverage": ["Fast Food", "Cafe", "Restaurant", "Bakery", "Desserts", "Coffee Shop"],
   Retail: ["Fashion", "Electronics", "Grocery", "Home & Living", "Beauty"],
   Health: ["Pharmacy", "Clinic", "Gym & Fitness", "Wellness", "Diagnostics"],
   Services: ["Salon", "Laundry", "Auto Service", "Education", "Repairs"],
