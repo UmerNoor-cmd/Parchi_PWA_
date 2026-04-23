@@ -326,8 +326,8 @@ export function AdminOffers() {
         maxDiscountAmount: Number(formData.maxDiscountAmount) || undefined,
         validFrom: formData.validFrom,
         validUntil: formData.validUntil,
-        dailyLimit: Number(formData.dailyLimit) || undefined,
-        totalLimit: Number(formData.totalLimit) || undefined,
+        dailyLimit: (formData.dailyLimit !== undefined && formData.dailyLimit !== null && formData.dailyLimit !== '') ? Number(formData.dailyLimit) : undefined,
+        totalLimit: (formData.totalLimit !== undefined && formData.totalLimit !== null && formData.totalLimit !== '') ? Number(formData.totalLimit) : undefined,
         imageUrl: formData.imageUrl,
         scheduleType: formData.scheduleType,
         additionalItem: formData.additionalItem || null,
@@ -670,17 +670,22 @@ export function AdminOffers() {
                   <Input
                     type="number"
                     placeholder="e.g. 1000"
-                    value={formData.minOrderValue || ''}
-                    onChange={(e) => setFormData(p => ({ ...p, minOrderValue: Number(e.target.value) }))}
+                    value={formData.minOrderValue ?? ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setFormData(p => ({ ...p, minOrderValue: val === '' ? undefined : Number(val) }))
+                    }}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>Daily Limit (Optional)</Label>
                   <Input
                     type="number"
-                    placeholder="e.g. 50"
-                    value={formData.dailyLimit || ''}
-                    onChange={(e) => setFormData(p => ({ ...p, dailyLimit: Number(e.target.value) }))}
+                    value={formData.dailyLimit ?? ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setFormData(p => ({ ...p, dailyLimit: val === '' ? undefined : Number(val) }))
+                    }}
                   />
                 </div>
               </div>
@@ -877,8 +882,8 @@ export function AdminOffers() {
                                     maxDiscountAmount: offer.maxDiscountAmount || undefined,
                                     validFrom: offer.validFrom.split('T')[0],
                                     validUntil: offer.validUntil.split('T')[0],
-                                    dailyLimit: offer.dailyLimit || undefined,
-                                    totalLimit: offer.totalLimit || undefined,
+                                    dailyLimit: offer.dailyLimit ?? undefined,
+                                    totalLimit: offer.totalLimit ?? undefined,
                                     imageUrl: offer.imageUrl || undefined,
                                     scheduleType: offer.scheduleType || 'always',
                                     allowedDays: offer.allowedDays || [0, 1, 2, 3, 4, 5, 6],
