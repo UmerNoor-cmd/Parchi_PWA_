@@ -169,12 +169,12 @@ const TopPerformingMerchants = ({
 
   const getCategoryIcon = (category: string) => {
     const cat = category?.toLowerCase() || "";
-    if (cat.includes("food") || cat.includes("beverage")) return <Utensils className="w-24 h-24 text-indigo-600" />;
-    if (cat.includes("lifestyle") || cat.includes("shopping")) return <ShoppingBag className="w-24 h-24 text-indigo-600" />;
-    if (cat.includes("beauty") || cat.includes("spa")) return <Sparkles className="w-24 h-24 text-indigo-600" />;
-    if (cat.includes("entertainment") || cat.includes("movie")) return <Ticket className="w-24 h-24 text-indigo-600" />;
-    if (cat.includes("health") || cat.includes("wellness")) return <Heart className="w-24 h-24 text-indigo-600" />;
-    return <ShoppingCart className="w-24 h-24 text-indigo-600" />;
+    if (cat.includes("food") || cat.includes("beverage")) return <Utensils className="w-24 h-24 text-[#007AFF]" />;
+    if (cat.includes("lifestyle") || cat.includes("shopping")) return <ShoppingBag className="w-24 h-24 text-[#007AFF]" />;
+    if (cat.includes("beauty") || cat.includes("spa")) return <Sparkles className="w-24 h-24 text-[#007AFF]" />;
+    if (cat.includes("entertainment") || cat.includes("movie")) return <Ticket className="w-24 h-24 text-[#007AFF]" />;
+    if (cat.includes("health") || cat.includes("wellness")) return <Heart className="w-24 h-24 text-[#007AFF]" />;
+    return <ShoppingCart className="w-24 h-24 text-[#007AFF]" />;
   };
 
   return (
@@ -186,7 +186,7 @@ const TopPerformingMerchants = ({
              <div className="absolute -top-4 -right-4 p-8 opacity-5 group-hover:opacity-10 group-hover:scale-125 transition-all duration-700">
                 {getCategoryIcon(merchant.category)}
              </div>
-             <div className="absolute top-4 right-4 w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-xs font-black text-indigo-600 border border-indigo-100 dark:border-indigo-800">
+             <div className="absolute top-4 right-4 w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-xs font-black text-[#007AFF] border border-blue-100 dark:border-blue-800">
                 #{idx + 1}
              </div>
              
@@ -197,7 +197,7 @@ const TopPerformingMerchants = ({
                         <img src={merchant.logoPath} alt="" className="w-full h-full object-cover" />
                      </div>
                   ) : (
-                     <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center font-black text-indigo-600 border border-indigo-100 dark:border-indigo-800">
+                     <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center font-black text-[#007AFF] border border-blue-100 dark:border-blue-800">
                         {merchant.businessName.substring(0, 2).toUpperCase()}
                      </div>
                   )}
@@ -211,8 +211,8 @@ const TopPerformingMerchants = ({
                 </div>
              </div>
              
-             <div className="p-4 rounded-3xl bg-indigo-500/5 border border-indigo-500/10 group-hover:bg-indigo-500/10 transition-colors">
-                <p className="text-4xl font-black text-indigo-600 tracking-tighter">{merchant.redemptionCount.toLocaleString()}</p>
+             <div className="p-4 rounded-3xl bg-blue-500/5 border border-blue-500/10 group-hover:bg-blue-500/10 transition-colors">
+                <p className="text-4xl font-black text-[#007AFF] tracking-tighter">{merchant.redemptionCount.toLocaleString()}</p>
                 <p className="text-[10px] font-bold uppercase text-slate-500 tracking-widest mt-1">Total Redemptions</p>
              </div>
           </div>
@@ -343,7 +343,7 @@ const TopPerformingMerchants = ({
 const UniversityInsights = ({ distribution }: { distribution: AdminDashboardStats['universityDistribution'] }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const colors = DASHBOARD_COLORS("admin");
-  
+
   const filtered = (distribution || [])
     .filter(u => u.university.toLowerCase().includes(searchTerm.toLowerCase()))
     .sort((a, b) => b.studentCount - a.studentCount);
@@ -357,33 +357,39 @@ const UniversityInsights = ({ distribution }: { distribution: AdminDashboardStat
         {top3.map((uni, idx) => (
           <div key={uni.university} className="relative group p-6 rounded-[2rem] bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-950 border border-slate-200/60 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500">
              <div className="absolute -top-4 -right-4 p-8 opacity-5 group-hover:opacity-10 group-hover:scale-125 transition-all duration-700">
-                <School className="w-24 h-24 text-indigo-600" />
+                <School className="w-24 h-24 text-[#007AFF]" />
              </div>
-             <div className="absolute top-4 right-4 w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-xs font-black text-indigo-600 border border-indigo-100 dark:border-indigo-800">
+             <div className="absolute top-4 right-4 w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-xs font-black text-[#007AFF] border border-blue-100 dark:border-blue-800">
                 #{idx + 1}
              </div>
-             <h3 className="text-lg font-black text-slate-900 dark:text-white leading-tight mb-6 pr-10">{uni.university}</h3>
              
-             <div className="grid grid-cols-2 gap-4">
-                <div className="p-3 rounded-2xl bg-indigo-500/5 border border-indigo-500/10">
-                   <p className="text-2xl font-black text-indigo-600">{uni.studentCount}</p>
-                   <p className="text-[10px] font-bold uppercase text-slate-500 tracking-wider">Students</p>
+             <div className="flex items-center gap-3 mb-6 pr-10">
+                <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center font-black text-[#007AFF] border border-blue-100 dark:border-blue-800 shrink-0">
+                   {uni.university.substring(0, 2).toUpperCase()}
                 </div>
-                <div className="p-3 rounded-2xl bg-emerald-500/5 border border-emerald-500/10">
-                   <p className="text-2xl font-black text-emerald-600">{uni.redemptionCount || 0}</p>
-                   <p className="text-[10px] font-bold uppercase text-slate-500 tracking-wider">Redeemed</p>
+                <h3 className="text-lg font-black text-slate-900 dark:text-white leading-tight truncate">{uni.university}</h3>
+             </div>
+             
+             <div className="grid grid-cols-2 gap-3">
+                <div className="p-4 rounded-3xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
+                   <p className="text-2xl font-black text-slate-900 dark:text-white">{uni.studentCount}</p>
+                   <p className="text-[10px] font-bold uppercase text-slate-400">Students</p>
+                </div>
+                <div className="p-4 rounded-3xl bg-blue-500/5 border border-blue-500/10">
+                   <p className="text-2xl font-black text-[#007AFF]">{uni.redemptionCount}</p>
+                   <p className="text-[10px] font-bold uppercase text-slate-400">Redeemed</p>
                 </div>
              </div>
              
-             <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800">
-                <div className="flex justify-between text-[10px] font-black uppercase mb-1.5">
-                   <span className="text-slate-400">Engagement Score</span>
-                   <span className="text-indigo-600">{uni.engagementScore || 0}x</span>
+             <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <div>
+                   <p className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Engagement Score</p>
+                   <p className="text-xs font-black text-[#007AFF] uppercase">{uni.engagementScore}x <span className="opacity-60">Score</span></p>
                 </div>
-                <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                <div className="w-16 h-1 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                    <div 
-                     className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-1000" 
-                     style={{ width: `${Math.min(100, (uni.engagementScore || 0) * 40)}%` }} 
+                     className="h-full bg-[#007AFF]" 
+                     style={{ width: `${Math.min(uni.engagementScore * 20, 100)}%` }}
                    />
                 </div>
              </div>
@@ -391,7 +397,7 @@ const UniversityInsights = ({ distribution }: { distribution: AdminDashboardStat
         ))}
       </div>
 
-      {/* Detailed Searchable List */}
+      {/* Detailed List */}
       <Card className="rounded-[2rem] border-none shadow-xl shadow-slate-200/50 dark:shadow-none overflow-hidden bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl">
          <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
@@ -403,49 +409,6 @@ const UniversityInsights = ({ distribution }: { distribution: AdminDashboardStat
                <input 
                  type="text" 
                  placeholder="Search universities..." 
-                 className="w-full pl-10 pr-4 py-2.5 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 transition-all"
-                 value={searchTerm}
-                 onChange={(e) => setSearchTerm(e.target.value)}
-               />
-            </div>
-         </div>
-         <div className="max-h-[500px] overflow-y-auto custom-scrollbar">
-            {filtered.length > 0 ? (
-              filtered.map((uni) => (
-                <div key={uni.university} className="group flex flex-col md:flex-row md:items-center justify-between p-5 hover:bg-white dark:hover:bg-slate-800 transition-all border-b border-slate-100 dark:border-slate-800 last:border-0">
-                    <div className="flex items-center gap-4 flex-1 min-w-0 mb-4 md:mb-0">
-                       <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center font-black text-indigo-600 shrink-0 uppercase border border-indigo-100 dark:border-indigo-800 group-hover:scale-110 transition-transform">
-                          {uni.university.substring(0, 2)}
-                       </div>
-                       <div className="min-w-0">
-                          <p className="font-black text-slate-900 dark:text-white text-base">{uni.university}</p>
-                          <div className="flex items-center gap-2 mt-0.5">
-                             <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 tracking-tighter">
-                                Share: {uni.percentage}%
-                             </span>
-                             {uni.engagementScore > 1 && (
-                               <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 tracking-tighter flex items-center gap-1">
-                                  <TrendingUp className="w-3 h-3" /> High Activity
-                               </span>
-                             )}
-                          </div>
-                       </div>
-                    </div>
-                    <div className="flex items-center justify-between md:justify-end gap-6 md:gap-12">
-                       <div className="text-center md:text-right min-w-[80px]">
-                          <p className="text-lg font-black text-slate-900 dark:text-white">{uni.studentCount.toLocaleString()}</p>
-                          <p className="text-[10px] font-bold uppercase text-slate-400">Students</p>
-                       </div>
-                       <div className="text-center md:text-right min-w-[80px]">
-                          <p className="text-lg font-black text-indigo-600">{(uni.redemptionCount || 0).toLocaleString()}</p>
-                          <p className="text-[10px] font-bold uppercase text-slate-400">Redeemed</p>
-                       </div>
-                       <div className="min-w-[60px] flex flex-col items-end">
-                          <div className={`text-[11px] font-black px-3 py-1.5 rounded-xl ${uni.engagementScore > 1 ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : 'bg-slate-100 dark:bg-slate-800 text-slate-600'}`}>
-                             {uni.engagementScore || 0}x
-                          </div>
-                          <p className="text-[9px] font-bold uppercase text-slate-400 mt-1">Score</p>
-                       </div>
                     </div>
                 </div>
               ))
@@ -542,12 +505,12 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
             <div className="space-y-2">
               <div className="flex items-center gap-3">
-                 <h1 className="text-4xl md:text-5xl font-black tracking-tighter bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
+                 <h1 className="text-4xl md:text-5xl font-black tracking-tighter bg-gradient-to-r from-[#007AFF] to-[#00C2FF] bg-clip-text text-transparent">
                     Admin Dashboard
                  </h1>
-                 <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800 animate-pulse">
-                    <div className="w-2 h-2 rounded-full bg-indigo-600" />
-                    <span className="text-[10px] font-black uppercase text-indigo-600 tracking-widest">Platform Live</span>
+                 <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800 animate-pulse">
+                    <div className="w-2 h-2 rounded-full bg-[#007AFF]" />
+                    <span className="text-[10px] font-black uppercase text-[#007AFF] tracking-widest">Platform Live</span>
                  </div>
               </div>
               <p className="text-sm font-medium text-slate-500 max-w-md leading-relaxed">
@@ -570,18 +533,18 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               {/* Global Floating Refresh Button - Restricted to Overview & Analytics */}
               {(activeTab === "overview" || activeTab === "analytics") && (
                 <div className="relative group">
-                  <Button 
-                    variant="default" 
-                    size="icon" 
-                    disabled={isLoading || isRefreshing}
-                    onClick={() => {
-                      toast.info('Refreshing platform data...')
-                      fetchStats(dateRange?.from, dateRange?.to)
-                    }} 
-                    className="rounded-2xl shadow-xl h-12 w-12 bg-white text-indigo-600 hover:bg-indigo-600 hover:text-white border border-slate-200 dark:border-slate-800 transition-all duration-500"
-                  >
-                    <RefreshCw className={`h-5 w-5 ${isLoading || isRefreshing ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-700'}`} />
-                  </Button>
+                    <Button 
+                      variant="default" 
+                      size="icon" 
+                      disabled={isLoading || isRefreshing}
+                      onClick={() => {
+                        toast.info('Refreshing platform data...')
+                        fetchStats(dateRange?.from, dateRange?.to)
+                      }} 
+                      className="rounded-2xl shadow-xl h-12 w-12 bg-white text-[#007AFF] hover:bg-[#007AFF] hover:text-white border border-slate-200 dark:border-slate-800 transition-all duration-500"
+                    >
+                      <RefreshCw className={`h-5 w-5 ${isLoading || isRefreshing ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-700'}`} />
+                    </Button>
                 </div>
               )}
             </div>
@@ -612,7 +575,7 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                          value={stats?.platformOverview.totalActiveStudents || 0} 
                          subtitle={`+${stats?.platformOverview.totalActiveStudentsGrowth}% MoM Growth`} 
                          icon={UserPlus} 
-                         color="#6366f1" 
+                         color="#007AFF" 
                        />
                        <MetricCard 
                          title="Verified Merchants" 
@@ -643,7 +606,7 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                          value={stats?.userManagement.verificationQueue || 0} 
                          subtitle="Pending KYC Approval" 
                          icon={Clock} 
-                         color="#6366f1" 
+                         color="#007AFF" 
                        />
                        <MetricCard 
                          title="Suspended / Rejected" 
