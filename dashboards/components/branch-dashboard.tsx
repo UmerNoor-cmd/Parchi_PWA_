@@ -89,7 +89,7 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
 
     setIsLoadingStudent(true)
     try {
-      const fullParchiId = `PK-${parchiIdInput}`
+      const fullParchiId = parchiIdInput
       const student = await getStudentByParchiId(fullParchiId)
       if (student.offers && student.offers.length > 0) {
         setStudentDetails(student)
@@ -110,7 +110,7 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
     if (parchiIdInput && applicableOffer && studentDetails) {
       setIsCreatingRedemption(true)
       try {
-        const fullParchiId = `PK-${parchiIdInput}`
+        const fullParchiId = parchiIdInput
         // Include merchant logo so the redemption record stores the branding snapshot
         const merchantLogoUrl = studentDetails.merchantLogoUrl
           ?? studentDetails.offer?.merchant?.logoPath
@@ -158,7 +158,7 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
     if (parchiIdInput && applicableOffer && studentDetails) {
       setIsRejectingRedemption(true)
       try {
-        const fullParchiId = `PK-${parchiIdInput}`
+        const fullParchiId = parchiIdInput
         await rejectRedemptionAttempt({
           parchiId: fullParchiId,
           offerId: applicableOffer.id,
@@ -414,9 +414,6 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
                       <label className="text-lg font-semibold" style={{ color: colors.primary }}>Student Parchi ID</label>
                       <div className="flex justify-center w-full">
                         <div className="flex items-center border-2 rounded-xl overflow-hidden bg-background shadow-sm w-full max-w-md transition-all focus-within:scale-[1.02] focus-within:shadow-md" style={{ borderColor: `${colors.primary}30` }}>
-                          <span className="px-6 py-4 text-3xl font-mono font-bold bg-muted/30 border-r" style={{ color: colors.primary }}>
-                            PK-
-                          </span>
                           <Input
                             placeholder="12345"
                             value={parchiIdInput}
