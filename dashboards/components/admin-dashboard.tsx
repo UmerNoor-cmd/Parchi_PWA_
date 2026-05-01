@@ -409,13 +409,49 @@ const UniversityInsights = ({ distribution }: { distribution: AdminDashboardStat
                <input 
                  type="text" 
                  placeholder="Search universities..." 
-                    </div>
+                 className="w-full pl-10 pr-4 py-2.5 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-blue-500 transition-all outline-none"
+                 value={searchTerm}
+                 onChange={(e) => setSearchTerm(e.target.value)}
+               />
+            </div>
+         </div>
+         <div className="max-h-[500px] overflow-y-auto custom-scrollbar">
+            {filtered.length > 0 ? (
+              filtered.map((uni, idx) => (
+                <div key={uni.university} className="group border-b border-slate-100 dark:border-slate-800 last:border-0 p-5 hover:bg-white dark:hover:bg-slate-800 transition-all">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                     <div className="flex items-center gap-4 flex-1 min-w-0">
+                        <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center font-black text-[#007AFF] text-xs shrink-0">
+                           {uni.university.substring(0, 2).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                           <p className="font-black text-slate-900 dark:text-white truncate text-base">{uni.university}</p>
+                           <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-[10px] font-black uppercase bg-slate-100 dark:bg-slate-800 text-slate-500 px-2 py-0.5 rounded-md tracking-tighter">Share: {uni.percentage}%</span>
+                           </div>
+                        </div>
+                     </div>
+                     <div className="flex items-center justify-between md:justify-end gap-6 md:gap-12">
+                        <div className="text-center md:text-right">
+                           <p className="text-xl font-black text-slate-900 dark:text-white">{uni.studentCount}</p>
+                           <p className="text-[10px] font-bold uppercase text-slate-400 tracking-tighter">Students</p>
+                        </div>
+                        <div className="text-center md:text-right">
+                           <p className="text-xl font-black text-[#007AFF]">{uni.redemptionCount}</p>
+                           <p className="text-[10px] font-bold uppercase text-slate-400 tracking-tighter">Redeemed</p>
+                        </div>
+                        <div className="px-3 py-1.5 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-center min-w-[60px]">
+                           <p className="text-sm font-black text-slate-900 dark:text-white">{uni.engagementScore}x</p>
+                           <p className="text-[10px] font-bold uppercase text-slate-400 tracking-tighter">Score</p>
+                        </div>
+                     </div>
+                  </div>
                 </div>
               ))
             ) : (
               <div className="p-20 text-center">
                  <School className="w-12 h-12 text-slate-200 mx-auto mb-4" />
-                 <p className="text-slate-400 font-bold uppercase tracking-widest">No matching universities found</p>
+                 <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">No matching universities found</p>
               </div>
             )}
          </div>
