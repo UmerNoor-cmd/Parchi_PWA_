@@ -300,23 +300,30 @@ export function AdminAnalytics({ stats }: AdminAnalyticsProps) {
                     <p className="text-sm text-slate-300 leading-relaxed min-h-[40px]">
                         The highest drop-off rate of <strong className="text-white">{maxDropoffPct.toFixed(0)}%</strong> occurs at <strong className="text-white">{maxDropoffStep}</strong>.
                     </p>
-                    <div className="h-28 w-full">
+                    <div className="h-32 w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={dropoffData.slice(0, 6)} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                            <AreaChart 
+                                data={dropoffData.slice(0, 6).map(s => ({ count: s.count, name: s.step }))} 
+                                margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                            >
+                                <defs>
+                                    <linearGradient id="bottleneckGradient" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.4}/>
+                                        <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
+                                    </linearGradient>
+                                </defs>
                                 <Tooltip 
-                                    contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', fontSize: '10px' }}
-                                    itemStyle={{ color: '#fff' }}
+                                    contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '12px', fontSize: '10px' }}
                                 />
-                                <Bar dataKey="count" radius={[4, 4, 0, 0]} barSize={25}>
-                                    {dropoffData.slice(0, 6).map((entry, index) => (
-                                        <Cell 
-                                            key={`cell-${index}`} 
-                                            fill={entry.step.includes(maxDropoffStep.toLowerCase().replace(/ /g, '_')) ? "#EF4444" : "#3B82F6"} 
-                                            fillOpacity={0.8}
-                                        />
-                                    ))}
-                                </Bar>
-                            </BarChart>
+                                <Area 
+                                    type="monotone" 
+                                    dataKey="count" 
+                                    stroke="#3B82F6" 
+                                    strokeWidth={3} 
+                                    fillOpacity={1} 
+                                    fill="url(#bottleneckGradient)" 
+                                />
+                            </AreaChart>
                         </ResponsiveContainer>
                     </div>
                 </div>
@@ -333,29 +340,39 @@ export function AdminAnalytics({ stats }: AdminAnalyticsProps) {
                         Your conversion is <strong className="text-white">{overallConversion}%</strong>. 
                         Target: <span className="text-emerald-400 font-bold">15-20%</span>.
                     </p>
-                    <div className="h-28 w-full flex items-center justify-center relative">
-                         {/* Simple Gauge Visual */}
-                         <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="relative w-24 h-24">
-                                <svg className="w-full h-full" viewBox="0 0 100 100">
-                                    <circle className="text-slate-800" strokeWidth="10" stroke="currentColor" fill="transparent" r="40" cx="50" cy="50" />
-                                    <circle 
-                                        className="text-emerald-500" 
-                                        strokeWidth="10" 
-                                        strokeDasharray={`${(parseFloat(overallConversion) / 20) * 125} 250`} 
-                                        strokeLinecap="round" 
-                                        stroke="currentColor" 
-                                        fill="transparent" 
-                                        r="40" cx="50" cy="50" 
-                                        transform="rotate(-90 50 50)"
-                                    />
-                                </svg>
-                                <div className="absolute inset-0 flex items-center justify-center flex-col">
-                                    <span className="text-lg font-bold text-white">{overallConversion}%</span>
-                                    <span className="text-[8px] text-slate-400">OF TARGET</span>
-                                </div>
-                            </div>
-                         </div>
+                    <div className="h-32 w-full flex items-center justify-center">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie
+                                    data={[
+                                        { value: parseFloat(overallConversion), name: 'Converted' },
+                                        { value: Math.max(0, 20 - parseFloat(overallConversion)), name: 'To Target' },
+                                        { value: 80, name: 'Remaining' }
+                                    ]}
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={35}
+                                    outerRadius={45}
+                                    paddingAngle={5}
+                                    dataKey="value"
+                                    startAngle={90}
+                                    endAngle={-270}
+                                >
+                                    <Cell fill="#10B981" />
+                                    <Cell fill="#064E3B" fillOpacity={0.5} />
+                                    <Cell fill="#1e293b" />
+                                </Pie>
+                                <text 
+                                    x="50%" 
+                                    y="50%" 
+                                    textAnchor="middle" 
+                                    dominantBaseline="middle" 
+                                    className="fill-white font-bold text-xs"
+                                >
+                                    {overallConversion}%
+                                </text>
+                            </PieChart>
+                        </ResponsiveContainer>
                     </div>
                 </div>
             </div>
@@ -370,19 +387,25 @@ export function AdminAnalytics({ stats }: AdminAnalyticsProps) {
                     <p className="text-sm text-slate-300 leading-relaxed min-h-[40px]">
                         Median: <strong className="text-white">{stats.kycPerformance?.medianDaysToFirstRedemption ?? "N/A"} days</strong> to first redemption.
                     </p>
-                    <div className="h-28 w-full pt-4">
+                    <div className="h-32 w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <AreaChart data={[
                                 { d: 10 }, { d: 8 }, { d: 7 }, { d: 6 }, 
                                 { d: stats.kycPerformance?.medianDaysToFirstRedemption ?? 6 }
-                            ]}>
+                            ]} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                <defs>
+                                    <linearGradient id="momentumGradient" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#818CF8" stopOpacity={0.4}/>
+                                        <stop offset="95%" stopColor="#818CF8" stopOpacity={0}/>
+                                    </linearGradient>
+                                </defs>
                                 <Area 
                                     type="monotone" 
                                     dataKey="d" 
                                     stroke="#818CF8" 
-                                    fill="#818CF8" 
-                                    fillOpacity={0.2} 
                                     strokeWidth={3} 
+                                    fillOpacity={1} 
+                                    fill="url(#momentumGradient)" 
                                 />
                             </AreaChart>
                         </ResponsiveContainer>
@@ -391,6 +414,7 @@ export function AdminAnalytics({ stats }: AdminAnalyticsProps) {
             </div>
           </div>
         </CardContent>
+
 
 
       </Card>
