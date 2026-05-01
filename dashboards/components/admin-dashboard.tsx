@@ -25,7 +25,7 @@ import { Check, X, TrendingUp, Users, FileText, ShoppingCart, CheckCircle2, Chev
 
 // Premium Metric Card Component
 const MetricCard = ({ title, value, subtitle, icon: Icon, color }: { title: string, value: any, subtitle: string, icon: any, color: string }) => (
-  <div className="relative group p-7 rounded-[2.5rem] bg-white/70 dark:bg-slate-900/70 border border-white/40 dark:border-slate-800/40 shadow-2xl shadow-slate-200/50 dark:shadow-none backdrop-blur-xl transition-all duration-700 overflow-hidden hover:-translate-y-2 hover:shadow-indigo-500/10">
+  <div className="relative group p-5 md:p-7 rounded-[2rem] md:rounded-[2.5rem] bg-white/70 dark:bg-slate-900/70 border border-white/40 dark:border-slate-800/40 shadow-2xl shadow-slate-200/50 dark:shadow-none backdrop-blur-xl transition-all duration-700 overflow-hidden hover:-translate-y-2 hover:shadow-indigo-500/10">
      {/* Dynamic Glow Effect */}
      <div 
         className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-1000 pointer-events-none"
@@ -36,28 +36,28 @@ const MetricCard = ({ title, value, subtitle, icon: Icon, color }: { title: stri
      
      {/* Increased Visibility Background Icon */}
      <div className="absolute -top-4 -right-4 p-8 opacity-[0.12] dark:opacity-[0.15] group-hover:opacity-[0.2] group-hover:scale-110 transition-all duration-1000 rotate-12 group-hover:rotate-0">
-        <Icon className="w-32 h-32" style={{ color }} />
+        <Icon className="w-24 md:w-32 h-24 md:h-32" style={{ color }} />
      </div>
      
-     <div className="relative z-10 flex justify-between items-start mb-8">
-        <div className="p-4 rounded-3xl bg-white dark:bg-slate-800 shadow-xl shadow-slate-100 dark:shadow-none border border-slate-50 dark:border-slate-700 group-hover:scale-110 transition-transform duration-500">
-           <Icon className="w-7 h-7" style={{ color }} />
+     <div className="relative z-10 flex justify-between items-start mb-6 md:mb-8">
+        <div className="p-3 md:p-4 rounded-2xl md:rounded-3xl bg-white dark:bg-slate-800 shadow-xl shadow-slate-100 dark:shadow-none border border-slate-50 dark:border-slate-700 group-hover:scale-110 transition-transform duration-500">
+           <Icon className="w-5 md:w-7 h-5 md:h-7" style={{ color }} />
         </div>
-        <div className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-           <p className="text-[10px] font-black text-emerald-600 uppercase tracking-tighter flex items-center gap-1">
-             <TrendingUp className="w-3 h-3" /> Live
+        <div className="px-2 md:px-3 py-0.5 md:py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+           <p className="text-[9px] md:text-[10px] font-black text-emerald-600 uppercase tracking-tighter flex items-center gap-1">
+             <TrendingUp className="w-2.5 md:w-3 h-2.5 md:h-3" /> Live
            </p>
         </div>
      </div>
      
      <div className="relative z-10">
-        <h3 className="text-[11px] font-black uppercase text-slate-400 tracking-[0.2em] mb-2">{title}</h3>
+        <h3 className="text-[9px] md:text-[11px] font-black uppercase text-slate-400 tracking-[0.2em] mb-1 md:mb-2">{title}</h3>
         <div className="flex items-baseline gap-2">
-           <p className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter group-hover:tracking-normal transition-all duration-700 drop-shadow-sm">{value.toLocaleString()}</p>
+           <p className="text-3xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tighter group-hover:tracking-normal transition-all duration-700 drop-shadow-sm">{value.toLocaleString()}</p>
         </div>
-        <div className="flex items-center gap-2 mt-4">
-           <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-           <p className="text-xs font-bold text-slate-500 uppercase tracking-tight">{subtitle}</p>
+        <div className="flex items-center gap-1.5 md:gap-2 mt-3 md:mt-4">
+           <div className="w-1.5 md:w-2 h-1.5 md:w-2 rounded-full bg-emerald-500 animate-ping" />
+           <p className="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-tight">{subtitle}</p>
         </div>
      </div>
   </div>
