@@ -926,6 +926,7 @@ export interface Student {
   totalSavings: number;
   totalRedemptions: number;
   verificationStatus: 'pending' | 'approved' | 'rejected' | 'expired';
+  reviewNotes: string | null;
   verifiedAt: string | null;
   verifiedBy?: {
     id: string;
@@ -1001,6 +1002,7 @@ export interface StudentsFilter {
   search?: string; // Server-side search query
   institute?: string;
   emailVerified?: boolean;
+  groupBy?: 'university' | 'city';
 }
 
 // ========== Student KYC API Functions ==========
@@ -1041,6 +1043,9 @@ export const getAllStudents = async (
   }
   if (filters?.emailVerified !== undefined) {
     queryParams.append('emailVerified', filters.emailVerified.toString());
+  }
+  if (filters?.groupBy) {
+    queryParams.append('groupBy', filters.groupBy);
   }
 
   const endpoint = `/admin/students${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
@@ -1550,6 +1555,8 @@ export interface AdminDashboardStats {
   kycPerformance?: {
     medianDaysToFirstRedemption: number;
   };
+  kycRejectionStats?: KycRejectionStats;
+  activeUserTracking?: ActiveUserTracking;
 
   funnelStats?: {
     step: string;
@@ -1577,16 +1584,38 @@ export interface AdminDashboardStats {
  */
 export const getAdminDashboardStats = async (
   startDate?: Date,
-  endDate?: Date
+  endDate?: Date,
+  groupBy: 'institution' | 'city' = 'institution',
 ): Promise<AdminDashboardStats> => {
   const params = new URLSearchParams();
   if (startDate) params.append('startDate', startDate.toISOString());
   if (endDate) params.append('endDate', endDate.toISOString());
+  if (groupBy) params.append('groupBy', groupBy);
 
   const queryString = params.toString();
   const url = `/admin/dashboard/stats${queryString ? `?${queryString}` : ''}`;
 
   const response = await apiRequest(url, {
+    method: 'GET',
+  });
+  return response.data;
+};
+
+/**
+ * Get KYC rejection statistics
+ */
+export const getKycRejectionStats = async (): Promise<KycRejectionStats> => {
+  const response = await apiRequest('/admin/dashboard/kyc-stats', {
+    method: 'GET',
+  });
+  return response.data;
+};
+
+/**
+ * Get active user tracking data
+ */
+export const getActiveUserTracking = async (): Promise<ActiveUserTracking> => {
+  const response = await apiRequest('/admin/dashboard/active-users', {
     method: 'GET',
   });
   return response.data;

@@ -16,6 +16,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Check, X, Search, Eye, MoreHorizontal, Loader2, AlertCircle, RefreshCw, ChevronLeft, ChevronRight, ZoomIn, Trash2, Save, Mail, Apple, Smartphone } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useToast } from "@/hooks/use-toast"
 import { usePendingStudents, useAllStudents, useStudentDetail, useApproveRejectStudent, useUpdateStudentStatus, useDeleteStudent, useUpdateStudentAdmin, useVerifyStudentEmail } from "@/hooks/use-kyc"
 import type { Student, UpdateStudentAdminRequest } from "@/lib/api-client"
@@ -37,6 +38,7 @@ export function AdminKYC() {
   const [debouncedSearch, setDebouncedSearch] = useState("")
   const [debouncedInstitute, setDebouncedInstitute] = useState("")
   const [emailVerifiedFilter, setEmailVerifiedFilter] = useState<boolean | undefined>(undefined)
+  const [groupByFilter, setGroupByFilter] = useState<'university' | 'city' | undefined>(undefined)
   // New state for deactivation
   const [isDeactivateDialogOpen, setIsDeactivateDialogOpen] = useState(false)
   const [deactivationReason, setDeactivationReason] = useState("")
@@ -69,8 +71,9 @@ export function AdminKYC() {
     limit: 12,
     search: debouncedSearch.trim() || undefined,
     institute: debouncedInstitute.trim() || undefined,
-    emailVerified: emailVerifiedFilter
-  }), [statusFilter, allPage, debouncedSearch, debouncedInstitute, emailVerifiedFilter])
+    emailVerified: emailVerifiedFilter,
+    groupBy: groupByFilter
+  }), [statusFilter, allPage, debouncedSearch, debouncedInstitute, emailVerifiedFilter, groupByFilter])
 
   const { students: allStudents, loading: allLoading, error: allError, pagination: allPagination, refetch: refetchAll } = useAllStudents(allStudentsFilters)
   const { student: studentDetail, loading: detailLoading, error: detailError, refetch: refetchDetail } = useStudentDetail(selectedStudentId)
@@ -641,6 +644,19 @@ export function AdminKYC() {
                     Unverified
                   </Button>
                 </div>
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs font-bold uppercase text-muted-foreground whitespace-nowrap">Segmentation:</Label>
+                  <Select value={groupByFilter || 'none'} onValueChange={(v) => setGroupByFilter(v === 'none' ? undefined : v as any)}>
+                    <SelectTrigger className="h-9 w-[160px] text-xs font-bold">
+                      <SelectValue placeholder="Group by..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">List View</SelectItem>
+                      <SelectItem value="university">By Institution</SelectItem>
+                      <SelectItem value="city">By City</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               {allLoading ? (
@@ -655,9 +671,45 @@ export function AdminKYC() {
               ) : (
                 <>
                   <div className="rounded-md border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
+                    {groupByFilter ? (
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-slate-50 dark:bg-slate-900/50">
+                            <TableHead className="font-black uppercase text-[10px] tracking-widest">{groupByFilter === 'university' ? 'Institution' : 'City'}</TableHead>
+                            <TableHead className="font-black uppercase text-[10px] tracking-widest">Total Students</TableHead>
+                            <TableHead className="font-black uppercase text-[10px] tracking-widest text-green-600">Approved</TableHead>
+                            <TableHead className="font-black uppercase text-[10px] tracking-widest text-yellow-600">Pending</TableHead>
+                            <TableHead className="font-black uppercase text-[10px] tracking-widest text-red-600">Rejected</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {allStudents.map((group: any) => (
+                            <TableRow key={group.group} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
+                              <TableCell className="font-black text-slate-900 dark:text-white">{group.group}</TableCell>
+                              <TableCell className="font-bold">{group.total}</TableCell>
+                              <TableCell>
+                                <Badge variant="default" className="bg-green-500/10 text-green-600 border-green-500/20 hover:bg-green-500/20">
+                                  {group.approved}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20">
+                                  {group.pending}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="destructive" className="bg-red-500/10 text-red-600 border-red-500/20 hover:bg-red-500/20">
+                                  {group.rejected}
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    ) : (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
                           <TableHead>Name</TableHead>
                           <TableHead>Institute</TableHead>
                           <TableHead>Parchi ID</TableHead>
@@ -701,6 +753,21 @@ export function AdminKYC() {
                               <Badge variant={getStatusVariant(student.verificationStatus)}>
                                 {getStatusText(student.verificationStatus)}
                               </Badge>
+                              {student.verificationStatus === 'rejected' && student.reviewNotes && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <div className="text-[10px] text-destructive mt-1 max-w-[150px] truncate leading-tight font-medium cursor-help">
+                                        ↳ {student.reviewNotes}
+                                      </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="right" className="max-w-xs p-3 text-xs bg-slate-900 text-white border-slate-800 shadow-2xl">
+                                      <p className="font-bold mb-1 uppercase tracking-tighter opacity-60">Rejection Reason</p>
+                                      <p className="leading-relaxed">{student.reviewNotes}</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
                               {!student.isActive && student.verificationStatus === 'approved' && (
                                 <Badge variant="secondary" className="ml-2">Inactive</Badge>
                               )}
@@ -745,10 +812,11 @@ export function AdminKYC() {
                           </TableRow>
                         ))}
                       </TableBody>
-                    </Table>
+                      </Table>
+                    )}
                   </div>
 
-                  {allPagination && allPagination.pages > 1 && (
+                  {!groupByFilter && allPagination && allPagination.pages > 1 && (
                     <div className="mt-4">
                       <Pagination>
                         <PaginationContent>

@@ -340,7 +340,15 @@ const TopPerformingMerchants = ({
 };
 
 // Enhanced University Insights Component
-const UniversityInsights = ({ distribution }: { distribution: AdminDashboardStats['universityDistribution'] }) => {
+const UniversityInsights = ({ 
+  distribution, 
+  groupBy, 
+  onGroupByChange 
+}: { 
+  distribution: AdminDashboardStats['universityDistribution'],
+  groupBy: 'institution' | 'city',
+  onGroupByChange: (val: 'institution' | 'city') => void
+}) => {
   const [searchTerm, setSearchTerm] = useState("");
   const colors = DASHBOARD_COLORS("admin");
 
@@ -376,7 +384,7 @@ const UniversityInsights = ({ distribution }: { distribution: AdminDashboardStat
                    <p className="text-[10px] font-bold uppercase text-slate-400">Students</p>
                 </div>
                 <div className="p-4 rounded-3xl bg-blue-500/5 border border-blue-500/10">
-                   <p className="text-2xl font-black text-[#007AFF]">{uni.redemptionCount}</p>
+                   <p className="text-2xl font-black text-[#007AFF]">{uni.redemptionCount || 0}</p>
                    <p className="text-[10px] font-bold uppercase text-slate-400">Redeemed</p>
                 </div>
              </div>
@@ -384,12 +392,12 @@ const UniversityInsights = ({ distribution }: { distribution: AdminDashboardStat
              <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
                 <div>
                    <p className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Engagement Score</p>
-                   <p className="text-xs font-black text-[#007AFF] uppercase">{uni.engagementScore}x <span className="opacity-60">Score</span></p>
+                   <p className="text-xs font-black text-[#007AFF] uppercase">{uni.engagementScore || 0}x <span className="opacity-60">Score</span></p>
                 </div>
                 <div className="w-16 h-1 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                    <div 
                      className="h-full bg-[#007AFF]" 
-                     style={{ width: `${Math.min(uni.engagementScore * 20, 100)}%` }}
+                     style={{ width: `${Math.min((uni.engagementScore || 0) * 20, 100)}%` }}
                    />
                 </div>
              </div>
@@ -402,13 +410,24 @@ const UniversityInsights = ({ distribution }: { distribution: AdminDashboardStat
          <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
                <h4 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">University Deep-Dive</h4>
-               <p className="text-xs text-slate-500 font-medium">Performance metrics for {filtered.length} institutions</p>
+               <div className="flex items-center gap-2 mt-1">
+                  <Select value={groupBy} onValueChange={(v: any) => onGroupByChange(v)}>
+                    <SelectTrigger className="h-7 px-3 text-[10px] font-black uppercase rounded-full bg-indigo-600 text-white border-none shadow-lg shadow-indigo-200">
+                      <SelectValue placeholder="Group By" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="institution">By Institution</SelectItem>
+                      <SelectItem value="city">By City</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest ml-2">Metrics for {filtered.length} {groupBy === 'city' ? 'cities' : 'institutions'}</p>
+               </div>
             </div>
             <div className="relative w-full md:w-72">
                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                <input 
                  type="text" 
-                 placeholder="Search universities..." 
+                 placeholder={`Search ${groupBy === 'city' ? 'cities' : 'universities'}...`}
                  className="w-full pl-10 pr-4 py-2.5 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-blue-500 transition-all outline-none"
                  value={searchTerm}
                  onChange={(e) => setSearchTerm(e.target.value)}
@@ -437,11 +456,11 @@ const UniversityInsights = ({ distribution }: { distribution: AdminDashboardStat
                            <p className="text-[10px] font-bold uppercase text-slate-400 tracking-tighter">Students</p>
                         </div>
                         <div className="text-center md:text-right">
-                           <p className="text-xl font-black text-[#007AFF]">{uni.redemptionCount}</p>
+                           <p className="text-xl font-black text-[#007AFF]">{uni.redemptionCount || 0}</p>
                            <p className="text-[10px] font-bold uppercase text-slate-400 tracking-tighter">Redeemed</p>
                         </div>
                         <div className="px-3 py-1.5 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-center min-w-[60px]">
-                           <p className="text-sm font-black text-slate-900 dark:text-white">{uni.engagementScore}x</p>
+                           <p className="text-sm font-black text-slate-900 dark:text-white">{uni.engagementScore || 0}x</p>
                            <p className="text-[10px] font-bold uppercase text-slate-400 tracking-tighter">Score</p>
                         </div>
                      </div>
@@ -451,7 +470,7 @@ const UniversityInsights = ({ distribution }: { distribution: AdminDashboardStat
             ) : (
               <div className="p-20 text-center">
                  <School className="w-12 h-12 text-slate-200 mx-auto mb-4" />
-                 <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">No matching universities found</p>
+                 <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">No matching {groupBy === 'city' ? 'cities' : 'universities'} found</p>
               </div>
             )}
          </div>
@@ -470,9 +489,10 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
   const [dateRange, setDateRange] = useState<DateRange | undefined>()
+  const [groupBy, setGroupBy] = useState<'institution' | 'city'>('institution')
 
   // Fetch dashboard stats
-  const fetchStats = async (start?: Date, end?: Date) => {
+  const fetchStats = async (start?: Date, end?: Date, group: 'institution' | 'city' = groupBy) => {
     // Only show loading state on initial load to prevent flashing skeletons on refresh
     if (!stats) {
       setIsLoading(true);
@@ -481,7 +501,7 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     }
 
     try {
-      const data = await getAdminDashboardStats(start, end)
+      const data = await getAdminDashboardStats(start, end, group)
       setStats(data)
       setLastUpdated(new Date())
 
@@ -497,8 +517,8 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
 
   // Fetch on mount and when date range changes
   useEffect(() => {
-    fetchStats(dateRange?.from, dateRange?.to)
-  }, [dateRange])
+    fetchStats(dateRange?.from, dateRange?.to, groupBy)
+  }, [dateRange, groupBy])
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -673,7 +693,11 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                           </CardHeader>
                           <CardContent>
                              {stats?.universityDistribution && stats.universityDistribution.length > 0 ? (
-<UniversityInsights distribution={stats.universityDistribution} />
+                                <UniversityInsights 
+                                  distribution={stats.universityDistribution} 
+                                  groupBy={groupBy}
+                                  onGroupByChange={setGroupBy}
+                                />
                             ) : (
                               <div className="flex items-center justify-center h-[250px] text-muted-foreground">
                                 No university data available
