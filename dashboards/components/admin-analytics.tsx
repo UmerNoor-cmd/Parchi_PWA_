@@ -18,7 +18,7 @@ import {
 } from "recharts"
 import { DASHBOARD_COLORS } from "@/lib/colors"
 import { AdminDashboardStats } from "@/lib/api-client"
-import { TrendingUp, Users, Smartphone, Target, ArrowDownRight, Info, Apple } from "lucide-react"
+import { TrendingUp, Users, Smartphone, Target, ArrowDownRight, Info, Apple, Download, UserPlus, ShieldCheck, Ticket } from "lucide-react"
 
 interface AdminAnalyticsProps {
   stats: AdminDashboardStats | null
@@ -36,6 +36,9 @@ export function AdminAnalytics({ stats }: AdminAnalyticsProps) {
 
   // Calculate key metrics
   const appOpens = funnelData.find(s => s.step === 'App Opened')?.count || 0
+  const signupStarted = funnelData.find(s => s.step === 'Student Info Started')?.count || 0
+  const kycSubmitted = funnelData.find(s => s.step === 'Kyc Submitted')?.count || 0
+  const accountVerified = funnelData.find(s => s.step === 'Account Verified')?.count || 0
   const firstRedemptions = funnelData.find(s => s.step === 'First Redemption')?.count || 0
   const overallConversion = appOpens > 0 ? ((firstRedemptions / appOpens) * 100).toFixed(1) : "0"
 
@@ -334,69 +337,149 @@ export function AdminAnalytics({ stats }: AdminAnalyticsProps) {
           </Card>
 
           {/* Conversion Rates Card */}
-          <Card className="md:col-span-2 border-none shadow-sm bg-gradient-to-br from-indigo-50 to-white dark:from-slate-900 dark:to-slate-800">
-            <CardHeader>
-                <CardTitle className="text-lg">Funnel Conversion Metrics</CardTitle>
-                <CardDescription>Step-by-step conversion efficiency</CardDescription>
+          <Card className="md:col-span-2 border-none shadow-sm bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
+            <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <CardTitle className="text-xl font-black tracking-tight">Onboarding Efficiency</CardTitle>
+                        <CardDescription>Step-by-step funnel conversion analysis</CardDescription>
+                    </div>
+                    <div className="bg-indigo-50 dark:bg-indigo-900/20 px-3 py-1 rounded-full border border-indigo-100 dark:border-indigo-900/30">
+                        <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest">Real-time Data</span>
+                    </div>
+                </div>
             </CardHeader>
             <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                        <div className="p-4 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-indigo-100 dark:border-indigo-900/30">
-                            <div className="text-[10px] uppercase font-bold text-indigo-500 mb-1">Install → Signup Started</div>
-                            <div className="flex items-end justify-between">
-                                <div className="text-2xl font-bold">
-                                    {appOpens > 0 ? Math.min(100, ((funnelData.find(s => s.step === 'Student Info Started')?.count || 0) / appOpens * 100)).toFixed(1) : "0"}%
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                    {/* Step 1: Install to Signup */}
+                    <div className="group relative p-5 bg-slate-50/50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-indigo-200 dark:hover:border-indigo-900/50 transition-all duration-300">
+                        <div className="flex items-start justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-indigo-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
+                                    <Download className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Step 1</h4>
+                                    <p className="text-sm font-bold text-slate-700 dark:text-slate-200">App Install → Signup</p>
                                 </div>
                             </div>
-                            <div className="w-full bg-slate-100 dark:bg-slate-700 h-1.5 rounded-full mt-3 overflow-hidden">
-                                <div 
-                                    className="h-full bg-indigo-500 rounded-full" 
-                                    style={{ width: `${appOpens > 0 ? Math.min(100, (funnelData.find(s => s.step === 'Student Info Started')?.count || 0) / appOpens * 100) : 0}%` }}
-                                />
+                            <div className="text-right">
+                                <div className="text-2xl font-black text-indigo-600">
+                                    {appOpens > 0 ? Math.min(100, (signupStarted / appOpens * 100)).toFixed(1) : "0"}%
+                                </div>
+                                <p className="text-[10px] text-slate-400 font-medium">{signupStarted} / {appOpens} students</p>
                             </div>
                         </div>
-
-                        <div className="p-4 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-emerald-100 dark:border-emerald-900/30">
-                            <div className="text-[10px] uppercase font-bold text-emerald-500 mb-1">Signup Started → KYC Submitted</div>
-                            <div className="flex items-end justify-between">
-                                <div className="text-2xl font-bold">
-                                    {funnelData.find(s => s.step === 'Student Info Started')?.count || 0 > 0 ? 
-                                        Math.min(100, ((funnelData.find(s => s.step === 'Kyc Submitted')?.count || 0) / (funnelData.find(s => s.step === 'Student Info Started')?.count || 1) * 100)).toFixed(1) : "0"}%
-                                </div>
+                        <div className="space-y-2">
+                            <div className="flex justify-between text-[10px] font-bold">
+                                <span className="text-indigo-500">CONVERSION RATE</span>
+                                <span className="text-slate-400">SUCCESS</span>
                             </div>
-                            <div className="w-full bg-slate-100 dark:bg-slate-700 h-1.5 rounded-full mt-3 overflow-hidden">
+                            <div className="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
                                 <div 
-                                    className="h-full bg-emerald-500 rounded-full" 
-                                    style={{ width: `${(funnelData.find(s => s.step === 'Student Info Started')?.count || 0) > 0 ? 
-                                        Math.min(100, (funnelData.find(s => s.step === 'Kyc Submitted')?.count || 0) / (funnelData.find(s => s.step === 'Student Info Started')?.count || 1) * 100) : 0}%` }}
+                                    className="h-full bg-indigo-500 rounded-full transition-all duration-1000 ease-out" 
+                                    style={{ width: `${appOpens > 0 ? Math.min(100, (signupStarted / appOpens * 100)) : 0}%` }}
                                 />
                             </div>
                         </div>
                     </div>
 
-                    <div className="space-y-4">
-                        <div className="p-4 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-amber-100 dark:border-amber-900/30">
-                            <div className="text-[10px] uppercase font-bold text-amber-500 mb-1">KYC Approved → First Redemption</div>
-                            <div className="flex items-end justify-between">
-                                <div className="text-2xl font-bold">
-                                    {funnelData.find(s => s.step === 'Account Verified')?.count || 0 > 0 ? 
-                                        Math.min(100, ((funnelData.find(s => s.step === 'First Redemption')?.count || 0) / (funnelData.find(s => s.step === 'Account Verified')?.count || 1) * 100)).toFixed(1) : "0"}%
+                    {/* Step 2: Signup to KYC */}
+                    <div className="group relative p-5 bg-slate-50/50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-emerald-200 dark:hover:border-emerald-900/50 transition-all duration-300">
+                        <div className="flex items-start justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center text-white shadow-lg shadow-emerald-500/20">
+                                    <UserPlus className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Step 2</h4>
+                                    <p className="text-sm font-bold text-slate-700 dark:text-slate-200">Signup → KYC Submit</p>
                                 </div>
                             </div>
-                            <div className="w-full bg-slate-100 dark:bg-slate-700 h-1.5 rounded-full mt-3 overflow-hidden">
+                            <div className="text-right">
+                                <div className="text-2xl font-black text-emerald-600">
+                                    {signupStarted > 0 ? Math.min(100, (kycSubmitted / signupStarted * 100)).toFixed(1) : "0"}%
+                                </div>
+                                <p className="text-[10px] text-slate-400 font-medium">{kycSubmitted} / {signupStarted} students</p>
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <div className="flex justify-between text-[10px] font-bold">
+                                <span className="text-emerald-500">CONVERSION RATE</span>
+                                <span className="text-slate-400">SUCCESS</span>
+                            </div>
+                            <div className="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
                                 <div 
-                                    className="h-full bg-amber-500 rounded-full" 
-                                    style={{ width: `${(funnelData.find(s => s.step === 'Account Verified')?.count || 0) > 0 ? 
-                                        Math.min(100, (funnelData.find(s => s.step === 'First Redemption')?.count || 0) / (funnelData.find(s => s.step === 'Account Verified')?.count || 1) * 100) : 0}%` }}
+                                    className="h-full bg-emerald-500 rounded-full transition-all duration-1000 ease-out" 
+                                    style={{ width: `${signupStarted > 0 ? Math.min(100, (kycSubmitted / signupStarted * 100)) : 0}%` }}
                                 />
                             </div>
                         </div>
+                    </div>
 
-                        <div className="p-4 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-blue-100 dark:border-blue-900/30">
-                            <div className="text-[10px] uppercase font-bold text-blue-500 mb-1">End-to-End Retention</div>
-                            <div className="text-2xl font-bold text-blue-600">{overallConversion}%</div>
-                            <p className="text-[10px] text-muted-foreground mt-1">From initial app open to final utility</p>
+                    {/* Step 3: KYC to Redemption */}
+                    <div className="group relative p-5 bg-slate-50/50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-amber-200 dark:hover:border-amber-900/50 transition-all duration-300">
+                        <div className="flex items-start justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center text-white shadow-lg shadow-amber-500/20">
+                                    <ShieldCheck className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Step 3</h4>
+                                    <p className="text-sm font-bold text-slate-700 dark:text-slate-200">KYC Verify → First Use</p>
+                                </div>
+                            </div>
+                            <div className="text-right">
+                                <div className="text-2xl font-black text-amber-600">
+                                    {accountVerified > 0 ? Math.min(100, (firstRedemptions / accountVerified * 100)).toFixed(1) : "0"}%
+                                </div>
+                                <p className="text-[10px] text-slate-400 font-medium">{firstRedemptions} / {accountVerified} students</p>
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <div className="flex justify-between text-[10px] font-bold">
+                                <span className="text-amber-500">CONVERSION RATE</span>
+                                <span className="text-slate-400">SUCCESS</span>
+                            </div>
+                            <div className="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
+                                <div 
+                                    className="h-full bg-amber-500 rounded-full transition-all duration-1000 ease-out" 
+                                    style={{ width: `${accountVerified > 0 ? Math.min(100, (firstRedemptions / accountVerified * 100)) : 0}%` }}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Final Step: Retention */}
+                    <div className="group relative p-5 bg-indigo-600 rounded-2xl border border-indigo-500 shadow-xl shadow-indigo-500/10 transition-all duration-300">
+                        <div className="flex items-start justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white">
+                                    <Ticket className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h4 className="text-[10px] font-bold text-indigo-200 uppercase tracking-wider">Final Goal</h4>
+                                    <p className="text-sm font-bold text-white">End-to-End Retention</p>
+                                </div>
+                            </div>
+                            <div className="text-right">
+                                <div className="text-2xl font-black text-white">
+                                    {overallConversion}%
+                                </div>
+                                <p className="text-[10px] text-indigo-200 font-medium">Platform Utility Rate</p>
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <div className="flex justify-between text-[10px] font-bold">
+                                <span className="text-indigo-200">TOTAL EFFICIENCY</span>
+                                <span className="text-indigo-200">NORTH STAR</span>
+                            </div>
+                            <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
+                                <div 
+                                    className="h-full bg-white rounded-full transition-all duration-1000 ease-out" 
+                                    style={{ width: `${overallConversion}%` }}
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>
