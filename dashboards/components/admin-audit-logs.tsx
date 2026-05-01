@@ -69,6 +69,7 @@ export function AdminAuditLogs() {
         sort: "newest",
     })
     const [searchInput, setSearchInput] = useState("")
+    const [selectedCategory, setSelectedCategory] = useState<string>("all")
     const [selectedAction, setSelectedAction] = useState<string>("all")
     const [startDate, setStartDate] = useState("")
     const [endDate, setEndDate] = useState("")
@@ -128,6 +129,17 @@ export function AdminAuditLogs() {
         setFilters((prev) => ({ ...prev, search: searchInput || undefined, page: 1 }))
     }
 
+    const handleCategoryFilter = (category: string) => {
+        setSelectedCategory(category)
+        setSelectedAction("all")
+        setFilters((prev) => ({
+            ...prev,
+            category: category === "all" ? undefined : category,
+            action: undefined,
+            page: 1,
+        }))
+    }
+
     const handleActionFilter = (action: string) => {
         setSelectedAction(action)
         setFilters((prev) => ({
@@ -148,6 +160,7 @@ export function AdminAuditLogs() {
 
     const handleClearFilters = () => {
         setSearchInput("")
+        setSelectedCategory("all")
         setSelectedAction("all")
         setStartDate("")
         setEndDate("")
@@ -174,10 +187,14 @@ export function AdminAuditLogs() {
 
     const getActionColor = (action: string): string => {
         const colorMap: Record<string, string> = {
-            APPROVE_REJECT_STUDENT: "bg-green-100 text-green-800",
-            APPROVE_REJECT_MERCHANT: "bg-blue-100 text-blue-800",
-            APPROVE_REJECT_BRANCH: "bg-indigo-100 text-indigo-800",
-            APPROVE_REJECT_OFFER: "bg-purple-100 text-purple-800",
+            APPROVE_STUDENT: "bg-green-100 text-green-800",
+            REJECT_STUDENT: "bg-red-100 text-red-800",
+            APPROVE_MERCHANT: "bg-blue-100 text-blue-800",
+            REJECT_MERCHANT: "bg-orange-100 text-orange-800",
+            APPROVE_BRANCH: "bg-indigo-100 text-indigo-800",
+            REJECT_BRANCH: "bg-pink-100 text-pink-800",
+            APPROVE_OFFER: "bg-purple-100 text-purple-800",
+            REJECT_OFFER: "bg-amber-100 text-amber-800",
             CREATE_REDEMPTION: "bg-orange-100 text-orange-800",
             REJECT_REDEMPTION: "bg-red-100 text-red-800",
             CREATE_STUDENT: "bg-cyan-100 text-cyan-800",
@@ -203,14 +220,31 @@ export function AdminAuditLogs() {
             .join(" ")
     }
 
-    const commonActions = [
-        { value: "all", label: "All Actions" },
-        { value: "APPROVE_REJECT_STUDENT", label: "Student Approval/Rejection" },
-        { value: "APPROVE_REJECT_MERCHANT", label: "Merchant Approval/Rejection" },
-        { value: "APPROVE_REJECT_BRANCH", label: "Branch Approval/Rejection" },
-        { value: "APPROVE_REJECT_OFFER", label: "Offer Approval/Rejection" },
-        { value: "CREATE_REDEMPTION", label: "Redemption Created" },
+    const categoryFilters = [
+        { value: "all", label: "All Categories" },
+        { value: "accept", label: "✅ Accept Actions" },
+        { value: "reject", label: "❌ Reject Actions" },
     ]
+
+    const getActionsByCategory = (category: string) => {
+        const allActions = [
+            { value: "APPROVE_STUDENT", label: "Student Approved", type: 'accept' },
+            { value: "REJECT_STUDENT", label: "Student Rejected", type: 'reject' },
+            { value: "APPROVE_MERCHANT", label: "Merchant Approved", type: 'accept' },
+            { value: "REJECT_MERCHANT", label: "Merchant Rejected", type: 'reject' },
+            { value: "APPROVE_BRANCH", label: "Branch Approved", type: 'accept' },
+            { value: "REJECT_BRANCH", label: "Branch Rejected", type: 'reject' },
+            { value: "APPROVE_OFFER", label: "Offer Approved", type: 'accept' },
+            { value: "REJECT_OFFER", label: "Offer Rejected", type: 'reject' },
+            { value: "CREATE_REDEMPTION", label: "Redemption Created", type: 'accept' },
+            { value: "REJECT_REDEMPTION", label: "Redemption Rejected", type: 'reject' },
+        ]
+
+        if (category === "all") return allActions
+        return allActions.filter(a => a.type === category)
+    }
+
+    const filteredActions = getActionsByCategory(selectedCategory)
 
     return (
         <div className="space-y-6">
@@ -319,15 +353,32 @@ export function AdminAuditLogs() {
                             </div>
 
                             {/* Action and Date Filters */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                                 <div>
-                                    <label className="text-sm font-medium mb-2 block">Action Type</label>
+                                    <label className="text-sm font-medium mb-2 block">Category</label>
+                                    <Select value={selectedCategory} onValueChange={handleCategoryFilter}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select category" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {categoryFilters.map((cat) => (
+                                                <SelectItem key={cat.value} value={cat.value}>
+                                                    {cat.label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div>
+                                    <label className="text-sm font-medium mb-2 block">Specific Action</label>
                                     <Select value={selectedAction} onValueChange={handleActionFilter}>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select action" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {commonActions.map((action) => (
+                                            <SelectItem value="all">All Actions</SelectItem>
+                                            {filteredActions.map((action) => (
                                                 <SelectItem key={action.value} value={action.value}>
                                                     {action.label}
                                                 </SelectItem>
@@ -414,8 +465,17 @@ export function AdminAuditLogs() {
                                             <TableBody>
                                                 {logs.map((log) => {
                                                     const datetime = formatDateTime(log.createdAt)
+                                                    const isReject = log.action.includes('REJECT')
+                                                    const isAccept = log.action.includes('APPROVE') || log.action.includes('CREATE_REDEMPTION')
+                                                    
                                                     return (
-                                                        <TableRow key={log.id}>
+                                                        <TableRow 
+                                                          key={log.id}
+                                                          className={
+                                                              isReject ? "border-l-4 border-l-red-500" : 
+                                                              isAccept ? "border-l-4 border-l-green-500" : ""
+                                                          }
+                                                        >
                                                             <TableCell>
                                                                 <div className="text-sm">
                                                                     <div className="font-medium">{datetime.date}</div>
@@ -444,7 +504,7 @@ export function AdminAuditLogs() {
                                                                         <div className="font-mono text-xs">{log.recordId.slice(0, 8)}...</div>
                                                                     )}
                                                                     {/* Show student details for student approval actions */}
-                                                                    {log.action === 'APPROVE_REJECT_STUDENT' && log.newValues && (
+                                                                    {(log.action === 'APPROVE_STUDENT' || log.action === 'REJECT_STUDENT') && log.newValues && (
                                                                         <div className="mt-1 text-xs">
                                                                             {log.newValues.parchiId && (
                                                                                 <div className="font-semibold text-blue-600">
@@ -531,7 +591,7 @@ export function AdminAuditLogs() {
                                                                 <div className="font-mono text-xs">ID: {log.recordId.slice(0, 8)}...</div>
                                                             )}
                                                             {/* Show student details for student approval actions */}
-                                                            {log.action === 'APPROVE_REJECT_STUDENT' && log.newValues && (
+                                                            {(log.action === 'APPROVE_STUDENT' || log.action === 'REJECT_STUDENT') && log.newValues && (
                                                                 <div className="mt-1 text-xs">
                                                                     {log.newValues.parchiId && (
                                                                         <div className="font-semibold text-blue-600">
@@ -649,7 +709,7 @@ export function AdminAuditLogs() {
                             </div>
 
                             {/* Student Details Section for Student Approvals */}
-                            {selectedLog.action === 'APPROVE_REJECT_STUDENT' && selectedLog.newValues && (
+                            {(selectedLog.action === 'APPROVE_STUDENT' || selectedLog.action === 'REJECT_STUDENT') && selectedLog.newValues && (
                                 <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
                                     <h4 className="font-semibold mb-3 text-blue-900">Student Details</h4>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">

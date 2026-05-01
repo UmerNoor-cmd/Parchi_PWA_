@@ -1,6 +1,7 @@
 "use client"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import {
   BarChart,
   Bar,
@@ -564,6 +565,173 @@ export function AdminAnalytics({ stats, isFiltered }: AdminAnalyticsProps) {
                 </div>
             </CardContent>
           </Card>
+      </div>
+
+      {/* --- KYC Rejection & Active User Tracking --- */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* KYC Rejection Analysis */}
+        <Card className="border-none shadow-sm overflow-hidden bg-white dark:bg-slate-900">
+          <CardHeader className="bg-slate-50/50 dark:bg-slate-800/20 border-b border-slate-100 dark:border-slate-800/50">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-xl font-black tracking-tighter">KYC Rejection Analysis</CardTitle>
+                <CardDescription className="text-[10px] font-bold uppercase text-slate-500 tracking-widest mt-1">Rejection Reasons & Institutional Breakdown</CardDescription>
+              </div>
+              <Badge variant="destructive" className="rounded-full px-3 py-1 font-black text-[10px] uppercase tracking-wider">
+                {stats.kycRejectionStats?.totalRejected || 0} Total Rejections
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Pie Chart: Reasons */}
+              <div className="space-y-4">
+                <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest text-center">Rejection Reasons</h4>
+                <div className="h-[200px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={stats.kycRejectionStats?.byReason || []}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={50}
+                        outerRadius={70}
+                        paddingAngle={5}
+                        dataKey="count"
+                        nameKey="reason"
+                      >
+                        {(stats.kycRejectionStats?.byReason || []).map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} stroke="none" />
+                        ))}
+                      </Pie>
+                      <Tooltip content={<ChartTooltip suffix="Students" />} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="space-y-2">
+                  {(stats.kycRejectionStats?.byReason || []).slice(0, 3).map((item, idx) => (
+                    <div key={item.reason} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 max-w-[140px]">
+                        <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: PIE_COLORS[idx % PIE_COLORS.length] }} />
+                        <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 truncate">{item.reason}</span>
+                      </div>
+                      <span className="text-[10px] font-black text-slate-900 dark:text-slate-200">{item.count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Bar Chart: University */}
+              <div className="space-y-4">
+                <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest text-center">Top 5 Rejection Hubs</h4>
+                <div className="h-[200px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={stats.kycRejectionStats?.byUniversity || []}
+                      layout="vertical"
+                      margin={{ left: -20, right: 30, top: 0, bottom: 0 }}
+                    >
+                      <XAxis type="number" hide />
+                      <YAxis 
+                        dataKey="university" 
+                        type="category" 
+                        fontSize={9} 
+                        fontWeight={800} 
+                        width={100}
+                        tickLine={false}
+                        axisLine={false}
+                        tick={(props) => {
+                          const { x, y, payload } = props;
+                          return (
+                            <g transform={`translate(${x},${y})`}>
+                              <text x={0} y={0} dy={4} textAnchor="end" fill="#64748b" className="uppercase" fontSize={8} fontWeight={900}>
+                                {payload.value.length > 15 ? payload.value.substring(0, 15) + '...' : payload.value}
+                              </text>
+                            </g>
+                          );
+                        }}
+                      />
+                      <Tooltip content={<ChartTooltip suffix="Rejected" />} />
+                      <Bar dataKey="rejectedCount" fill="#EF4444" radius={[0, 4, 4, 0]} barSize={16} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Info className="w-3 h-3 text-red-500" />
+                    <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Primary Issue Identified</span>
+                  </div>
+                  <p className="text-xs font-black text-slate-900 dark:text-white">{stats.kycRejectionStats?.mostFoundIssue || 'No data available'}</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Active User Activity */}
+        <Card className="border-none shadow-sm overflow-hidden bg-white dark:bg-slate-900">
+          <CardHeader className="bg-slate-50/50 dark:bg-slate-800/20 border-b border-slate-100 dark:border-slate-800/50">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-xl font-black tracking-tighter">Active User Momentum</CardTitle>
+                <CardDescription className="text-[10px] font-bold uppercase text-slate-500 tracking-widest mt-1">Transaction & Engagement Trends</CardDescription>
+              </div>
+              <div className="flex gap-2">
+                <Badge variant="outline" className="rounded-full bg-emerald-500/10 text-emerald-600 border-emerald-500/20 px-3 py-1 font-black text-[10px] uppercase tracking-wider">
+                  {stats.activeUserTracking?.last7Days.uniqueStudents || 0} Act. Students (7d)
+                </Badge>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 rounded-3xl bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800">
+                   <p className="text-2xl font-black text-[#007AFF] tracking-tighter">{stats.activeUserTracking?.last30Days.totalRedemptions || 0}</p>
+                   <p className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">30d Redemptions</p>
+                </div>
+                <div className="p-4 rounded-3xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800">
+                   <p className="text-2xl font-black text-emerald-600 tracking-tighter">{stats.activeUserTracking?.last30Days.uniqueStudents || 0}</p>
+                   <p className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">30d Unique Users</p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest">Transaction Trends (Last 30 Days)</h4>
+                <div className="h-[200px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={stats.activeUserTracking?.last30Days.dailyBreakdown || []}>
+                      <defs>
+                        <linearGradient id="activeUserGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor={colors.primary} stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor={colors.primary} stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                      <XAxis 
+                        dataKey="date" 
+                        fontSize={8} 
+                        tickLine={false} 
+                        axisLine={false}
+                        tickFormatter={(val) => val.split('-').slice(1).join('/')}
+                      />
+                      <YAxis fontSize={10} tickLine={false} axisLine={false} />
+                      <Tooltip content={<ChartTooltip suffix="Txns" />} />
+                      <Area 
+                        type="monotone" 
+                        dataKey="count" 
+                        stroke={colors.primary} 
+                        strokeWidth={3} 
+                        fillOpacity={1} 
+                        fill="url(#activeUserGradient)" 
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* --- Admin Insights Card --- */}
