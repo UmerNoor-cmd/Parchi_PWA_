@@ -43,7 +43,9 @@ export function AdminKYC() {
   const [studentToDeactivate, setStudentToDeactivate] = useState<Student | null>(null)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [studentToDelete, setStudentToDelete] = useState<Student | null>(null)
+  const [cnicInput, setCnicInput] = useState("")
   const { toast } = useToast()
+
 
   const { students: pendingStudents, loading: pendingLoading, error: pendingError, pagination: pendingPagination, refetch: refetchPending } = usePendingStudents(pendingPage, 12)
 
@@ -138,8 +140,21 @@ export function AdminKYC() {
 
   const handleApprove = async () => {
     if (!selectedStudentId) return
+    
+    const digitsOnly = cnicInput.replace(/\D/g, "")
+    if (digitsOnly.length !== 13) {
+      toast({
+        title: "Invalid CNIC",
+        description: "Please enter a valid 13-digit CNIC number.",
+        variant: "destructive"
+      })
+      return
+    }
 
-    const result = await approveReject(selectedStudentId, { action: 'approve' })
+    const result = await approveReject(selectedStudentId, { 
+      action: 'approve',
+      cnic: digitsOnly
+    })
     if (result) {
       toast({
         title: "Success",
@@ -147,9 +162,11 @@ export function AdminKYC() {
       })
       setIsReviewOpen(false)
       setSelectedStudentId(null)
+      setCnicInput("")
       refetchPending()
       refetchAll()
     } else {
+
       toast({
         title: "Error",
         description: approveRejectError || "Failed to approve student",
@@ -1128,6 +1145,31 @@ export function AdminKYC() {
                 Verify Email
               </Button>
             )}
+            
+            {studentDetail?.verificationStatus !== 'approved' && (
+              <div className="flex items-center gap-2 mr-auto">
+                <div className="grid w-full max-w-sm items-center gap-1.5">
+                  <Label htmlFor="cnic-verify" className="sr-only">Enter CNIC</Label>
+                  <Input 
+                    id="cnic-verify"
+                    placeholder="Enter 13-digit CNIC" 
+                    value={cnicInput}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, "");
+                      if (val.length <= 13) setCnicInput(val);
+                    }}
+                    className="w-[200px]"
+                    autoComplete="off"
+                  />
+                </div>
+                {cnicInput.length > 0 && (
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">
+                    {cnicInput.length}/13
+                  </span>
+                )}
+              </div>
+            )}
+
             <Button
               variant="destructive"
               onClick={handleRejectClick}

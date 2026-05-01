@@ -529,7 +529,10 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
 
 
 
+          {activeTab === "financials" && <AdminFinancials />}
+          
           {activeTab === "account-creation" && <AccountCreation />}
+
 
           {activeTab === "notifications" && <AdminNotifications />}
 

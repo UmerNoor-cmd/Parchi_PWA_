@@ -1546,6 +1546,10 @@ export interface AdminDashboardStats {
   }[];
   leaderboardTopPerformers: number;
   foundersClubMembers: number;
+  kycPerformance?: {
+    medianDaysToFirstRedemption: number;
+  };
+
   funnelStats?: {
     step: string;
     count: number;

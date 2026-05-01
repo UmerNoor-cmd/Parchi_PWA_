@@ -304,7 +304,15 @@ export function AdminAnalytics({ stats }: AdminAnalyticsProps) {
                     Successful platforms in this category typically target 15-20%. Current trends suggest {appOpens > 50 ? "stable" : "early stage"} traffic volume.
                 </p>
             </div>
+            <div className="space-y-2">
+                <h4 className="text-sm font-bold text-indigo-400">KYC Momentum</h4>
+                <p className="text-sm text-slate-300 leading-relaxed">
+                    Students take a median of <strong>{stats.kycPerformance?.medianDaysToFirstRedemption ?? "N/A"} days</strong> from KYC approval to their first redemption. 
+                    { (stats.kycPerformance?.medianDaysToFirstRedemption ?? 10) < 3 ? " Your onboarding is highly efficient." : " Consider offering a 'First Redemption Bonus' to speed this up."}
+                </p>
+            </div>
           </div>
+
         </CardContent>
       </Card>
     </div>
