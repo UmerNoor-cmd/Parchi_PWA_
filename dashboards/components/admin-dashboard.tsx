@@ -25,22 +25,31 @@ import { Check, X, TrendingUp, Users, FileText, ShoppingCart, CheckCircle2, Chev
 
 // Premium Metric Card Component
 const MetricCard = ({ title, value, subtitle, icon: Icon, color }: { title: string, value: any, subtitle: string, icon: any, color: string }) => (
-  <div className="relative group p-6 rounded-[2rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden">
+  <div className="relative group p-6 rounded-[2rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-2xl transition-all duration-500 overflow-hidden hover:-translate-y-1">
+     {/* Dynamic Glow Effect */}
+     <div 
+        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"
+        style={{ 
+          background: `radial-gradient(circle at top right, ${color}15, transparent 70%)` 
+        }}
+     />
      <div className="absolute -top-6 -right-6 p-8 opacity-5 group-hover:opacity-10 group-hover:scale-125 transition-all duration-700">
         <Icon className="w-24 h-24" style={{ color }} />
      </div>
-     <div className="flex justify-between items-start mb-6">
-        <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
+     <div className="relative z-10 flex justify-between items-start mb-6">
+        <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 group-hover:border-indigo-200/50 transition-colors">
            <Icon className="w-6 h-6" style={{ color }} />
         </div>
      </div>
-     <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1.5">{title}</h3>
-     <div className="flex items-baseline gap-2">
-        <p className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter">{value.toLocaleString()}</p>
-     </div>
-     <div className="flex items-center gap-1.5 mt-3">
-        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">{subtitle}</p>
+     <div className="relative z-10">
+        <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1.5">{title}</h3>
+        <div className="flex items-baseline gap-2">
+           <p className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter group-hover:text-indigo-600 transition-colors">{value.toLocaleString()}</p>
+        </div>
+        <div className="flex items-center gap-1.5 mt-3">
+           <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">{subtitle}</p>
+        </div>
      </div>
   </div>
 );
