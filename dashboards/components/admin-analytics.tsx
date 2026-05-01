@@ -547,7 +547,7 @@ export function AdminAnalytics({ stats }: AdminAnalyticsProps) {
                 </div>
                 <div className="space-y-4">
                     <p className="text-sm text-slate-300 leading-relaxed min-h-[40px]">
-                        Your end-to-end conversion is <strong className="text-white">{overallConversion}%</strong>. Successful platforms typically target 15-20%.
+                        Measures the percentage of users who successfully complete the journey from initial app download to their <strong className="text-white">first redemption</strong>.
                     </p>
                     <div className="h-32 w-full flex items-center justify-center">
 
@@ -556,8 +556,7 @@ export function AdminAnalytics({ stats }: AdminAnalyticsProps) {
                                 <Pie
                                     data={[
                                         { value: parseFloat(overallConversion), name: 'Converted' },
-                                        { value: Math.max(0, 20 - parseFloat(overallConversion)), name: 'To Target' },
-                                        { value: 80, name: 'Remaining' }
+                                        { value: 100 - parseFloat(overallConversion), name: 'Remaining' }
                                     ]}
                                     cx="50%"
                                     cy="50%"
@@ -569,7 +568,6 @@ export function AdminAnalytics({ stats }: AdminAnalyticsProps) {
                                     endAngle={-270}
                                 >
                                     <Cell fill="#10B981" />
-                                    <Cell fill="#064E3B" fillOpacity={0.5} />
                                     <Cell fill="#1e293b" />
                                 </Pie>
                                 <text 
