@@ -309,7 +309,7 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               <h1 className="text-3xl font-bold" style={{ color: colors.primary }}>Admin Dashboard</h1>
               <p className="text-muted-foreground mt-1">Platform management and oversight</p>
             </div>
-          {(activeTab === "overview" || activeTab === "analytics") && (
+          {activeTab === "analytics" && (
             <div className="flex items-center gap-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-all duration-500 hover:shadow-md hover:border-indigo-200/50 dark:hover:border-indigo-900/50">
               <DatePickerWithRange 
                 date={dateRange}
@@ -525,7 +525,7 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           )}
 
           {activeTab === "analytics" && (
-            <AdminAnalytics stats={stats} isFiltered={!!dateRange?.from} />
+            <AdminAnalytics stats={stats} isFiltered={!!dateRange?.from} key={lastUpdated.getTime()} />
           )}
 
           {activeTab === "redemption-engine" && <AdminRedemptionEngine />}
