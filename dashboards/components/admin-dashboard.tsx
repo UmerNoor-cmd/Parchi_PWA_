@@ -238,6 +238,7 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
+  const [dateRange, setDateRange] = useState<DateRange | undefined>()
 
   // Fetch dashboard stats
   const fetchStats = async (start?: Date, end?: Date) => {
@@ -263,10 +264,10 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     }
   }
 
-  // Fetch on mount
+  // Fetch on mount and when date range changes
   useEffect(() => {
-    fetchStats()
-  }, [])
+    fetchStats(dateRange?.from, dateRange?.to)
+  }, [dateRange])
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -309,18 +310,25 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               <p className="text-muted-foreground mt-1">Platform management and oversight</p>
             </div>
           {(activeTab === "overview" || activeTab === "analytics") && (
-            <div className="fixed top-6 right-6 z-[9999]">
-                <Button 
-                  variant="default" 
-                  size="icon" 
-                  onClick={() => {
-                    toast.info('Refreshing data...')
-                    fetchStats()
-                  }} 
-                  className="rounded-full shadow-2xl h-14 w-14 bg-white text-primary hover:bg-slate-50 border-2 border-primary"
-                >
-                  <RefreshCw className={`h-6 w-6 ${isLoading || isRefreshing ? 'animate-spin' : ''}`} />
-                </Button>
+            <div className="flex items-center gap-4">
+              <DatePickerWithRange 
+                date={dateRange}
+                setDate={setDateRange}
+                className="w-[300px]"
+              />
+              <div className="fixed top-6 right-6 z-[9999]">
+                  <Button 
+                    variant="default" 
+                    size="icon" 
+                    onClick={() => {
+                      toast.info('Refreshing data...')
+                      fetchStats(dateRange?.from, dateRange?.to)
+                    }} 
+                    className="rounded-full shadow-2xl h-14 w-14 bg-white text-primary hover:bg-slate-50 border-2 border-primary"
+                  >
+                    <RefreshCw className={`h-6 w-6 ${isLoading || isRefreshing ? 'animate-spin' : ''}`} />
+                  </Button>
+              </div>
             </div>
           )}
 
@@ -385,7 +393,7 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                           <div className="text-2xl font-bold" style={{ color: colors.primary }}>
                             {stats?.platformOverview.totalRedemptions.toLocaleString()}
                           </div>
-                          <p className="text-xs text-muted-foreground mt-1">All Time</p>
+                          <p className="text-xs text-muted-foreground mt-1">{dateRange?.from ? 'Selected Period' : 'All Time'}</p>
                         </CardContent>
                       </Card>
                     </div>
@@ -517,7 +525,7 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           )}
 
           {activeTab === "analytics" && (
-            <AdminAnalytics stats={stats} />
+            <AdminAnalytics stats={stats} isFiltered={!!dateRange?.from} />
           )}
 
           {activeTab === "redemption-engine" && <AdminRedemptionEngine />}

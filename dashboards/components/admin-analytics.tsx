@@ -22,9 +22,10 @@ import { TrendingUp, Users, Smartphone, Target, ArrowDownRight, Info, Apple, Dow
 
 interface AdminAnalyticsProps {
   stats: AdminDashboardStats | null
+  isFiltered?: boolean
 }
 
-export function AdminAnalytics({ stats }: AdminAnalyticsProps) {
+export function AdminAnalytics({ stats, isFiltered }: AdminAnalyticsProps) {
   const colors = DASHBOARD_COLORS("admin")
 
   if (!stats) return null
@@ -420,8 +421,10 @@ export function AdminAnalytics({ stats }: AdminAnalyticsProps) {
                         <CardTitle className="text-xl font-black tracking-tight">Onboarding Efficiency</CardTitle>
                         <CardDescription>Step-by-step funnel conversion analysis</CardDescription>
                     </div>
-                    <div className="bg-indigo-50 dark:bg-indigo-900/20 px-3 py-1 rounded-full border border-indigo-100 dark:border-indigo-900/30">
-                        <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest">Real-time Data</span>
+                    <div className={isFiltered ? "bg-amber-50 dark:bg-amber-900/20 px-3 py-1 rounded-full border border-amber-100 dark:border-amber-900/30" : "bg-indigo-50 dark:bg-indigo-900/20 px-3 py-1 rounded-full border border-indigo-100 dark:border-indigo-900/30"}>
+                        <span className={`text-[10px] font-bold uppercase tracking-widest ${isFiltered ? 'text-amber-600' : 'text-indigo-600'}`}>
+                          {isFiltered ? 'Filtered Data' : 'Real-time Data'}
+                        </span>
                     </div>
                 </div>
             </CardHeader>
