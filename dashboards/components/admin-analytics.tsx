@@ -292,23 +292,27 @@ export function AdminAnalytics({ stats }: AdminAnalyticsProps) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Bottleneck Analysis */}
             <div className="space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-2">
                     <h4 className="text-sm font-bold text-blue-400">Bottleneck Analysis</h4>
                     <span className="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full uppercase">Critical</span>
                 </div>
-                <div className="space-y-2">
-                    <p className="text-sm text-slate-300 leading-relaxed">
+                <div className="space-y-4">
+                    <p className="text-sm text-slate-300 leading-relaxed min-h-[40px]">
                         The highest drop-off rate of <strong className="text-white">{maxDropoffPct.toFixed(0)}%</strong> occurs at <strong className="text-white">{maxDropoffStep}</strong>.
                     </p>
-                    <div className="h-16 w-full mt-2">
+                    <div className="h-28 w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={dropoffData.slice(0, 5)}>
-                                <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                                    {dropoffData.slice(0, 5).map((entry, index) => (
+                            <BarChart data={dropoffData.slice(0, 6)} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                <Tooltip 
+                                    contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', fontSize: '10px' }}
+                                    itemStyle={{ color: '#fff' }}
+                                />
+                                <Bar dataKey="count" radius={[4, 4, 0, 0]} barSize={25}>
+                                    {dropoffData.slice(0, 6).map((entry, index) => (
                                         <Cell 
                                             key={`cell-${index}`} 
                                             fill={entry.step.includes(maxDropoffStep.toLowerCase().replace(/ /g, '_')) ? "#EF4444" : "#3B82F6"} 
-                                            fillOpacity={0.6}
+                                            fillOpacity={0.8}
                                         />
                                     ))}
                                 </Bar>
@@ -320,62 +324,74 @@ export function AdminAnalytics({ stats }: AdminAnalyticsProps) {
 
             {/* Conversion Health */}
             <div className="space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-2">
                     <h4 className="text-sm font-bold text-emerald-400">Conversion Health</h4>
                     <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full uppercase">Benchmark</span>
                 </div>
-                <div className="space-y-2">
-                    <p className="text-sm text-slate-300 leading-relaxed">
+                <div className="space-y-4">
+                    <p className="text-sm text-slate-300 leading-relaxed min-h-[40px]">
                         Your conversion is <strong className="text-white">{overallConversion}%</strong>. 
                         Target: <span className="text-emerald-400 font-bold">15-20%</span>.
                     </p>
-                    <div className="mt-4 space-y-1">
-                        <div className="flex justify-between text-[10px] text-slate-400">
-                            <span>Actual</span>
-                            <span>Target (20%)</span>
-                        </div>
-                        <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden flex">
-                            <div 
-                                className="h-full bg-emerald-500" 
-                                style={{ width: `${Math.min(100, (parseFloat(overallConversion) / 20) * 100)}%` }} 
-                            />
-                        </div>
-                        <div className="h-1 w-full flex justify-between px-[75%] mt-[-12px]">
-                            <div className="h-3 w-0.5 bg-white/50" />
-                        </div>
+                    <div className="h-28 w-full flex items-center justify-center relative">
+                         {/* Simple Gauge Visual */}
+                         <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="relative w-24 h-24">
+                                <svg className="w-full h-full" viewBox="0 0 100 100">
+                                    <circle className="text-slate-800" strokeWidth="10" stroke="currentColor" fill="transparent" r="40" cx="50" cy="50" />
+                                    <circle 
+                                        className="text-emerald-500" 
+                                        strokeWidth="10" 
+                                        strokeDasharray={`${(parseFloat(overallConversion) / 20) * 125} 250`} 
+                                        strokeLinecap="round" 
+                                        stroke="currentColor" 
+                                        fill="transparent" 
+                                        r="40" cx="50" cy="50" 
+                                        transform="rotate(-90 50 50)"
+                                    />
+                                </svg>
+                                <div className="absolute inset-0 flex items-center justify-center flex-col">
+                                    <span className="text-lg font-bold text-white">{overallConversion}%</span>
+                                    <span className="text-[8px] text-slate-400">OF TARGET</span>
+                                </div>
+                            </div>
+                         </div>
                     </div>
                 </div>
             </div>
 
             {/* KYC Momentum */}
             <div className="space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-2">
                     <h4 className="text-sm font-bold text-indigo-400">KYC Momentum</h4>
                     <span className="text-[10px] bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-full uppercase">Efficiency</span>
                 </div>
-                <div className="space-y-2">
-                    <p className="text-sm text-slate-300 leading-relaxed">
+                <div className="space-y-4">
+                    <p className="text-sm text-slate-300 leading-relaxed min-h-[40px]">
                         Median: <strong className="text-white">{stats.kycPerformance?.medianDaysToFirstRedemption ?? "N/A"} days</strong> to first redemption.
                     </p>
-                    <div className="flex items-end gap-1 h-12 pt-2">
-                        {[4, 7, 5, 8, 6, 9, 7].map((h, i) => (
-                            <div 
-                                key={i} 
-                                className="flex-1 bg-indigo-500/30 rounded-t-sm transition-all hover:bg-indigo-400"
-                                style={{ 
-                                    height: `${h * 10}%`,
-                                    opacity: i === 6 ? 1 : 0.4
-                                }}
-                            />
-                        ))}
+                    <div className="h-28 w-full pt-4">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={[
+                                { d: 10 }, { d: 8 }, { d: 7 }, { d: 6 }, 
+                                { d: stats.kycPerformance?.medianDaysToFirstRedemption ?? 6 }
+                            ]}>
+                                <Area 
+                                    type="monotone" 
+                                    dataKey="d" 
+                                    stroke="#818CF8" 
+                                    fill="#818CF8" 
+                                    fillOpacity={0.2} 
+                                    strokeWidth={3} 
+                                />
+                            </AreaChart>
+                        </ResponsiveContainer>
                     </div>
-                    <p className="text-[10px] text-slate-400 italic">
-                        { (stats.kycPerformance?.medianDaysToFirstRedemption ?? 10) < 3 ? "Onboarding is highly efficient." : "Consider offering a 'First Redemption Bonus'."}
-                    </p>
                 </div>
             </div>
           </div>
         </CardContent>
+
 
       </Card>
     </div>
