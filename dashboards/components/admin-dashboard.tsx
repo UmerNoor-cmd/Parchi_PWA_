@@ -541,7 +541,7 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
             <div className="space-y-2">
               <div className="flex items-center gap-3">
-                 <h1 className="text-4xl md:text-5xl font-black tracking-tighter bg-gradient-to-r from-[#007AFF] to-[#00C2FF] bg-clip-text text-transparent">
+                 <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-[#007AFF]">
                     Admin Dashboard
                  </h1>
                  <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800 animate-pulse">
