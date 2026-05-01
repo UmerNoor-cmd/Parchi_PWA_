@@ -21,7 +21,7 @@ import {
   ResponsiveContainer,
 } from "recharts"
 import { AdminSidebar, AdminSidebarContent } from "./admin-sidebar"
-import { Check, X, TrendingUp, Users, FileText, ShoppingCart, CheckCircle2, ChevronDown, ChevronUp, Menu, RefreshCw } from "lucide-react"
+import { Check, X, TrendingUp, Users, FileText, ShoppingCart, CheckCircle2, ChevronDown, ChevronUp, Menu, RefreshCw, School, Search } from "lucide-react"
 import { DASHBOARD_COLORS } from "@/lib/colors"
 import {
   DropdownMenu,
@@ -226,6 +226,128 @@ const TopPerformingMerchants = ({
         </div>
       </CardContent>
     </Card>
+  );
+};
+
+// Enhanced University Insights Component
+const UniversityInsights = ({ distribution }: { distribution: AdminDashboardStats['universityDistribution'] }) => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const colors = DASHBOARD_COLORS("admin");
+  
+  const filtered = (distribution || [])
+    .filter(u => u.university.toLowerCase().includes(searchTerm.toLowerCase()))
+    .sort((a, b) => b.studentCount - a.studentCount);
+
+  const top3 = [...(distribution || [])].sort((a, b) => b.studentCount - a.studentCount).slice(0, 3);
+
+  return (
+    <div className="space-y-6">
+      {/* Top 3 Podium Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {top3.map((uni, idx) => (
+          <div key={uni.university} className="relative group p-6 rounded-[2rem] bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-950 border border-slate-200/60 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500">
+             <div className="absolute -top-4 -right-4 p-8 opacity-5 group-hover:opacity-10 group-hover:scale-125 transition-all duration-700">
+                <School className="w-24 h-24 text-indigo-600" />
+             </div>
+             <div className="absolute top-4 right-4 w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-xs font-black text-indigo-600 border border-indigo-100 dark:border-indigo-800">
+                #{idx + 1}
+             </div>
+             <h3 className="text-lg font-black text-slate-900 dark:text-white leading-tight mb-6 pr-10">{uni.university}</h3>
+             
+             <div className="grid grid-cols-2 gap-4">
+                <div className="p-3 rounded-2xl bg-indigo-500/5 border border-indigo-500/10">
+                   <p className="text-2xl font-black text-indigo-600">{uni.studentCount}</p>
+                   <p className="text-[10px] font-bold uppercase text-slate-500 tracking-wider">Students</p>
+                </div>
+                <div className="p-3 rounded-2xl bg-emerald-500/5 border border-emerald-500/10">
+                   <p className="text-2xl font-black text-emerald-600">{uni.redemptionCount || 0}</p>
+                   <p className="text-[10px] font-bold uppercase text-slate-500 tracking-wider">Redeemed</p>
+                </div>
+             </div>
+             
+             <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800">
+                <div className="flex justify-between text-[10px] font-black uppercase mb-1.5">
+                   <span className="text-slate-400">Engagement Score</span>
+                   <span className="text-indigo-600">{uni.engagementScore || 0}x</span>
+                </div>
+                <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                   <div 
+                     className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-1000" 
+                     style={{ width: `${Math.min(100, (uni.engagementScore || 0) * 40)}%` }} 
+                   />
+                </div>
+             </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Detailed Searchable List */}
+      <Card className="rounded-[2rem] border-none shadow-xl shadow-slate-200/50 dark:shadow-none overflow-hidden bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl">
+         <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+               <h4 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">University Deep-Dive</h4>
+               <p className="text-xs text-slate-500 font-medium">Performance metrics for {filtered.length} institutions</p>
+            </div>
+            <div className="relative w-full md:w-72">
+               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+               <input 
+                 type="text" 
+                 placeholder="Search universities..." 
+                 className="w-full pl-10 pr-4 py-2.5 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 transition-all"
+                 value={searchTerm}
+                 onChange={(e) => setSearchTerm(e.target.value)}
+               />
+            </div>
+         </div>
+         <div className="max-h-[500px] overflow-y-auto custom-scrollbar">
+            {filtered.length > 0 ? (
+              filtered.map((uni) => (
+                <div key={uni.university} className="group flex flex-col md:flex-row md:items-center justify-between p-5 hover:bg-white dark:hover:bg-slate-800 transition-all border-b border-slate-100 dark:border-slate-800 last:border-0">
+                    <div className="flex items-center gap-4 flex-1 min-w-0 mb-4 md:mb-0">
+                       <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center font-black text-indigo-600 shrink-0 uppercase border border-indigo-100 dark:border-indigo-800 group-hover:scale-110 transition-transform">
+                          {uni.university.substring(0, 2)}
+                       </div>
+                       <div className="min-w-0">
+                          <p className="font-black text-slate-900 dark:text-white text-base">{uni.university}</p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                             <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 tracking-tighter">
+                                Share: {uni.percentage}%
+                             </span>
+                             {uni.engagementScore > 1 && (
+                               <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 tracking-tighter flex items-center gap-1">
+                                  <TrendingUp className="w-3 h-3" /> High Activity
+                               </span>
+                             )}
+                          </div>
+                       </div>
+                    </div>
+                    <div className="flex items-center justify-between md:justify-end gap-6 md:gap-12">
+                       <div className="text-center md:text-right min-w-[80px]">
+                          <p className="text-lg font-black text-slate-900 dark:text-white">{uni.studentCount.toLocaleString()}</p>
+                          <p className="text-[10px] font-bold uppercase text-slate-400">Students</p>
+                       </div>
+                       <div className="text-center md:text-right min-w-[80px]">
+                          <p className="text-lg font-black text-indigo-600">{(uni.redemptionCount || 0).toLocaleString()}</p>
+                          <p className="text-[10px] font-bold uppercase text-slate-400">Redeemed</p>
+                       </div>
+                       <div className="min-w-[60px] flex flex-col items-end">
+                          <div className={`text-[11px] font-black px-3 py-1.5 rounded-xl ${uni.engagementScore > 1 ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : 'bg-slate-100 dark:bg-slate-800 text-slate-600'}`}>
+                             {uni.engagementScore || 0}x
+                          </div>
+                          <p className="text-[9px] font-bold uppercase text-slate-400 mt-1">Score</p>
+                       </div>
+                    </div>
+                </div>
+              ))
+            ) : (
+              <div className="p-20 text-center">
+                 <School className="w-12 h-12 text-slate-200 mx-auto mb-4" />
+                 <p className="text-slate-400 font-bold uppercase tracking-widest">No matching universities found</p>
+              </div>
+            )}
+         </div>
+      </Card>
+    </div>
   );
 };
 
@@ -457,73 +579,7 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                           </CardHeader>
                           <CardContent>
                              {stats?.universityDistribution && stats.universityDistribution.length > 0 ? (
-                               <ResponsiveContainer width="100%" height={600}>
-                                 <BarChart
-                                   layout="vertical"
-                                   data={stats.universityDistribution
-                                     .sort((a, b) => b.studentCount - a.studentCount)
-                                     .slice(0, 15)
-                                     .map(u => ({
-                                       name: u.university.length > 30 ? u.university.substring(0, 27) + '...' : u.university,
-                                       students: u.studentCount
-                                     }))}
-                                   margin={{ left: 40, right: 40, top: 20, bottom: 20 }}
-                                 >
-                                   <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f1f5f9" />
-                                   <XAxis
-                                     type="number"
-                                     fontSize={12}
-                                     tickLine={false}
-                                     axisLine={false}
-                                     hide={true}
-                                   />
-                                   <YAxis
-                                     dataKey="name"
-                                     type="category"
-                                     fontSize={11}
-                                     fontWeight={600}
-                                     tickLine={false}
-                                     axisLine={false}
-                                     width={180}
-                                     tick={{ fill: '#64748b' }}
-                                   />
-                                   <Tooltip
-                                     cursor={{ fill: 'rgba(99, 102, 241, 0.05)', radius: 8 }}
-                                     content={({ active, payload }) => {
-                                       if (active && payload && payload.length) {
-                                         return (
-                                           <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xl">
-                                             <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">{payload[0].payload.name}</p>
-                                             <div className="flex items-center gap-2">
-                                               <div className="w-2 h-2 rounded-full bg-indigo-500" />
-                                               <p className="text-lg font-black text-slate-900 dark:text-white">
-                                                 {payload[0].value} <span className="text-xs font-normal text-slate-400">Students</span>
-                                               </p>
-                                             </div>
-                                           </div>
-                                         );
-                                       }
-                                       return null;
-                                     }}
-                                   />
-                                   <Bar
-                                     dataKey="students"
-                                     radius={[0, 8, 8, 0]}
-                                     barSize={24}
-                                   >
-                                     {stats.universityDistribution.slice(0, 15).map((entry, index) => {
-                                       const opacity = Math.max(0.4, 1 - (index * 0.04));
-                                       return (
-                                         <Cell 
-                                           key={`cell-${index}`} 
-                                           fill={colors.primary} 
-                                           fillOpacity={opacity}
-                                         />
-                                       );
-                                     })}
-                                   </Bar>
-                                 </BarChart>
-                               </ResponsiveContainer>
+<UniversityInsights distribution={stats.universityDistribution} />
                             ) : (
                               <div className="flex items-center justify-center h-[250px] text-muted-foreground">
                                 No university data available
