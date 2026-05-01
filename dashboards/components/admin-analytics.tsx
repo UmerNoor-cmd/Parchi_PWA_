@@ -156,7 +156,7 @@ export function AdminAnalytics({ stats }: AdminAnalyticsProps) {
               </div>
             </div>
             <div className="space-y-1">
-                <div className="text-xl font-black text-slate-900 dark:text-white tracking-tight truncate leading-tight">{maxDropoffStep}</div>
+                <div className="text-lg font-black text-slate-900 dark:text-white tracking-tight leading-tight min-h-[3rem] flex items-end pb-1">{maxDropoffStep}</div>
                 <p className="text-xs text-amber-600 font-bold uppercase tracking-wider">{maxDropoffPct.toFixed(0)}% Drop Rate</p>
             </div>
           </CardContent>
