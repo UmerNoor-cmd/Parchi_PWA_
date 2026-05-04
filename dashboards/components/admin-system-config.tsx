@@ -39,8 +39,8 @@ export function AdminSystemConfig() {
     setSaving(true)
     try {
       await updateAppConfig({
-        min_android_build_number: config.min_android_build_number,
-        min_ios_build_number: config.min_ios_build_number,
+        min_android_version: config.min_android_version,
+        min_ios_version: config.min_ios_version,
         force_update_title: config.force_update_title,
         force_update_message: config.force_update_message,
         is_under_maintenance: config.is_under_maintenance,
@@ -92,32 +92,34 @@ export function AdminSystemConfig() {
               <CardTitle>Version Control</CardTitle>
             </div>
             <CardDescription>
-              Set the minimum required build numbers to trigger a force update in the mobile app.
+              Set the minimum required app version to trigger a force update in the mobile app.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="android-build">Min Android Build Number</Label>
+                <Label htmlFor="android-version">Min Android Version</Label>
                 <Input
-                  id="android-build"
-                  type="number"
-                  value={config.min_android_build_number}
-                  onChange={(e) => setConfig({ ...config, min_android_build_number: parseInt(e.target.value) })}
+                  id="android-version"
+                  type="text"
+                  placeholder="e.g. 2.1.0"
+                  value={config.min_android_version ?? ''}
+                  onChange={(e) => setConfig({ ...config, min_android_version: e.target.value })}
                   className="font-mono"
                 />
-                <p className="text-[10px] text-muted-foreground italic">Current version in production: +27</p>
+                <p className="text-[10px] text-muted-foreground italic">Current version in production: 2.1.0</p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="ios-build">Min iOS Build Number</Label>
+                <Label htmlFor="ios-version">Min iOS Version</Label>
                 <Input
-                  id="ios-build"
-                  type="number"
-                  value={config.min_ios_build_number}
-                  onChange={(e) => setConfig({ ...config, min_ios_build_number: parseInt(e.target.value) })}
+                  id="ios-version"
+                  type="text"
+                  placeholder="e.g. 2.1.0"
+                  value={config.min_ios_version ?? ''}
+                  onChange={(e) => setConfig({ ...config, min_ios_version: e.target.value })}
                   className="font-mono"
                 />
-                <p className="text-[10px] text-muted-foreground italic">Current version in production: +27</p>
+                <p className="text-[10px] text-muted-foreground italic">Current version in production: 2.1.0</p>
               </div>
             </div>
 

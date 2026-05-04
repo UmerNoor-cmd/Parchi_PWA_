@@ -182,6 +182,8 @@ export interface AppConfig {
   id: string;
   min_android_build_number: number;
   min_ios_build_number: number;
+  min_android_version: string;
+  min_ios_version: string;
   force_update_title: string;
   force_update_message: string;
   is_under_maintenance: boolean;
@@ -192,6 +194,8 @@ export interface AppConfig {
 export interface UpdateAppConfigDto {
   min_android_build_number?: number;
   min_ios_build_number?: number;
+  min_android_version?: string;
+  min_ios_version?: string;
   force_update_title?: string;
   force_update_message?: string;
   is_under_maintenance?: boolean;
