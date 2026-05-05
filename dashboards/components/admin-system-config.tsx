@@ -39,6 +39,8 @@ export function AdminSystemConfig() {
     setSaving(true)
     try {
       await updateAppConfig({
+        min_android_build_number: config.min_android_build_number,
+        min_ios_build_number: config.min_ios_build_number,
         min_android_version: config.min_android_version,
         min_ios_version: config.min_ios_version,
         force_update_title: config.force_update_title,
@@ -107,7 +109,6 @@ export function AdminSystemConfig() {
                   onChange={(e) => setConfig({ ...config, min_android_version: e.target.value })}
                   className="font-mono"
                 />
-                <p className="text-[10px] text-muted-foreground italic">Current version in production: 2.1.0</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="ios-version">Min iOS Version</Label>
@@ -119,7 +120,26 @@ export function AdminSystemConfig() {
                   onChange={(e) => setConfig({ ...config, min_ios_version: e.target.value })}
                   className="font-mono"
                 />
-                <p className="text-[10px] text-muted-foreground italic">Current version in production: 2.1.0</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="android-version">Min Android Version (Semver)</Label>
+                <Input
+                  id="android-version"
+                  value={config.min_android_version}
+                  onChange={(e) => setConfig({ ...config, min_android_version: e.target.value })}
+                  placeholder="e.g. 1.0.0"
+                  className="font-mono"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="ios-version">Min iOS Version (Semver)</Label>
+                <Input
+                  id="ios-version"
+                  value={config.min_ios_version}
+                  onChange={(e) => setConfig({ ...config, min_ios_version: e.target.value })}
+                  placeholder="e.g. 1.0.0"
+                  className="font-mono"
+                />
               </div>
             </div>
 

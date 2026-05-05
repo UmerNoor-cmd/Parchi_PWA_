@@ -19,8 +19,7 @@ import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, Pagi
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useToast } from "@/hooks/use-toast"
 import { usePendingStudents, useAllStudents, useStudentDetail, useApproveRejectStudent, useUpdateStudentStatus, useDeleteStudent, useUpdateStudentAdmin, useVerifyStudentEmail } from "@/hooks/use-kyc"
-import type { Student, UpdateStudentAdminRequest, Institute } from "@/lib/api-client"
-import { getActiveInstitutes } from "@/lib/api-client"
+import type { Student, UpdateStudentAdminRequest } from "@/lib/api-client"
 
 import { AdminInstitutesDialog } from "./admin-institutes-dialog"
 
@@ -46,20 +45,11 @@ export function AdminKYC() {
   const [studentToDeactivate, setStudentToDeactivate] = useState<Student | null>(null)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [studentToDelete, setStudentToDelete] = useState<Student | null>(null)
-  const [selectedInstituteId, setSelectedInstituteId] = useState("")
-  const [studentIdNumberInput, setStudentIdNumberInput] = useState("")
-  const [availableInstitutes, setAvailableInstitutes] = useState<Institute[]>([])
+  const [cnicInput, setCnicInput] = useState("")
   const { toast } = useToast()
 
 
   const { students: pendingStudents, loading: pendingLoading, error: pendingError, pagination: pendingPagination, refetch: refetchPending } = usePendingStudents(pendingPage, 12)
-
-  // Load institutes once for the approve dropdown
-  useEffect(() => {
-    getActiveInstitutes()
-      .then(setAvailableInstitutes)
-      .catch(() => { /* non-critical */ })
-  }, [])
 
   // Debounce search and institute queries
   useEffect(() => {
@@ -105,8 +95,7 @@ export function AdminKYC() {
     totalRedemptions: "0",
     verificationStatus: "pending" as Student["verificationStatus"],
     verificationExpiresAt: "",
-    instituteId: "",
-    studentIdNumber: "",
+    cnic: "",
     dateOfBirth: "",
     profilePicture: "",
     verificationSelfiePath: "",
@@ -129,8 +118,7 @@ export function AdminKYC() {
       verificationExpiresAt: studentDetail.verificationExpiresAt
         ? new Date(studentDetail.verificationExpiresAt).toISOString().slice(0, 16)
         : "",
-      instituteId: studentDetail.instituteId ?? "",
-      studentIdNumber: studentDetail.studentIdNumber ?? "",
+      cnic: studentDetail.cnic ?? "",
       dateOfBirth: studentDetail.dateOfBirth ? studentDetail.dateOfBirth.slice(0, 10) : "",
       profilePicture: studentDetail.profilePicture ?? "",
       verificationSelfiePath: studentDetail.verificationSelfiePath ?? "",
@@ -156,18 +144,11 @@ export function AdminKYC() {
   const handleApprove = async () => {
     if (!selectedStudentId) return
     
-    if (!selectedInstituteId) {
+    const digitsOnly = cnicInput.replace(/\D/g, "")
+    if (digitsOnly.length !== 13) {
       toast({
-        title: "Institute Required",
-        description: "Please select the student's institute before approving.",
-        variant: "destructive"
-      })
-      return
-    }
-    if (!studentIdNumberInput.trim()) {
-      toast({
-        title: "Student ID Required",
-        description: "Please enter the student's ID number before approving.",
+        title: "Invalid CNIC",
+        description: "Please enter a valid 13-digit CNIC number.",
         variant: "destructive"
       })
       return
@@ -175,8 +156,7 @@ export function AdminKYC() {
 
     const result = await approveReject(selectedStudentId, { 
       action: 'approve',
-      instituteId: selectedInstituteId,
-      studentIdNumber: studentIdNumberInput.trim(),
+      cnic: digitsOnly
     })
     if (result) {
       toast({
@@ -185,8 +165,7 @@ export function AdminKYC() {
       })
       setIsReviewOpen(false)
       setSelectedStudentId(null)
-      setSelectedInstituteId("")
-      setStudentIdNumberInput("")
+      setCnicInput("")
       refetchPending()
       refetchAll()
     } else {
@@ -331,8 +310,7 @@ export function AdminKYC() {
       totalRedemptions: parseInt(profileDraft.totalRedemptions, 10) || 0,
       verificationStatus: profileDraft.verificationStatus,
       verificationExpiresAt: profileDraft.verificationExpiresAt.trim() || null,
-      instituteId: profileDraft.instituteId.trim() || null,
-      studentIdNumber: profileDraft.studentIdNumber.trim() || null,
+      cnic: profileDraft.cnic.trim() || null,
       dateOfBirth: profileDraft.dateOfBirth.trim() || null,
       profilePicture: profileDraft.profilePicture.trim() || null,
       verificationSelfiePath: profileDraft.verificationSelfiePath.trim() || null,
@@ -977,25 +955,8 @@ export function AdminKYC() {
                     <Input id="draft-dob" type="date" value={profileDraft.dateOfBirth} onChange={(e) => setProfileDraft((d) => ({ ...d, dateOfBirth: e.target.value }))} />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="draft-institute">Institute</Label>
-                    <Select
-                      value={profileDraft.instituteId || "__none__"}
-                      onValueChange={(v) => setProfileDraft((d) => ({ ...d, instituteId: v === "__none__" ? "" : v }))}
-                    >
-                      <SelectTrigger id="draft-institute">
-                        <SelectValue placeholder="Select institute" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="__none__">— None —</SelectItem>
-                        {availableInstitutes.map((inst) => (
-                          <SelectItem key={inst.id} value={inst.id}>{inst.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="draft-student-id">Student ID Number</Label>
-                    <Input id="draft-student-id" value={profileDraft.studentIdNumber} onChange={(e) => setProfileDraft((d) => ({ ...d, studentIdNumber: e.target.value }))} placeholder="Assigned by admin" />
+                    <Label htmlFor="draft-cnic">CNIC</Label>
+                    <Input id="draft-cnic" value={profileDraft.cnic} onChange={(e) => setProfileDraft((d) => ({ ...d, cnic: e.target.value }))} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="draft-vs">Verification status</Label>
@@ -1082,14 +1043,6 @@ export function AdminKYC() {
                     {studentDetail.verifiedBy?.email ?? "—"}
                   </div>
                   <div>
-                    <span className="font-medium text-foreground">Institute: </span>
-                    {studentDetail.instituteName ?? "—"}
-                  </div>
-                  <div>
-                    <span className="font-medium text-foreground">Student ID: </span>
-                    {studentDetail.studentIdNumber ?? "—"}
-                  </div>
-                  <div>
                     <span className="font-medium text-foreground">Created: </span>
                     {studentDetail.createdAt ? new Date(studentDetail.createdAt).toLocaleString() : "—"}
                   </div>
@@ -1149,6 +1102,68 @@ export function AdminKYC() {
                   <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-md transition-colors">
                     <ZoomIn className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>CNIC (Front)</Label>
+                <div
+                  className="border rounded-lg p-2 bg-muted/20 cursor-pointer hover:bg-muted/30 transition-colors relative group"
+                  onClick={() => kyc.cnicFrontImagePath && setExpandedImage({
+                    url: kyc.cnicFrontImagePath,
+                    alt: "CNIC Front"
+                  })}
+                >
+                  {kyc.cnicFrontImagePath ? (
+                    <>
+                      <img
+                        src={kyc.cnicFrontImagePath}
+                        alt="CNIC Front"
+                        className="w-full h-auto rounded-md object-contain max-h-[300px]"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = '/placeholder.svg?height=300&width=500'
+                        }}
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-md transition-colors">
+                        <ZoomIn className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
+                    </>
+                  ) : (
+                    <div className="h-[200px] flex items-center justify-center text-muted-foreground">
+                      No Image Available
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>CNIC (Back)</Label>
+                <div
+                  className="border rounded-lg p-2 bg-muted/20 cursor-pointer hover:bg-muted/30 transition-colors relative group"
+                  onClick={() => kyc.cnicBackImagePath && setExpandedImage({
+                    url: kyc.cnicBackImagePath,
+                    alt: "CNIC Back"
+                  })}
+                >
+                  {kyc.cnicBackImagePath ? (
+                    <>
+                      <img
+                        src={kyc.cnicBackImagePath}
+                        alt="CNIC Back"
+                        className="w-full h-auto rounded-md object-contain max-h-[300px]"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = '/placeholder.svg?height=300&width=500'
+                        }}
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-md transition-colors">
+                        <ZoomIn className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
+                    </>
+                  ) : (
+                    <div className="h-[200px] flex items-center justify-center text-muted-foreground">
+                      No Image Available
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1216,34 +1231,26 @@ export function AdminKYC() {
             )}
             
             {studentDetail?.verificationStatus !== 'approved' && (
-              <div className="flex flex-col gap-2 mr-auto w-full sm:w-auto sm:flex-row sm:items-end">
-                <div className="grid gap-1.5">
-                  <Label htmlFor="institute-select" className="text-xs text-muted-foreground">Institute *</Label>
-                  <Select
-                    value={selectedInstituteId}
-                    onValueChange={setSelectedInstituteId}
-                  >
-                    <SelectTrigger id="institute-select" className="w-[200px]">
-                      <SelectValue placeholder="Select institute" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableInstitutes.map((inst) => (
-                        <SelectItem key={inst.id} value={inst.id}>{inst.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-1.5">
-                  <Label htmlFor="student-id-input" className="text-xs text-muted-foreground">Student ID *</Label>
-                  <Input
-                    id="student-id-input"
-                    placeholder="Enter student ID"
-                    value={studentIdNumberInput}
-                    onChange={(e) => setStudentIdNumberInput(e.target.value)}
-                    className="w-[180px]"
+              <div className="flex items-center gap-2 mr-auto">
+                <div className="grid w-full max-w-sm items-center gap-1.5">
+                  <Label htmlFor="cnic-verify" className="sr-only">Enter CNIC</Label>
+                  <Input 
+                    id="cnic-verify"
+                    placeholder="Enter 13-digit CNIC" 
+                    value={cnicInput}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, "");
+                      if (val.length <= 13) setCnicInput(val);
+                    }}
+                    className="w-[200px]"
                     autoComplete="off"
                   />
                 </div>
+                {cnicInput.length > 0 && (
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">
+                    {cnicInput.length}/13
+                  </span>
+                )}
               </div>
             )}
 
