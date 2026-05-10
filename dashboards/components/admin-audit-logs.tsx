@@ -214,6 +214,9 @@ export function AdminAuditLogs() {
     }
 
     const formatActionName = (action: string) => {
+        if (action === 'CREATE_REDEMPTION') return "Student Redeemed Offer"
+        if (action === 'REJECT_REDEMPTION_ATTEMPT') return "Redemption Rejected"
+        
         return action
             .split("_")
             .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
@@ -526,6 +529,25 @@ export function AdminAuditLogs() {
                                                                             )}
                                                                         </div>
                                                                     )}
+
+                                                                    {/* Show redemption details for redemption actions */}
+                                                                    {log.action === 'CREATE_REDEMPTION' && log.newValues && (
+                                                                        <div className="mt-1 text-xs space-y-0.5">
+                                                                            <div className="flex flex-col">
+                                                                                <span className="font-semibold text-orange-600">
+                                                                                    {log.newValues.student?.parchiId || log.newValues.parchiId || "N/A"}
+                                                                                </span>
+                                                                                <span className="text-foreground">
+                                                                                    {log.newValues.student ? `${log.newValues.student.firstName} ${log.newValues.student.lastName}` : "Redemption Attempt"}
+                                                                                </span>
+                                                                            </div>
+                                                                            {(log.newValues.branch || log.newValues.branchName) && (
+                                                                                <div className="text-[10px] font-medium text-muted-foreground mt-1 bg-slate-100 dark:bg-slate-800 p-1 rounded">
+                                                                                    @ {log.newValues.branch?.branchName || log.newValues.branchName}
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    )}
                                                                 </div>
                                                             </TableCell>
                                                             <TableCell>
@@ -601,6 +623,21 @@ export function AdminAuditLogs() {
                                                                     {log.newValues.firstName && log.newValues.lastName && (
                                                                         <div className="text-foreground">
                                                                             {log.newValues.firstName} {log.newValues.lastName}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                            {/* Show redemption details for redemption actions */}
+                                                            {log.action === 'CREATE_REDEMPTION' && log.newValues && (
+                                                                <div className="mt-1 text-xs space-y-1">
+                                                                    {log.newValues.student && (
+                                                                        <div className="font-semibold text-orange-600">
+                                                                            {log.newValues.student.parchiId} | {log.newValues.student.firstName} {log.newValues.student.lastName}
+                                                                        </div>
+                                                                    )}
+                                                                    {log.newValues.branch && (
+                                                                        <div className="text-muted-foreground">
+                                                                            Branch: {log.newValues.branch.branchName}
                                                                         </div>
                                                                     )}
                                                                 </div>
@@ -744,6 +781,52 @@ export function AdminAuditLogs() {
                                                 >
                                                     {selectedLog.newValues.verificationStatus}
                                                 </Badge>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Redemption Details Section */}
+                            {selectedLog.action === 'CREATE_REDEMPTION' && selectedLog.newValues && (
+                                <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                                    <h4 className="font-semibold mb-3 text-orange-900">Redemption Summary</h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                        <div>
+                                            <span className="text-muted-foreground">Parchi ID:</span>{' '}
+                                            <span className="font-semibold text-orange-600">
+                                                {selectedLog.newValues.student?.parchiId || selectedLog.newValues.parchiId || "N/A"}
+                                            </span>
+                                        </div>
+                                        {selectedLog.newValues.student && (
+                                            <div>
+                                                <span className="text-muted-foreground">Student:</span>{' '}
+                                                <span className="font-semibold">
+                                                    {selectedLog.newValues.student.firstName} {selectedLog.newValues.student.lastName}
+                                                </span>
+                                            </div>
+                                        )}
+                                        {(selectedLog.newValues.branch || selectedLog.newValues.branchName) && (
+                                            <div>
+                                                <span className="text-muted-foreground">Branch:</span>{' '}
+                                                <span className="font-medium">{selectedLog.newValues.branch?.branchName || selectedLog.newValues.branchName}</span>
+                                            </div>
+                                        )}
+                                        {(selectedLog.newValues.offer || selectedLog.newValues.offerTitle) && (
+                                            <div>
+                                                <span className="text-muted-foreground">Offer:</span>{' '}
+                                                <span className="font-medium">{selectedLog.newValues.offer?.title || selectedLog.newValues.offerTitle}</span>
+                                            </div>
+                                        )}
+                                        {selectedLog.newValues.notes && (
+                                            <div className="col-span-1 md:col-span-2">
+                                                <span className="text-muted-foreground">Notes:</span>{' '}
+                                                <span className="italic">"{selectedLog.newValues.notes}"</span>
+                                            </div>
+                                        )}
+                                        {selectedLog.newValues.isBonusApplied && (
+                                            <div className="col-span-1 md:col-span-2 mt-1">
+                                                <Badge className="bg-orange-500 text-white">Loyalty Bonus Applied</Badge>
                                             </div>
                                         )}
                                     </div>
