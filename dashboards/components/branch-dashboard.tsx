@@ -5,8 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -25,7 +23,7 @@ import { DASHBOARD_COLORS } from "@/lib/colors"
 import { formatPakistanDateTime } from "@/lib/utils"
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { Menu } from "lucide-react"
-import { getStudentByParchiId, createRedemption, rejectRedemptionAttempt, StudentVerificationResponse, getDailyRedemptionStats, DailyRedemptionStats, getDailyRedemptionDetails, DailyRedemptionDetail, getAggregatedRedemptionStats, AggregatedStats, getQrSettings, updateQrSettings, getPendingQrRequests, approveQrRequest, rejectQrRequest, QrSettings, QrPendingRequest } from "@/lib/api-client"
+import { getStudentByParchiId, createRedemption, rejectRedemptionAttempt, StudentVerificationResponse, getDailyRedemptionStats, DailyRedemptionStats, getDailyRedemptionDetails, DailyRedemptionDetail, getAggregatedRedemptionStats, AggregatedStats, getQrSettings, getPendingQrRequests, approveQrRequest, rejectQrRequest, QrSettings, QrPendingRequest } from "@/lib/api-client"
 import { supabase } from "@/lib/supabase"
 import { toast } from "sonner"
 
@@ -61,7 +59,6 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
 
   // QR state
   const [qrSettings, setQrSettings] = useState<QrSettings | null>(null)
-  const [isUpdatingQrMode, setIsUpdatingQrMode] = useState(false)
   const [activeQrRequest, setActiveQrRequest] = useState<QrPendingRequest | null>(null)
   const [isQrApprovalDialogOpen, setIsQrApprovalDialogOpen] = useState(false)
   const [isApprovingQr, setIsApprovingQr] = useState(false)
@@ -253,20 +250,6 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
   const hasRedeemedToday = studentDetails?.lastBranchRedemptionAt
     ? isSameDayAsToday(studentDetails.lastBranchRedemptionAt)
     : false;
-
-  // QR handlers
-  const handleToggleQrMode = async (enabled: boolean) => {
-    setIsUpdatingQrMode(true)
-    try {
-      const updated = await updateQrSettings(enabled)
-      setQrSettings(updated)
-      toast.success(`QR mode set to: ${enabled ? "Auto-Approve" : "Manual Approval"}`)
-    } catch {
-      toast.error("Failed to update QR settings")
-    } finally {
-      setIsUpdatingQrMode(false)
-    }
-  }
 
   const handleApproveQrRequest = async () => {
     if (!activeQrRequest) return
@@ -572,7 +555,7 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
 
               {/* QR Settings + QR Code cards */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                {/* QR Settings Card */}
+                {/* QR Settings Card — read-only, mode configured by admin */}
                 <Card className="border-2" style={{ borderColor: `${colors.primary}30` }}>
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
@@ -585,50 +568,29 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
                           className={`text-xs font-semibold ${qrSettings.qrAutoApprove ? "bg-green-100 text-green-700 border-green-300" : "bg-blue-100 text-blue-700 border-blue-300"}`}
                           variant="outline"
                         >
-                          {qrSettings.qrAutoApprove ? "⚡ Auto-Approve ON" : "👁 Manual Approval"}
+                          {qrSettings.qrAutoApprove ? "⚡ Auto-Approve" : "👁 Manual Approval"}
                         </Badge>
                       )}
                     </div>
-                    <CardDescription>Control how QR scan requests are processed</CardDescription>
+                    <CardDescription>Configured by admin — contact support to change</CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-5">
+                  <CardContent>
                     {qrSettings ? (
-                      <>
-                        <div className="flex items-center justify-between p-4 rounded-lg bg-muted/30 border">
-                          <div>
-                            <Label htmlFor="qr-auto-approve" className="text-sm font-medium">Auto-Approve Scans</Label>
-                            <p className="text-xs text-muted-foreground mt-0.5">
-                              {qrSettings.qrAutoApprove
-                                ? "Redemptions are created instantly when a student scans."
-                                : "Each scan shows a modal here for you to approve or reject."}
-                            </p>
+                      <div className="rounded-lg p-3 text-sm border" style={{ backgroundColor: `${colors.primary}08`, borderColor: `${colors.primary}20` }}>
+                        {qrSettings.qrAutoApprove ? (
+                          <div className="flex gap-2">
+                            <span className="text-green-600 text-base">⚡</span>
+                            <p className="text-muted-foreground">Students who scan your QR will be redeemed <strong>instantly</strong> — no action needed from you.</p>
                           </div>
-                          <Switch
-                            id="qr-auto-approve"
-                            checked={qrSettings.qrAutoApprove}
-                            onCheckedChange={handleToggleQrMode}
-                            disabled={isUpdatingQrMode}
-                          />
-                        </div>
-                        <div className="rounded-lg p-3 text-sm border" style={{ backgroundColor: `${colors.primary}08`, borderColor: `${colors.primary}20` }}>
-                          {qrSettings.qrAutoApprove ? (
-                            <div className="flex gap-2">
-                              <span className="text-green-600 text-base">⚡</span>
-                              <p className="text-muted-foreground">Students who scan your QR will be redeemed <strong>instantly</strong> — no action needed from you.</p>
-                            </div>
-                          ) : (
-                            <div className="flex gap-2">
-                              <Bell className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: colors.primary }} />
-                              <p className="text-muted-foreground">When a student scans, you'll see a <strong>verification modal</strong> here and can approve or reject.</p>
-                            </div>
-                          )}
-                        </div>
-                      </>
-                    ) : (
-                      <div className="space-y-3">
-                        <Skeleton className="h-16 w-full" />
-                        <Skeleton className="h-12 w-full" />
+                        ) : (
+                          <div className="flex gap-2">
+                            <Bell className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: colors.primary }} />
+                            <p className="text-muted-foreground">When a student scans, you'll see a <strong>verification modal</strong> here to approve or reject.</p>
+                          </div>
+                        )}
                       </div>
+                    ) : (
+                      <Skeleton className="h-12 w-full" />
                     )}
                   </CardContent>
                 </Card>
