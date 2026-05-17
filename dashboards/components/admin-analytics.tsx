@@ -35,6 +35,16 @@ export function AdminAnalytics({ stats, isFiltered }: AdminAnalyticsProps) {
   const funnelData = stats.funnelStats || []
   const dropoffData = stats.onboardingDropoff || []
   const platformData = stats.platformDistribution || []
+  const kycTrendData = (stats.kycPerformance?.monthlyTrend && stats.kycPerformance.monthlyTrend.length > 0)
+    ? stats.kycPerformance.monthlyTrend.map((t: any) => ({ name: t.month, days: t.days }))
+    : [
+        { name: 'Jan', days: 10 },
+        { name: 'Feb', days: 8 },
+        { name: 'Mar', days: 7 },
+        { name: 'Apr', days: 6 },
+        { name: 'May', days: stats.kycPerformance?.medianDaysToFirstRedemption ?? 6 }
+      ]
+
 
   // Calculate key metrics
   const appOpens = funnelData.find(s => s.step === 'App Opened')?.count || 0
@@ -42,7 +52,9 @@ export function AdminAnalytics({ stats, isFiltered }: AdminAnalyticsProps) {
   const kycSubmitted = funnelData.find(s => s.step === 'Kyc Submitted')?.count || 0
   const accountVerified = funnelData.find(s => s.step === 'Account Verified')?.count || 0
   const firstRedemptions = funnelData.find(s => s.step === 'First Redemption')?.count || 0
-  const overallConversion = appOpens > 0 ? ((firstRedemptions / appOpens) * 100).toFixed(1) : "0"
+  const approvedStudents = stats.platformOverview?.totalActiveStudents || 0
+  const overallConversion = approvedStudents > 0 ? ((firstRedemptions / approvedStudents) * 100).toFixed(1) : "0"
+
 
   // Find biggest drop-off point
   let maxDropoffStep = "N/A"
@@ -54,15 +66,97 @@ export function AdminAnalytics({ stats, isFiltered }: AdminAnalyticsProps) {
       const dropPct = ((current - next) / current) * 100
       if (dropPct > maxDropoffPct) {
         maxDropoffPct = dropPct
-        maxDropoffStep = dropoffData[i].step.replace(/signup_/g, '').replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+        const rawStep = dropoffData[i].step;
+        if (rawStep === "Document Upload Start") {
+          maxDropoffStep = "Document Upload";
+        } else {
+          maxDropoffStep = rawStep.replace(/signup_/g, '').replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        }
       }
     }
   }
 
   const PIE_COLORS = [colors.primary, "#10B981", "#F59E0B", "#EF4444", "#8B5CF6"]
 
+  // Dedicated funnel tooltip component to calculate passes and drop-offs
+  const FunnelTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      const currentStepName = label;
+      const currentCount = payload[0].value;
+
+      // Find the index of this step in dropoffData
+      const mappedSteps = dropoffData.map((s: any) => ({
+        step: s.step.replace(/signup_/g, '').replace(/_/g, ' ').replace(/\b\w/g, (l: any) => l.toUpperCase()),
+        count: s.count
+      }));
+      
+      const currentIndex = mappedSteps.findIndex((s: any) => s.step === currentStepName);
+      
+      let exits = 0;
+      let dropPercent = 0;
+      let previousCount = 0;
+      const startCount = mappedSteps[0]?.count || 0;
+      const progressPercent = startCount > 0 ? (currentCount / startCount) * 100 : 100;
+
+      if (currentIndex > 0) {
+        previousCount = mappedSteps[currentIndex - 1].count;
+        // Clamp to 0 to prevent negative exits/drops caused by analytics log anomalies (e.g. app restarts/refreshes directly on step 2)
+        exits = Math.max(0, previousCount - currentCount);
+        dropPercent = previousCount > 0 ? Math.max(0, (exits / previousCount) * 100) : 0;
+      }
+
+
+      return (
+        <div className="bg-slate-900/95 border border-slate-800 p-4 shadow-2xl rounded-2xl backdrop-blur-md ring-1 ring-white/10 w-72">
+          <p className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-3">{currentStepName}</p>
+          <div className="space-y-3">
+            {/* Step Completion */}
+            <div className="flex flex-col gap-0.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  Completed:
+                </span>
+                <span className="text-sm font-black text-white">{currentCount.toLocaleString()} Users</span>
+              </div>
+              {startCount > 0 && (
+                <span className="text-[10px] text-slate-500 font-medium ml-3.5">
+                  {progressPercent.toFixed(1)}% of total entry funnel retained
+                </span>
+              )}
+            </div>
+
+            {/* Step Drop-off/Exits */}
+            {currentIndex > 0 ? (
+              <div className="flex flex-col gap-0.5 pt-2.5 border-t border-slate-800/80">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-amber-500" />
+                    Drop-offs:
+                  </span>
+                  <span className="text-sm font-black text-amber-400">{exits.toLocaleString()} Exits</span>
+                </div>
+                <span className="text-[10px] text-amber-500/80 font-medium ml-3.5">
+                  {dropPercent.toFixed(1)}% drop-off rate from previous stage
+                </span>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-0.5 pt-2.5 border-t border-slate-800/80">
+                <span className="text-[10px] text-slate-500 font-medium italic">
+                  Funnel Entrance stage (Drop-off is N/A)
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
+
   // High-fidelity tooltip component for all charts
   const ChartTooltip = ({ active, payload, label, suffix = "Users" }: any) => {
+
     if (active && payload && payload.length) {
       return (
         <div className="bg-slate-900/95 border border-slate-800 p-4 shadow-2xl rounded-2xl backdrop-blur-md ring-1 ring-white/10">
@@ -248,7 +342,7 @@ export function AdminAnalytics({ stats, isFiltered }: AdminAnalyticsProps) {
                     barSize={32}
                     background={{ fill: '#f8fafc', radius: 8 }}
                 >
-                  {funnelData.map((entry, index) => {
+                  {funnelData.map((entry: any, index: number) => {
                     const retention = appOpens > 0 ? (entry.count / appOpens) * 100 : 0
                     const opacity = Math.max(0.3, 1 - (index * 0.08));
                     return (
@@ -268,10 +362,37 @@ export function AdminAnalytics({ stats, isFiltered }: AdminAnalyticsProps) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Onboarding Detail */}
         <Card className="border-none shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-lg">Detailed Signup Drop-off</CardTitle>
-            <CardDescription>Granular view of the registration form completion</CardDescription>
+          <CardHeader className="pb-2">
+            <div className="flex justify-between items-start gap-4">
+              <div>
+                <CardTitle className="text-lg">Detailed Signup Drop-off</CardTitle>
+                <CardDescription>Granular view of the registration form completion</CardDescription>
+              </div>
+            </div>
+            
+            {/* Contextual UI/UX Funnel Guide */}
+            <div className="mt-4 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400 space-y-2">
+              <div className="flex flex-wrap gap-x-4 gap-y-1">
+                <span className="flex items-center gap-1.5 font-bold text-slate-700 dark:text-slate-300">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                  Completed:
+                </span>
+                <span>Students who successfully finished this specific stage.</span>
+              </div>
+              <div className="flex flex-wrap gap-x-4 gap-y-1 pt-1.5 border-t border-slate-100 dark:border-slate-850">
+                <span className="flex items-center gap-1.5 font-bold text-slate-700 dark:text-slate-300">
+                  <span className="w-2 h-2 rounded-full bg-amber-500" />
+                  Drop-offs (Exits):
+                </span>
+                <span>Students who abandoned the sign-up process during this step.</span>
+              </div>
+              <div className="text-[10px] text-slate-400 dark:text-slate-500 italic pt-1 flex items-start gap-1">
+                <Info className="w-3.5 h-3.5 shrink-0 mt-0.5 text-blue-500" />
+                <span>Note: High values or spikes in Verification screen are due to students launching/reopening their app repeatedly to check their status or resending verification links.</span>
+              </div>
+            </div>
           </CardHeader>
+
           <CardContent>
             <div className="h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
@@ -296,16 +417,17 @@ export function AdminAnalytics({ stats, isFiltered }: AdminAnalyticsProps) {
                     padding={{ left: 20, right: 20 }}
                   />
                   <YAxis fontSize={12} tickLine={false} axisLine={false} hide />
-                  <Tooltip content={<ChartTooltip suffix="Exits" />} />
+                  <Tooltip content={<FunnelTooltip />} />
                   <Area 
                     type="monotone" 
                     dataKey="count" 
-                    name="Drop-offs"
+                    name="Completed Stage"
                     stroke={colors.primary} 
                     strokeWidth={3}
                     fillOpacity={1} 
                     fill="url(#colorCount)" 
                   />
+
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -391,7 +513,7 @@ export function AdminAnalytics({ stats, isFiltered }: AdminAnalyticsProps) {
                         dataKey="count"
                         nameKey="platform"
                     >
-                        {platformData.map((entry, index) => (
+                        {platformData.map((entry: any, index: number) => (
                         <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} stroke="none" />
                         ))}
                     </Pie>
@@ -400,7 +522,7 @@ export function AdminAnalytics({ stats, isFiltered }: AdminAnalyticsProps) {
                 </ResponsiveContainer>
                 </div>
                 <div className="grid grid-cols-1 gap-2 mt-2 w-full">
-                    {platformData.map((item, idx) => (
+                    {platformData.map((item: any, idx: number) => (
                         <div key={item.platform} className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <div className="w-2 h-2 rounded-full" style={{ backgroundColor: PIE_COLORS[idx % PIE_COLORS.length] }} />
@@ -600,7 +722,7 @@ export function AdminAnalytics({ stats, isFiltered }: AdminAnalyticsProps) {
                         dataKey="count"
                         nameKey="reason"
                       >
-                        {(stats.kycRejectionStats?.byReason || []).map((entry, index) => (
+                        {(stats.kycRejectionStats?.byReason || []).map((entry: any, index: number) => (
                           <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} stroke="none" />
                         ))}
                       </Pie>
@@ -609,7 +731,7 @@ export function AdminAnalytics({ stats, isFiltered }: AdminAnalyticsProps) {
                   </ResponsiveContainer>
                 </div>
                 <div className="space-y-2">
-                  {(stats.kycRejectionStats?.byReason || []).slice(0, 3).map((item, idx) => (
+                  {(stats.kycRejectionStats?.byReason || []).slice(0, 3).map((item: any, idx: number) => (
                     <div key={item.reason} className="flex items-center justify-between">
                       <div className="flex items-center gap-2 max-w-[140px]">
                         <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: PIE_COLORS[idx % PIE_COLORS.length] }} />
@@ -755,7 +877,7 @@ export function AdminAnalytics({ stats, isFiltered }: AdminAnalyticsProps) {
                 </div>
                 <div className="space-y-4">
                     <p className="text-sm text-slate-300 leading-relaxed min-h-[40px]">
-                        The highest drop-off rate of <strong className="text-white">{maxDropoffPct.toFixed(0)}%</strong> occurs at <strong className="text-white">{maxDropoffStep}</strong>.
+                        The highest drop-off rate of <strong className="text-white">{maxDropoffPct.toFixed(0)}%</strong> occurs during the <strong className="text-white font-bold">{maxDropoffStep}</strong> phase (between start and completion).
                     </p>
                     <div className="h-32 w-full">
                         <ResponsiveContainer width="100%" height="100%">
@@ -769,15 +891,17 @@ export function AdminAnalytics({ stats, isFiltered }: AdminAnalyticsProps) {
                                         <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
                                     </linearGradient>
                                 </defs>
-                                <Tooltip content={<ChartTooltip suffix="Exits" />} />
+                                <Tooltip content={<FunnelTooltip />} />
                                 <Area 
                                     type="monotone" 
                                     dataKey="count" 
+                                    name="Completed Stage"
                                     stroke="#3B82F6" 
                                     strokeWidth={3} 
                                     fillOpacity={1} 
                                     fill="url(#bottleneckGradient)" 
                                 />
+
                             </AreaChart>
                         </ResponsiveContainer>
                     </div>
@@ -790,9 +914,13 @@ export function AdminAnalytics({ stats, isFiltered }: AdminAnalyticsProps) {
                     <h4 className="text-sm font-bold text-emerald-400">Conversion Health</h4>
                     <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full uppercase">Success Rate</span>
                 </div>
-                <div className="space-y-4">
-                    <p className="text-sm text-slate-300 leading-relaxed min-h-[40px]">
-                        Measures the percentage of users who successfully complete the journey from initial app download to their <strong className="text-white">first redemption</strong>.
+                <div className="space-y-3">
+                    <div className="flex justify-between items-center bg-slate-950/30 p-2.5 rounded-2xl border border-slate-900/50">
+                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Verification to Buy</span>
+                        <strong className="text-xs font-black text-emerald-400 bg-emerald-500/15 px-2.5 py-1 rounded-xl border border-emerald-500/25">{overallConversion}% Rate</strong>
+                    </div>
+                    <p className="text-[10px] text-slate-400 leading-relaxed bg-slate-950/50 p-3 rounded-2xl border border-slate-900/60">
+                        Tracks <strong className="text-white font-bold">activation success</strong>: measures the percentage of <strong className="text-emerald-400 font-bold">approved capable students</strong> who complete their <strong className="text-white font-bold">first redemption</strong>. Ideal target is <strong className="text-emerald-400 font-bold">15% - 20%</strong> to show high brand engagement!
                     </p>
                     <div className="h-32 w-full flex items-center justify-center relative">
                         <ResponsiveContainer width="100%" height="100%">
@@ -829,25 +957,46 @@ export function AdminAnalytics({ stats, isFiltered }: AdminAnalyticsProps) {
                     <h4 className="text-sm font-bold text-indigo-400">KYC Momentum</h4>
                     <span className="text-[10px] bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-full uppercase">Efficiency</span>
                 </div>
-                <div className="space-y-4">
-                    <p className="text-sm text-slate-300 leading-relaxed min-h-[40px]">
-                        Median: <strong className="text-white">{stats.kycPerformance?.medianDaysToFirstRedemption ?? "N/A"} days</strong> to first redemption.
+                <div className="space-y-3">
+                    <div className="flex justify-between items-center bg-slate-950/30 p-2.5 rounded-2xl border border-slate-900/50">
+                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Median Speed</span>
+                        <strong className="text-xs font-black text-indigo-400 bg-indigo-500/15 px-2.5 py-1 rounded-xl border border-indigo-500/25">{stats.kycPerformance?.medianDaysToFirstRedemption ?? "N/A"} Days</strong>
+                    </div>
+                    <p className="text-[10px] text-slate-400 leading-relaxed bg-slate-950/50 p-3 rounded-2xl border border-slate-900/60">
+                        Tracks <strong className="text-white">onboarding momentum</strong>: measures the median time it takes from <strong className="text-white font-bold">admin approval</strong> to a student's <strong className="text-white font-bold">first voucher redemption</strong>. A <strong className="text-indigo-400 font-bold">downward curve</strong> represents faster and more active customer conversion!
                     </p>
                     <div className="h-32 w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={[
-                                { d: 10 }, { d: 8 }, { d: 7 }, { d: 6 }, 
-                                { d: stats.kycPerformance?.medianDaysToFirstRedemption ?? 6 }
-                            ]} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                            <AreaChart data={kycTrendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                 <defs>
                                     <linearGradient id="momentumGradient" x1="0" y1="0" x2="0" y2="1">
                                         <stop offset="5%" stopColor="#818CF8" stopOpacity={0.4}/>
                                         <stop offset="95%" stopColor="#818CF8" stopOpacity={0}/>
                                     </linearGradient>
                                 </defs>
+                                <XAxis 
+                                    dataKey="name" 
+                                    stroke="#475569" 
+                                    fontSize={9}
+                                    tickLine={false}
+                                    axisLine={false}
+                                />
+                                <Tooltip 
+                                    content={({ active, payload }: any) => {
+                                        if (active && payload && payload.length) {
+                                            return (
+                                                <div className="bg-slate-900 border border-slate-800 p-2 rounded shadow-lg">
+                                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{payload[0].payload.name}</p>
+                                                    <p className="text-xs text-white font-extrabold mt-0.5">{payload[0].value} Days Median</p>
+                                                </div>
+                                            );
+                                        }
+                                        return null;
+                                    }}
+                                />
                                 <Area 
                                     type="monotone" 
-                                    dataKey="d" 
+                                    dataKey="days" 
                                     stroke="#818CF8" 
                                     strokeWidth={3} 
                                     fillOpacity={1} 

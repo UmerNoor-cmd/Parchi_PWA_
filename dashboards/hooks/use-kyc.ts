@@ -205,6 +205,7 @@ export function useStudentDetail(id: string | null): UseStudentDetailResult {
 
     try {
       setLoading(true)
+      setStudent(null)
       setError(null)
 
       const data = await getStudentDetailsForReview(id)

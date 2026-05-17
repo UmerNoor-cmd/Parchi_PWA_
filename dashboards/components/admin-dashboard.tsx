@@ -845,10 +845,13 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           {activeTab === "brand-portfolio" && <AdminBrandPortfolio />}
 
           {activeTab === "kyc" && (
-            <AdminKYC 
-              externalSelectedId={selectedStudentId} 
-              onExternalIdHandled={() => setSelectedStudentId(null)} 
-            />
+            <div className="animate-in fade-in duration-700">
+               <AdminKYC 
+                  externalSelectedId={selectedStudentId} 
+                  onExternalIdHandled={() => setSelectedStudentId(null)} 
+                  stats={stats}
+               />
+            </div>
           )}
           
           {activeTab === "students" && (

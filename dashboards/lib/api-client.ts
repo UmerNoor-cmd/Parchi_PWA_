@@ -1646,6 +1646,7 @@ export interface AdminDashboardStats {
   foundersClubMembers: number;
   kycPerformance?: {
     medianDaysToFirstRedemption: number;
+    monthlyTrend?: { month: string; days: number }[];
   };
   kycRejectionStats?: KycRejectionStats;
   activeUserTracking?: ActiveUserTracking;
