@@ -50,6 +50,11 @@ export function AdminSidebarContent({ activeTab, onTabChange, onLogout }: AdminS
       label: "Student KYC",
       icon: Users,
     },
+    {
+      id: "students",
+      label: "All Students",
+      icon: Users,
+    },
 
     {
       id: "financials",

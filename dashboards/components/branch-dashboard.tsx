@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Skeleton } from "@/components/ui/skeleton"
-import { CheckCircle, Clock, TrendingUp, Users, Zap, Loader2, XCircle, AlertCircle, Sparkles } from "lucide-react"
+import { CheckCircle, Clock, TrendingUp, Users, Zap, Loader2, XCircle, AlertCircle, Sparkles, QrCode, Download, Smartphone, Bell } from "lucide-react"
 import {
   BarChart,
   Bar,
@@ -23,7 +23,8 @@ import { DASHBOARD_COLORS } from "@/lib/colors"
 import { formatPakistanDateTime } from "@/lib/utils"
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { Menu } from "lucide-react"
-import { getStudentByParchiId, createRedemption, rejectRedemptionAttempt, StudentVerificationResponse, getDailyRedemptionStats, DailyRedemptionStats, getDailyRedemptionDetails, DailyRedemptionDetail, getAggregatedRedemptionStats, AggregatedStats } from "@/lib/api-client"
+import { getStudentByParchiId, createRedemption, rejectRedemptionAttempt, StudentVerificationResponse, getDailyRedemptionStats, DailyRedemptionStats, getDailyRedemptionDetails, DailyRedemptionDetail, getAggregatedRedemptionStats, AggregatedStats, getQrSettings, getPendingQrRequests, approveQrRequest, rejectQrRequest, QrSettings, QrPendingRequest } from "@/lib/api-client"
+import { supabase } from "@/lib/supabase"
 import { toast } from "sonner"
 
 const colors = DASHBOARD_COLORS("branch")
@@ -56,6 +57,18 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false)
   const [rejectionReason, setRejectionReason] = useState("")
 
+  // QR state
+  const [qrSettings, setQrSettings] = useState<QrSettings | null>(null)
+  const [activeQrRequest, setActiveQrRequest] = useState<QrPendingRequest | null>(null)
+  const [isQrApprovalDialogOpen, setIsQrApprovalDialogOpen] = useState(false)
+  const [isApprovingQr, setIsApprovingQr] = useState(false)
+  const [isRejectingQr, setIsRejectingQr] = useState(false)
+  const [isQrRejectDialogOpen, setIsQrRejectDialogOpen] = useState(false)
+  const [qrRejectionReason, setQrRejectionReason] = useState("")
+  const realtimeChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const activeQrRequestRef = useRef<QrPendingRequest | null>(null)
+
   useEffect(() => {
     const fetchStats = async () => {
       try {
@@ -72,6 +85,103 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
       }
     }
     fetchStats()
+  }, [])
+
+  // Load QR settings and subscribe to incoming requests
+  useEffect(() => {
+    let cancelled = false
+
+    const showPendingRequest = (pending: QrPendingRequest[]) => {
+      if (pending.length === 0) return
+      activeQrRequestRef.current = pending[0]
+      setActiveQrRequest(pending[0])
+      setIsQrApprovalDialogOpen(true)
+    }
+
+    // Open dialog immediately (skeleton state), then fetch full details
+    const handleIncomingRequest = async () => {
+      // Snap the dialog open before the API round-trip so branch sees it instantly
+      setIsQrApprovalDialogOpen(true)
+      toast.info("New QR redemption request", { description: "Fetching student details…" })
+      try {
+        const pending = await getPendingQrRequests()
+        if (cancelled || pending.length === 0) return
+        showPendingRequest(pending)
+        toast.dismiss()
+        toast.info("QR request from student", {
+          description: `${pending[0].student.firstName} ${pending[0].student.lastName} — ${pending[0].offer.title}`,
+          action: { label: "Review", onClick: () => setIsQrApprovalDialogOpen(true) },
+        })
+      } catch {/* non-critical */}
+    }
+
+    // Polls every 8 s as a safety net when Realtime misses events
+    const pollPendingRequests = async () => {
+      if (activeQrRequestRef.current) return // already handling one
+      try {
+        const pending = await getPendingQrRequests()
+        if (!cancelled && pending.length > 0) showPendingRequest(pending)
+      } catch {/* non-critical */}
+    }
+
+    const initQr = async () => {
+      try {
+        const [settings, existingPending] = await Promise.all([
+          getQrSettings(),
+          getPendingQrRequests().catch(() => [] as QrPendingRequest[]),
+        ])
+        if (cancelled) return
+        setQrSettings(settings)
+
+        if (existingPending.length > 0) {
+          showPendingRequest(existingPending)
+        }
+
+        // Subscribe — no server-side filter to avoid silent RLS drops; filter client-side
+        const channel = supabase
+          .channel(`qr-branch-${settings.branchId}`)
+          .on(
+            'postgres_changes',
+            { event: 'INSERT', schema: 'public', table: 'qr_redemption_requests' },
+            async (payload) => {
+              // Only act on inserts for this branch that arrive as pending
+              if (payload.new?.branch_id !== settings.branchId) return
+              if (payload.new?.status !== 'pending') return
+              await handleIncomingRequest()
+            }
+          )
+          .subscribe((status) => {
+            if (status === 'SUBSCRIBED') {
+              console.log('[QR Realtime] subscribed for branch', settings.branchId)
+            } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+              console.warn('[QR Realtime] subscription issue:', status)
+            }
+          })
+
+        realtimeChannelRef.current = channel
+
+        // Polling fallback — guarantees pickup even if Realtime drops
+        pollIntervalRef.current = setInterval(pollPendingRequests, 8000)
+      } catch {
+        // Non-critical: branch may not have QR feature yet
+      }
+    }
+
+    // Re-check when user switches back to this tab
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') pollPendingRequests()
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    initQr()
+
+    return () => {
+      cancelled = true
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      if (realtimeChannelRef.current) supabase.removeChannel(realtimeChannelRef.current)
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // ------------------------------------------------------------------
@@ -181,9 +291,104 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
     }
   }
 
-  const hasRedeemedToday = studentDetails?.lastBranchRedemptionAt 
-    ? isSameDayAsToday(studentDetails.lastBranchRedemptionAt) 
+  const hasRedeemedToday = studentDetails?.lastBranchRedemptionAt
+    ? isSameDayAsToday(studentDetails.lastBranchRedemptionAt)
     : false;
+
+  const handleApproveQrRequest = async () => {
+    if (!activeQrRequest) return
+    setIsApprovingQr(true)
+    try {
+      await approveQrRequest(activeQrRequest.id)
+      setIsQrApprovalDialogOpen(false)
+      activeQrRequestRef.current = null
+      setActiveQrRequest(null)
+      const [stats, details, aggregated] = await Promise.all([
+        getDailyRedemptionStats(),
+        getDailyRedemptionDetails(),
+        getAggregatedRedemptionStats(),
+      ])
+      setDailyStats(stats)
+      setDailyRedemptionDetails(details)
+      setAggregatedStats(aggregated)
+      toast.success("QR redemption approved!")
+    } catch {
+      toast.error("Failed to approve request")
+    } finally {
+      setIsApprovingQr(false)
+    }
+  }
+
+  const handleRejectQrRequest = () => setIsQrRejectDialogOpen(true)
+
+  const handleConfirmQrRejection = async () => {
+    if (!activeQrRequest) return
+    setIsRejectingQr(true)
+    try {
+      await rejectQrRequest(activeQrRequest.id, qrRejectionReason || undefined)
+      setIsQrRejectDialogOpen(false)
+      setIsQrApprovalDialogOpen(false)
+      activeQrRequestRef.current = null
+      setActiveQrRequest(null)
+      setQrRejectionReason("")
+      toast.info("QR request rejected")
+    } catch {
+      toast.error("Failed to reject request")
+    } finally {
+      setIsRejectingQr(false)
+    }
+  }
+
+  const handleDownloadQrCode = useCallback(() => {
+    if (!qrSettings) return
+    const canvas = document.createElement("canvas")
+    const size = 400
+    const padding = 40
+    const logoHeight = 60
+    const textHeight = 50
+    canvas.width = size + padding * 2
+    canvas.height = size + padding * 2 + logoHeight + textHeight
+    const ctx = canvas.getContext("2d")!
+
+    // Background
+    ctx.fillStyle = "#ffffff"
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+    // Border
+    ctx.strokeStyle = "#e5e7eb"
+    ctx.lineWidth = 2
+    ctx.roundRect(4, 4, canvas.width - 8, canvas.height - 8, 12)
+    ctx.stroke()
+
+    // QR image (load from qrserver.com)
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(`parchi://redeem/${qrSettings.branchId}`)}&format=png&margin=0`
+    const img = new Image()
+    img.crossOrigin = "anonymous"
+    img.onload = () => {
+      ctx.drawImage(img, padding, padding + logoHeight, size, size)
+
+      // Branch name text
+      ctx.fillStyle = "#111827"
+      ctx.font = "bold 20px Inter, system-ui, sans-serif"
+      ctx.textAlign = "center"
+      ctx.fillText(qrSettings.branchName, canvas.width / 2, padding + logoHeight - 8)
+
+      // Footer text
+      ctx.font = "16px Inter, system-ui, sans-serif"
+      ctx.fillStyle = "#6b7280"
+      ctx.fillText("Scan with Parchi App", canvas.width / 2, padding + logoHeight + size + 30)
+
+      const link = document.createElement("a")
+      link.download = `parchi-qr-${qrSettings.branchName.replace(/\s+/g, "-").toLowerCase()}.png`
+      link.href = canvas.toDataURL("image/png")
+      link.click()
+    }
+    img.onerror = () => {
+      // Fallback: open QR image directly
+      window.open(qrUrl, "_blank")
+    }
+    img.src = qrUrl
+  }, [qrSettings])
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -394,6 +599,90 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
                 </Card>
               </div>
 
+              {/* QR Settings + QR Code cards */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                {/* QR Settings Card — read-only, mode configured by admin */}
+                <Card className="border-2" style={{ borderColor: `${colors.primary}30` }}>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="flex items-center gap-2 text-lg" style={{ color: colors.primary }}>
+                        <Smartphone className="w-5 h-5" />
+                        QR Approval Mode
+                      </CardTitle>
+                      {qrSettings && (
+                        <Badge
+                          className={`text-xs font-semibold ${qrSettings.qrAutoApprove ? "bg-green-100 text-green-700 border-green-300" : "bg-blue-100 text-blue-700 border-blue-300"}`}
+                          variant="outline"
+                        >
+                          {qrSettings.qrAutoApprove ? "⚡ Auto-Approve" : "👁 Manual Approval"}
+                        </Badge>
+                      )}
+                    </div>
+                    <CardDescription>Configured by admin — contact support to change</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {qrSettings ? (
+                      <div className="rounded-lg p-3 text-sm border" style={{ backgroundColor: `${colors.primary}08`, borderColor: `${colors.primary}20` }}>
+                        {qrSettings.qrAutoApprove ? (
+                          <div className="flex gap-2">
+                            <span className="text-green-600 text-base">⚡</span>
+                            <p className="text-muted-foreground">Students who scan your QR will be redeemed <strong>instantly</strong> — no action needed from you.</p>
+                          </div>
+                        ) : (
+                          <div className="flex gap-2">
+                            <Bell className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: colors.primary }} />
+                            <p className="text-muted-foreground">When a student scans, you'll see a <strong>verification modal</strong> here to approve or reject.</p>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <Skeleton className="h-12 w-full" />
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Branch QR Code Card */}
+                <Card className="border-2" style={{ borderColor: `${colors.primary}30` }}>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-lg" style={{ color: colors.primary }}>
+                      <QrCode className="w-5 h-5" />
+                      Branch QR Code
+                    </CardTitle>
+                    <CardDescription>Students scan this with the Parchi app to redeem</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {qrSettings ? (
+                      <div className="flex flex-col items-center gap-4">
+                        <div className="p-3 rounded-xl border-2 bg-white shadow-sm" style={{ borderColor: `${colors.primary}30` }}>
+                          <img
+                            src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`parchi://redeem/${qrSettings.branchId}`)}&format=png&margin=4`}
+                            alt="Branch QR Code"
+                            className="w-48 h-48"
+                          />
+                        </div>
+                        <div className="text-center">
+                          <p className="font-semibold text-sm">{qrSettings.branchName}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">Scan with Parchi App</p>
+                        </div>
+                        <Button
+                          onClick={handleDownloadQrCode}
+                          variant="outline"
+                          className="w-full gap-2 border-2"
+                          style={{ borderColor: `${colors.primary}40`, color: colors.primary }}
+                        >
+                          <Download className="w-4 h-4" />
+                          Download Printable Card
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center gap-4">
+                        <Skeleton className="h-48 w-48 rounded-xl" />
+                        <Skeleton className="h-8 w-40" />
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
             </>
           )}
 
@@ -791,6 +1080,138 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
               disabled={isRejectingRedemption}
             >
               {isRejectingRedemption && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Confirm Rejection
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* QR Request Approval Dialog */}
+      <Dialog open={isQrApprovalDialogOpen} onOpenChange={(open) => {
+        if (!open && !isApprovingQr && !isRejectingQr) {
+          setIsQrApprovalDialogOpen(false)
+          activeQrRequestRef.current = null
+          setActiveQrRequest(null)
+        }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <QrCode className="w-5 h-5" style={{ color: colors.primary }} />
+              QR Redemption Request
+            </DialogTitle>
+            <DialogDescription>A student has scanned your QR code and wants to redeem an offer.</DialogDescription>
+          </DialogHeader>
+
+          {activeQrRequest ? (
+            <div className="py-4 space-y-5">
+              {/* Student info */}
+              <div className="flex flex-col items-center text-center space-y-3">
+                <Avatar className="w-24 h-24 border-4 border-background shadow-lg">
+                  <AvatarImage src={activeQrRequest.student.profilePicture || ""} />
+                  <AvatarFallback className="text-2xl bg-muted">
+                    {activeQrRequest.student.firstName[0]}{activeQrRequest.student.lastName[0]}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <h3 className="text-xl font-bold">{activeQrRequest.student.firstName} {activeQrRequest.student.lastName}</h3>
+                  <p className="text-muted-foreground text-sm">{activeQrRequest.student.university}</p>
+                  <Badge variant="outline" className="mt-2 font-mono">{activeQrRequest.student.parchiId}</Badge>
+                </div>
+              </div>
+
+              {/* Offer + stats */}
+              <div className="grid grid-cols-2 gap-4 text-sm border rounded-lg p-4 bg-muted/20">
+                <div>
+                  <p className="text-muted-foreground">Status</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    {activeQrRequest.student.verificationStatus === 'approved' ? (
+                      <Badge className="bg-green-500 hover:bg-green-600">Verified</Badge>
+                    ) : (
+                      <Badge variant="destructive">Not Verified</Badge>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Total Redemptions</p>
+                  <p className="font-semibold mt-1">{activeQrRequest.student.totalRedemptions}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-muted-foreground">Offer</p>
+                  <p className="font-semibold mt-1">{activeQrRequest.offer.title}</p>
+                  <p className="text-sm font-bold mt-0.5" style={{ color: colors.primary }}>{activeQrRequest.offer.formattedDiscount}</p>
+                </div>
+              </div>
+
+              {activeQrRequest.student.verificationStatus !== 'approved' && (
+                <div className="flex items-center gap-2 p-3 bg-red-50 text-red-600 rounded-md text-sm">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  <p>Warning: This student is not verified.</p>
+                </div>
+              )}
+            </div>
+          ) : (
+            // Skeleton shown while details are loading (dialog opened immediately from payload)
+            <div className="py-4 space-y-4">
+              <div className="flex flex-col items-center space-y-3">
+                <Skeleton className="w-24 h-24 rounded-full" />
+                <Skeleton className="h-5 w-44" />
+                <Skeleton className="h-4 w-32" />
+              </div>
+              <Skeleton className="h-24 w-full rounded-lg" />
+            </div>
+          )}
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={handleRejectQrRequest}
+              className="flex-1"
+              disabled={isApprovingQr || isRejectingQr || !activeQrRequest}
+            >
+              <XCircle className="w-4 h-4 mr-2" />
+              Reject
+            </Button>
+            <Button
+              onClick={handleApproveQrRequest}
+              className="flex-1"
+              style={{ backgroundColor: colors.primary }}
+              disabled={isApprovingQr || isRejectingQr || !activeQrRequest}
+            >
+              {isApprovingQr ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <CheckCircle className="w-4 h-4 mr-2" />
+              )}
+              Approve & Redeem
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* QR Rejection Reason Dialog */}
+      <Dialog open={isQrRejectDialogOpen} onOpenChange={setIsQrRejectDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reject QR Request</DialogTitle>
+            <DialogDescription>Optionally provide a reason. This will be shown to the student.</DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Input
+              placeholder="Reason for rejection (optional)"
+              value={qrRejectionReason}
+              onChange={(e) => setQrRejectionReason(e.target.value)}
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsQrRejectDialogOpen(false)}>Cancel</Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmQrRejection}
+              disabled={isRejectingQr}
+            >
+              {isRejectingQr && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Confirm Rejection
             </Button>
           </DialogFooter>

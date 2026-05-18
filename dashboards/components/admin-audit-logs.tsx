@@ -200,6 +200,8 @@ export function AdminAuditLogs() {
             CREATE_STUDENT: "bg-cyan-100 text-cyan-800",
             CREATE_MERCHANT: "bg-teal-100 text-teal-800",
             CREATE_OFFER: "bg-violet-100 text-violet-800",
+            UPDATE_OFFER: "bg-sky-100 text-sky-800",
+            EDIT_OFFER: "bg-sky-100 text-sky-800",
             UPDATE_PROFILE: "bg-yellow-100 text-yellow-800",
         }
         return colorMap[action] || "bg-gray-100 text-gray-800"
@@ -214,13 +216,24 @@ export function AdminAuditLogs() {
     }
 
     const formatActionName = (action: string) => {
-        if (action === 'CREATE_REDEMPTION') return "Student Redeemed Offer"
-        if (action === 'REJECT_REDEMPTION_ATTEMPT') return "Redemption Rejected"
-        
+        if (action === 'UPDATE_OFFER') return "Offer Updated"
         return action
             .split("_")
             .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
             .join(" ")
+    }
+
+    const getStudentName = (newValues: any) => {
+        if (!newValues) return "(name unavailable)"
+        if (newValues.student?.firstName || newValues.student?.lastName) {
+            return `${newValues.student.firstName || ''} ${newValues.student.lastName || ''}`.trim()
+        }
+        if (newValues.studentName) return newValues.studentName
+        if (newValues.name) return newValues.name
+        if (newValues.firstName || newValues.lastName) {
+            return `${newValues.firstName || ''} ${newValues.lastName || ''}`.trim()
+        }
+        return "(name unavailable)"
     }
 
     const categoryFilters = [
@@ -241,6 +254,7 @@ export function AdminAuditLogs() {
             { value: "REJECT_OFFER", label: "Offer Rejected", type: 'reject' },
             { value: "CREATE_REDEMPTION", label: "Redemption Created", type: 'accept' },
             { value: "REJECT_REDEMPTION", label: "Redemption Rejected", type: 'reject' },
+            { value: "UPDATE_OFFER", label: "Offer Updated", type: 'accept' },
         ]
 
         if (category === "all") return allActions
@@ -470,14 +484,14 @@ export function AdminAuditLogs() {
                                                     const datetime = formatDateTime(log.createdAt)
                                                     const isReject = log.action.includes('REJECT')
                                                     const isAccept = log.action.includes('APPROVE') || log.action.includes('CREATE_REDEMPTION')
-                                                    
+
                                                     return (
-                                                        <TableRow 
-                                                          key={log.id}
-                                                          className={
-                                                              isReject ? "border-l-4 border-l-red-500" : 
-                                                              isAccept ? "border-l-4 border-l-green-500" : ""
-                                                          }
+                                                        <TableRow
+                                                            key={log.id}
+                                                            className={
+                                                                isReject ? "border-l-4 border-l-red-500" :
+                                                                    isAccept ? "border-l-4 border-l-green-500" : ""
+                                                            }
                                                         >
                                                             <TableCell>
                                                                 <div className="text-sm">
@@ -489,6 +503,11 @@ export function AdminAuditLogs() {
                                                                 <Badge className={getActionColor(log.action)}>
                                                                     {formatActionName(log.action)}
                                                                 </Badge>
+                                                                {(log.action.includes('REDEMPTION') || log.action.includes('STUDENT')) && log.newValues && (
+                                                                    <div className="text-[10px] text-muted-foreground mt-1 font-medium truncate max-w-[120px]">
+                                                                        {getStudentName(log.newValues)}
+                                                                    </div>
+                                                                )}
                                                             </TableCell>
                                                             <TableCell>
                                                                 <div className="text-sm">
@@ -506,46 +525,63 @@ export function AdminAuditLogs() {
                                                                     {log.recordId && (
                                                                         <div className="font-mono text-xs">{log.recordId.slice(0, 8)}...</div>
                                                                     )}
-                                                                    {/* Show student details for student approval actions */}
-                                                                    {(log.action === 'APPROVE_STUDENT' || log.action === 'REJECT_STUDENT') && log.newValues && (
-                                                                        <div className="mt-1 text-xs">
-                                                                            {log.newValues.parchiId && (
-                                                                                <div className="font-semibold text-blue-600">
-                                                                                    {log.newValues.parchiId}
-                                                                                </div>
-                                                                            )}
-                                                                            {log.newValues.firstName && log.newValues.lastName && (
-                                                                                <div className="text-foreground">
-                                                                                    {log.newValues.firstName} {log.newValues.lastName}
-                                                                                </div>
-                                                                            )}
-                                                                            {log.newValues.verificationStatus && (
-                                                                                <Badge
-                                                                                    variant={log.newValues.verificationStatus === 'approved' ? 'default' : 'destructive'}
-                                                                                    className="text-xs mt-1"
-                                                                                >
-                                                                                    {log.newValues.verificationStatus}
-                                                                                </Badge>
-                                                                            )}
+
+                                                                    {/* Enhanced student display for redemption and student actions */}
+                                                                    {(log.action.includes('REDEMPTION') || log.action.includes('STUDENT')) && log.newValues && (
+                                                                        <div className="mt-2 p-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-100 dark:border-slate-800">
+                                                                            <div className="text-foreground font-bold flex items-center gap-1.5">
+                                                                                <Users className="w-3 h-3 text-slate-400" />
+                                                                                {getStudentName(log.newValues)}
+                                                                            </div>
+                                                                            <div className="flex items-center gap-2 mt-1">
+                                                                                {log.newValues.parchiId && (
+                                                                                    <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded uppercase">
+                                                                                        {log.newValues.parchiId}
+                                                                                    </span>
+                                                                                )}
+                                                                                {(log.newValues.verificationStatus || log.newValues.status) && (
+                                                                                    <Badge
+                                                                                        variant={(log.newValues.verificationStatus || log.newValues.status) === 'approved' || (log.action === 'CREATE_REDEMPTION') ? 'default' : 'destructive'}
+                                                                                        className="text-[9px] h-4 px-1"
+                                                                                    >
+                                                                                        {log.newValues.verificationStatus || log.newValues.status || 'Verified'}
+                                                                                    </Badge>
+                                                                                )}
+                                                                            </div>
                                                                         </div>
                                                                     )}
 
-                                                                    {/* Show redemption details for redemption actions */}
-                                                                    {log.action === 'CREATE_REDEMPTION' && log.newValues && (
-                                                                        <div className="mt-1 text-xs space-y-0.5">
-                                                                            <div className="flex flex-col">
-                                                                                <span className="font-semibold text-orange-600">
-                                                                                    {log.newValues.student?.parchiId || log.newValues.parchiId || "N/A"}
-                                                                                </span>
-                                                                                <span className="text-foreground">
-                                                                                    {log.newValues.student ? `${log.newValues.student.firstName} ${log.newValues.student.lastName}` : "Redemption Attempt"}
-                                                                                </span>
+                                                                    {/* Offer Edit Diff View */}
+                                                                    {log.action === 'UPDATE_OFFER' && log.newValues && (
+                                                                        <div className="mt-2 p-2 bg-sky-50/50 dark:bg-sky-900/20 rounded-lg border border-sky-100 dark:border-sky-800/50">
+                                                                            <div className="text-sky-900 dark:text-sky-100 font-bold text-xs flex items-center gap-1.5 mb-1.5">
+                                                                                <TrendingUp className="w-3 h-3" />
+                                                                                {log.newValues.title || "Updated Offer"}
                                                                             </div>
-                                                                            {(log.newValues.branch || log.newValues.branchName) && (
-                                                                                <div className="text-[10px] font-medium text-muted-foreground mt-1 bg-slate-100 dark:bg-slate-800 p-1 rounded">
-                                                                                    @ {log.newValues.branch?.branchName || log.newValues.branchName}
-                                                                                </div>
-                                                                            )}
+                                                                            <div className="space-y-1">
+                                                                                {Object.keys(log.newValues).map(key => {
+                                                                                    const oldVal = log.oldValues?.[key];
+                                                                                    const newVal = log.newValues[key];
+
+                                                                                    // Only show primitive fields that changed
+                                                                                    if (
+                                                                                        oldVal !== newVal &&
+                                                                                        typeof newVal !== 'object' &&
+                                                                                        key !== 'updatedAt' &&
+                                                                                        key !== 'id'
+                                                                                    ) {
+                                                                                        return (
+                                                                                            <div key={key} className="text-[10px] flex items-center gap-1 flex-wrap">
+                                                                                                <span className="font-semibold text-muted-foreground">{key}:</span>
+                                                                                                <span className="text-red-500 line-through opacity-70">{String(oldVal ?? 'None')}</span>
+                                                                                                <span className="text-slate-400">→</span>
+                                                                                                <span className="text-green-600 font-medium">{String(newVal)}</span>
+                                                                                            </div>
+                                                                                        );
+                                                                                    }
+                                                                                    return null;
+                                                                                })}
+                                                                            </div>
                                                                         </div>
                                                                     )}
                                                                 </div>
@@ -612,32 +648,16 @@ export function AdminAuditLogs() {
                                                             {log.recordId && (
                                                                 <div className="font-mono text-xs">ID: {log.recordId.slice(0, 8)}...</div>
                                                             )}
-                                                            {/* Show student details for student approval actions */}
-                                                            {(log.action === 'APPROVE_STUDENT' || log.action === 'REJECT_STUDENT') && log.newValues && (
-                                                                <div className="mt-1 text-xs">
+                                                            {/* Enhanced student display for mobile */}
+                                                            {(log.action.includes('REDEMPTION') || log.action.includes('STUDENT')) && log.newValues && (
+                                                                <div className="mt-2 p-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-100 dark:border-slate-800">
+                                                                    <div className="text-foreground font-bold flex items-center gap-1.5">
+                                                                        <Users className="w-3 h-3 text-slate-400" />
+                                                                        {getStudentName(log.newValues)}
+                                                                    </div>
                                                                     {log.newValues.parchiId && (
-                                                                        <div className="font-semibold text-blue-600">
+                                                                        <div className="text-[10px] font-black text-indigo-600 mt-1 uppercase">
                                                                             {log.newValues.parchiId}
-                                                                        </div>
-                                                                    )}
-                                                                    {log.newValues.firstName && log.newValues.lastName && (
-                                                                        <div className="text-foreground">
-                                                                            {log.newValues.firstName} {log.newValues.lastName}
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            )}
-                                                            {/* Show redemption details for redemption actions */}
-                                                            {log.action === 'CREATE_REDEMPTION' && log.newValues && (
-                                                                <div className="mt-1 text-xs space-y-1">
-                                                                    {log.newValues.student && (
-                                                                        <div className="font-semibold text-orange-600">
-                                                                            {log.newValues.student.parchiId} | {log.newValues.student.firstName} {log.newValues.student.lastName}
-                                                                        </div>
-                                                                    )}
-                                                                    {log.newValues.branch && (
-                                                                        <div className="text-muted-foreground">
-                                                                            Branch: {log.newValues.branch.branchName}
                                                                         </div>
                                                                     )}
                                                                 </div>
@@ -758,14 +778,14 @@ export function AdminAuditLogs() {
                                                 </span>
                                             </div>
                                         )}
-                                        {selectedLog.newValues.firstName && selectedLog.newValues.lastName && (
+                                        {selectedLog.newValues.firstName && selectedLog.newValues.lastName || selectedLog.newValues.student ? (
                                             <div>
                                                 <span className="text-muted-foreground">Student Name:</span>{' '}
                                                 <span className="font-semibold">
-                                                    {selectedLog.newValues.firstName} {selectedLog.newValues.lastName}
+                                                    {getStudentName(selectedLog.newValues)}
                                                 </span>
                                             </div>
-                                        )}
+                                        ) : null}
                                         {selectedLog.newValues.university && (
                                             <div>
                                                 <span className="text-muted-foreground">University:</span>{' '}

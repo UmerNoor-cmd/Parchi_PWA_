@@ -85,7 +85,8 @@ import { AdminSystemConfig } from "./admin-system-config"
 import { AdminAnalytics } from "./admin-analytics"
 import { AdminRedemptionEngine } from "./admin-redemption-engine"
 import { AdminBrandPortfolio } from "./admin-brand-portfolio"
-import { getAdminDashboardStats, getTopPerformingMerchants, AdminDashboardStats } from "@/lib/api-client"
+import { AdminStudents } from "./admin-students"
+import { getAdminDashboardStats, getTopPerformingMerchants, AdminDashboardStats, getSignupDropoff, SignupDropoff } from "@/lib/api-client"
 
 import { toast } from "sonner"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -479,6 +480,97 @@ const UniversityInsights = ({
   );
 };
 
+// Signup Dropoff Analysis Component
+const SignupDropoffSection = ({ data, isLoading }: { data: SignupDropoff | null, isLoading: boolean }) => {
+  const [showAll, setShowAll] = useState(false);
+  
+  if (isLoading && !data) {
+    return (
+      <div className="mb-12">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Signup Dropoff Analysis</h2>
+          <div className="h-px flex-1 bg-slate-100 dark:bg-slate-800 mx-6 opacity-50" />
+        </div>
+        <Skeleton className="h-[400px] w-full rounded-[2.5rem]" />
+      </div>
+    );
+  }
+
+  if (!data) return null;
+
+  const displayedStages = showAll ? data.stages : data.stages.slice(0, 3);
+
+  return (
+    <div className="mb-12">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Signup Dropoff Analysis</h2>
+        <div className="h-px flex-1 bg-slate-100 dark:bg-slate-800 mx-6 opacity-50" />
+      </div>
+      
+      <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-slate-200/50 dark:shadow-none bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl overflow-hidden">
+        <div className="p-8">
+          <div className="space-y-4">
+            {displayedStages.map((stage, idx) => (
+              <div key={stage.stage} className="relative group">
+                {/* Horizontal Funnel Bar Background */}
+                <div 
+                  className="absolute inset-y-0 left-0 bg-indigo-500/5 dark:bg-indigo-500/10 rounded-2xl transition-all duration-1000 group-hover:bg-indigo-500/10"
+                  style={{ width: `${stage.percentOfTotal}%` }}
+                />
+                
+                <div className="relative z-10 flex items-center justify-between p-4 rounded-2xl border border-transparent hover:border-slate-100 dark:hover:border-slate-800 transition-all">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 flex items-center justify-center font-black text-indigo-600 text-xs">
+                      {idx + 1}
+                    </div>
+                    <div>
+                      <p className="font-black text-slate-900 dark:text-white text-base">{stage.stage}</p>
+                      <p className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">{stage.count.toLocaleString()} Users</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-6">
+                    <div className="text-right">
+                      <p className="text-lg font-black text-slate-900 dark:text-white">{Math.round(stage.percentOfTotal)}%</p>
+                      <p className="text-[9px] font-bold uppercase text-slate-400 tracking-tighter">of Total</p>
+                    </div>
+                    
+                    {idx > 0 && (
+                      <div className="flex items-center gap-2 min-w-[80px] justify-end">
+                        <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase flex items-center gap-1 ${stage.dropoffPct > 20 ? 'bg-red-500/10 text-red-500 border border-red-500/20' : 'bg-slate-100 text-slate-500'}`}>
+                          {stage.dropoffPct > 20 && <TrendingUp className="w-3 h-3 rotate-180" />}
+                          -{stage.dropoffPct}%
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          {data.stages.length > 3 && (
+            <div className="mt-8 flex justify-center">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setShowAll(!showAll)}
+                className="rounded-full px-6 font-black uppercase text-[10px] tracking-widest hover:bg-indigo-50 text-indigo-600"
+              >
+                {showAll ? (
+                  <>Show Less <ChevronUp className="ml-2 w-4 h-4" /></>
+                ) : (
+                  <>Show All Stages <ChevronDown className="ml-2 w-4 h-4" /></>
+                )}
+              </Button>
+            </div>
+          )}
+        </div>
+      </Card>
+    </div>
+  );
+};
+
 export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [activeTab, setActiveTab] = useState<string>("overview")
   const colors = DASHBOARD_COLORS("admin")
@@ -490,6 +582,10 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
   const [dateRange, setDateRange] = useState<DateRange | undefined>()
   const [groupBy, setGroupBy] = useState<'institution' | 'city'>('institution')
+  const [filterStudentId, setFilterStudentId] = useState<string | null>(null)
+  const [funnelData, setFunnelData] = useState<SignupDropoff | null>(null)
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null)
+  const [isFunnelLoading, setIsFunnelLoading] = useState(false)
 
   // Fetch dashboard stats
   const fetchStats = async (start?: Date, end?: Date, group: 'institution' | 'city' = groupBy) => {
@@ -501,8 +597,12 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     }
 
     try {
-      const data = await getAdminDashboardStats(start, end, group)
+      const [data, funnel] = await Promise.all([
+        getAdminDashboardStats(start, end, group),
+        getSignupDropoff()
+      ])
       setStats(data)
+      setFunnelData(funnel)
       setLastUpdated(new Date())
 
 
@@ -674,6 +774,9 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                     </div>
                   </div>
 
+                  {/* Signup Dropoff Analysis */}
+                  <SignupDropoffSection data={funnelData} isLoading={isFunnelLoading || isLoading} />
+
 
                     {/* Merchant Performance & Student Analytics */}
                     <div className="mb-8 mt-12">
@@ -732,11 +835,37 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             <AdminAnalytics stats={stats} isFiltered={!!dateRange?.from} key={lastUpdated.getTime()} />
           )}
 
-          {activeTab === "redemption-engine" && <AdminRedemptionEngine />}
+          {activeTab === "redemption-engine" && (
+            <AdminRedemptionEngine 
+              externalStudentId={filterStudentId} 
+              onExternalIdHandled={() => setFilterStudentId(null)} 
+            />
+          )}
 
           {activeTab === "brand-portfolio" && <AdminBrandPortfolio />}
 
-          {activeTab === "kyc" && <AdminKYC />}
+          {activeTab === "kyc" && (
+            <div className="animate-in fade-in duration-700">
+               <AdminKYC 
+                  externalSelectedId={selectedStudentId} 
+                  onExternalIdHandled={() => setSelectedStudentId(null)} 
+                  stats={stats}
+               />
+            </div>
+          )}
+          
+          {activeTab === "students" && (
+            <AdminStudents 
+              onViewProfile={(id) => {
+                setSelectedStudentId(id)
+                setActiveTab("kyc")
+              }} 
+              onViewRedemptions={(id) => {
+                setFilterStudentId(id)
+                setActiveTab("redemption-engine")
+              }}
+            />
+          )}
 
 
           {activeTab === "merchants" && <AdminMerchants />}

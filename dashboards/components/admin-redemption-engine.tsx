@@ -17,10 +17,15 @@ import {
 } from "recharts"
 import { DASHBOARD_COLORS } from "@/lib/colors"
 import { getRedemptionAnalytics, RedemptionAnalytics } from "@/lib/api-client"
-import { Users, TrendingUp, Repeat, Gift, Activity } from "lucide-react"
+import { Users, TrendingUp, Repeat, Gift, Activity, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Spinner } from "@/components/ui/spinner"
 import { toast } from "sonner"
+import { DatePickerWithRange } from "@/components/ui/date-range-picker"
+import { DateRange } from "react-day-picker"
+import { RefreshCw, Info } from "lucide-react"
+import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 type VolumeView = "daily" | "weekly" | "monthly"
 
@@ -66,28 +71,53 @@ const HistogramTooltip = ({ active, payload, label }: any) => {
   return null
 }
 
-export function AdminRedemptionEngine() {
+export function AdminRedemptionEngine({ 
+  externalStudentId, 
+  onExternalIdHandled 
+}: { 
+  externalStudentId?: string | null;
+  onExternalIdHandled?: () => void;
+}) {
   const colors = DASHBOARD_COLORS("admin")
   const [data, setData] = useState<RedemptionAnalytics | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const [volumeView, setVolumeView] = useState<VolumeView>("daily")
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined)
+  const [filterStudentId, setFilterStudentId] = useState<string | null>(null)
 
-  const fetchData = async () => {
-    setIsLoading(true)
+  const fetchData = async (range?: DateRange, studentId: string | null = filterStudentId) => {
+    if (!data) {
+      setIsLoading(true)
+    } else {
+      setIsRefreshing(true)
+    }
+
     try {
-      const result = await getRedemptionAnalytics()
+      const result = await getRedemptionAnalytics(range?.from, range?.to, studentId)
       setData(result)
     } catch (err) {
       console.error("Failed to load redemption analytics:", err)
       toast.error("Failed to load redemption analytics")
     } finally {
       setIsLoading(false)
+      setIsRefreshing(false)
     }
   }
 
+  // Handle external student selection
   useEffect(() => {
-    fetchData()
-  }, [])
+    if (externalStudentId) {
+      setFilterStudentId(externalStudentId)
+      fetchData(dateRange, externalStudentId)
+      onExternalIdHandled?.()
+    }
+  }, [externalStudentId])
+
+  // Fetch when date range changes (maintaining current filter)
+  useEffect(() => {
+    fetchData(dateRange, filterStudentId)
+  }, [dateRange])
 
   if (isLoading) {
     return (
@@ -125,14 +155,67 @@ export function AdminRedemptionEngine() {
   return (
     <div className="space-y-8 pb-10">
       {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold" style={{ color: colors.primary }}>
-          Redemption &amp; Behavioral Engine
-        </h2>
-        <p className="text-muted-foreground mt-1">
-          Deep-dive into redemption patterns, user behavior, and loyalty loop performance
-        </p>
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div>
+          <h2 className="text-2xl font-bold" style={{ color: colors.primary }}>
+            Redemption &amp; Behavioral Engine
+          </h2>
+          <p className="text-muted-foreground text-sm">
+            Insights into redemption volume, user behavior, and bonus program performance
+          </p>
+          {filterStudentId && (
+            <div className="mt-2 flex items-center gap-2">
+              <Badge variant="secondary" className="pl-2 pr-1 py-1 flex items-center gap-1.5 bg-blue-50 text-blue-700 border-blue-100">
+                <Users className="w-3.5 h-3.5" />
+                <span>Student ID: {filterStudentId.slice(0, 8)}...</span>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-5 w-5 hover:bg-blue-100 rounded-full"
+                  onClick={() => { setFilterStudentId(null); fetchData(dateRange, null); }}
+                >
+                  <X className="w-3 h-3" />
+                </Button>
+              </Badge>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+             <Button
+                variant={!dateRange?.from ? "default" : "outline"}
+                size="sm"
+                onClick={() => setDateRange(undefined)}
+                className={`h-8 px-3 text-[10px] font-black uppercase rounded-full transition-all ${!dateRange?.from ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : 'text-slate-400'}`}
+              >
+                All Time
+              </Button>
+              <DatePickerWithRange 
+                date={dateRange}
+                setDate={setDateRange}
+                className="w-[280px]"
+              />
+          </div>
+          
+          <Button 
+            variant="outline" 
+            size="icon" 
+            disabled={isRefreshing}
+            onClick={() => fetchData(dateRange)} 
+            className="rounded-2xl h-11 w-11 border-slate-200 dark:border-slate-800"
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          </Button>
+        </div>
       </div>
+
+      <div className="relative">
+        {isRefreshing && (
+          <div className="absolute inset-0 z-50 bg-background/20 backdrop-blur-[1px] flex items-center justify-center rounded-3xl">
+            <Spinner className="size-8" />
+          </div>
+        )}
 
       {/* ── KPI Row ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -140,7 +223,18 @@ export function AdminRedemptionEngine() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between">
-              <span>Unique Redeemers</span>
+              <TooltipProvider>
+                <UITooltip>
+                  <TooltipTrigger asChild>
+                    <span className="cursor-help border-b border-dashed border-muted-foreground/30 flex items-center gap-1">
+                      Unique Redeemers <Info className="w-3 h-3 opacity-50" />
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="max-w-xs">Count of distinct students who have completed at least one verified redemption in the selected period.</p>
+                  </TooltipContent>
+                </UITooltip>
+              </TooltipProvider>
               <Users className="w-4 h-4" style={{ color: colors.primary }} />
             </CardTitle>
           </CardHeader>
@@ -148,7 +242,12 @@ export function AdminRedemptionEngine() {
             <div className="text-3xl font-bold" style={{ color: colors.primary }}>
               {data.uniqueRedeemers.toLocaleString()}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Users with ≥1 verified redemption</p>
+            <div className="space-y-0.5 mt-1">
+              <p className="text-xs text-muted-foreground">Users with ≥1 verified redemption</p>
+              <p className="text-[10px] font-medium text-indigo-600/70">
+                {data.uniqueRedeemers.toLocaleString()} of {data.totalRegisteredStudents.toLocaleString()} total registered ({data.totalRegisteredStudents > 0 ? Math.round((data.uniqueRedeemers / data.totalRegisteredStudents) * 100) : 0}%)
+              </p>
+            </div>
           </CardContent>
         </Card>
 
@@ -212,7 +311,14 @@ export function AdminRedemptionEngine() {
         <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4 space-y-0">
           <div className="space-y-1">
             <CardTitle style={{ color: colors.primary }}>Redemption Volume Trends</CardTitle>
-            <CardDescription>{VIEW_LABELS[volumeView]}</CardDescription>
+            <CardDescription>
+              {VIEW_LABELS[volumeView]}
+              {dateRange?.from && (
+                <span className="ml-2 opacity-70">
+                  ({dateRange.from.toLocaleDateString()} - {dateRange.to?.toLocaleDateString() || '...'})
+                </span>
+              )}
+            </CardDescription>
           </div>
           <div className="flex gap-2 flex-wrap">
             {(["daily", "weekly", "monthly"] as VolumeView[]).map((v) => (
@@ -363,5 +469,6 @@ export function AdminRedemptionEngine() {
         </CardContent>
       </Card>
     </div>
+  </div>
   )
 }

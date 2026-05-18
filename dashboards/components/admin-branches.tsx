@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Search, AlertTriangle, Loader2, CheckCircle, XCircle, Edit, Key, MoreHorizontal } from "lucide-react"
+import { Search, AlertTriangle, Loader2, CheckCircle, XCircle, Edit, Key, MoreHorizontal, Zap } from "lucide-react"
 import { TestMerchantAlert } from "./test-merchant-alert"
 import { toast } from "sonner"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -92,6 +92,19 @@ export function AdminBranches() {
       fetchBranches()
     } catch (error) {
       toast({ title: "Error", description: "Failed to approve branch", variant: "destructive" })
+    }
+  }
+
+  const handleToggleQrAutoApprove = async (branch: AdminBranch) => {
+    try {
+      await updateBranch(branch.id, { qrAutoApprove: !branch.qr_auto_approve })
+      toast({
+        title: "Success",
+        description: `QR mode set to ${!branch.qr_auto_approve ? "Auto-Approve" : "Manual Approval"} for ${branch.branch_name}`,
+      })
+      fetchBranches(searchQuery)
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to update QR settings", variant: "destructive" })
     }
   }
 
@@ -246,19 +259,20 @@ export function AdminBranches() {
                     <TableHead>City</TableHead>
                     <TableHead>Contact</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>QR Mode</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {loading ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8">
+                      <TableCell colSpan={7} className="text-center py-8">
                         <Loader2 className="h-6 w-6 animate-spin mx-auto" />
                       </TableCell>
                     </TableRow>
                   ) : filteredBranches.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                         No branches found
                       </TableCell>
                     </TableRow>
@@ -277,6 +291,14 @@ export function AdminBranches() {
                         <TableCell>
                           <Badge variant={branch.is_active ? "default" : "secondary"}>
                             {branch.is_active ? "Active" : "Pending"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant="outline"
+                            className={`text-xs ${branch.qr_auto_approve ? "bg-green-50 text-green-700 border-green-300" : "bg-blue-50 text-blue-700 border-blue-300"}`}
+                          >
+                            {branch.qr_auto_approve ? "⚡ Auto" : "👁 Manual"}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
@@ -305,6 +327,10 @@ export function AdminBranches() {
                                     <CheckCircle className="mr-2 h-4 w-4 text-green-600" /> Activate
                                   </>
                                 )}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleToggleQrAutoApprove(branch)}>
+                                <Zap className="mr-2 h-4 w-4 text-yellow-500" />
+                                {branch.qr_auto_approve ? "Set QR to Manual" : "Enable QR Auto-Approve"}
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
@@ -370,6 +396,10 @@ export function AdminBranches() {
                               </>
                             )}
                           </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleToggleQrAutoApprove(branch)}>
+                            <Zap className="mr-2 h-4 w-4 text-yellow-500" />
+                            {branch.qr_auto_approve ? "Set QR to Manual" : "Enable QR Auto-Approve"}
+                          </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             className="text-destructive"
@@ -384,6 +414,12 @@ export function AdminBranches() {
                     <div className="flex items-center gap-2 text-sm">
                       <Badge variant={branch.is_active ? "default" : "secondary"}>
                         {branch.is_active ? "Active" : "Pending"}
+                      </Badge>
+                      <Badge
+                        variant="outline"
+                        className={`text-xs ${branch.qr_auto_approve ? "bg-green-50 text-green-700 border-green-300" : "bg-blue-50 text-blue-700 border-blue-300"}`}
+                      >
+                        {branch.qr_auto_approve ? "⚡ Auto" : "👁 Manual"}
                       </Badge>
                       <span className="text-muted-foreground">{branch.city}</span>
                     </div>

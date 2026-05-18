@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
+import { format } from "date-fns"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -10,26 +11,44 @@ import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Switch } from "@/components/ui/switch"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
-import { Check, X, Search, Eye, MoreHorizontal, Loader2, AlertCircle, RefreshCw, ChevronLeft, ChevronRight, ZoomIn, Trash2, Save, Mail, Apple, Smartphone, School, ChevronsUpDown } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { Check, X, Search, Eye, MoreHorizontal, Loader2, AlertCircle, RefreshCw, ChevronLeft, ChevronRight, ZoomIn, Trash2, Save, Mail, Apple, Smartphone, ShieldCheck, CheckCircle2, School, Calendar as CalendarIcon, ChevronsUpDown } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/hooks/use-toast"
 import { usePendingStudents, useAllStudents, useStudentDetail, useApproveRejectStudent, useUpdateStudentStatus, useDeleteStudent, useUpdateStudentAdmin, useVerifyStudentEmail } from "@/hooks/use-kyc"
-import type { Student, UpdateStudentAdminRequest, Institute } from "@/lib/api-client"
+import type { Student, UpdateStudentAdminRequest, Institute, AdminDashboardStats } from "@/lib/api-client"
 import { getActiveInstitutes } from "@/lib/api-client"
 
 import { AdminInstitutesDialog } from "./admin-institutes-dialog"
+import { cn } from "@/lib/utils"
 
-export function AdminKYC() {
+export function AdminKYC({
+  externalSelectedId,
+  onExternalIdHandled,
+  stats
+}: {
+  externalSelectedId?: string | null;
+  onExternalIdHandled?: () => void;
+  stats?: AdminDashboardStats | null;
+}) {
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null)
   const [isReviewOpen, setIsReviewOpen] = useState(false)
+
+  // Handle external selection from other tabs
+  useEffect(() => {
+    if (externalSelectedId) {
+      setSelectedStudentId(externalSelectedId)
+      setIsReviewOpen(true)
+      if (onExternalIdHandled) onExternalIdHandled()
+    }
+  }, [externalSelectedId, onExternalIdHandled])
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false)
   const [isInstitutesDialogOpen, setIsInstitutesDialogOpen] = useState(false)
   const [rejectionNotes, setRejectionNotes] = useState("")
@@ -51,6 +70,7 @@ export function AdminKYC() {
   const [studentToDelete, setStudentToDelete] = useState<Student | null>(null)
   const [selectedInstituteId, setSelectedInstituteId] = useState("")
   const [studentIdNumberInput, setStudentIdNumberInput] = useState("")
+  const [isComboboxOpen, setIsComboboxOpen] = useState(false)
   const [availableInstitutes, setAvailableInstitutes] = useState<Institute[]>([])
   const [dropdownSearch, setDropdownSearch] = useState("")
   const { toast } = useToast()
@@ -95,6 +115,329 @@ export function AdminKYC() {
   const { updateStatus, loading: updateStatusLoading, error: updateStatusError } = useUpdateStudentStatus()
   const { removeStudent, loading: deleteStudentLoading, error: deleteStudentError } = useDeleteStudent()
   const { save: saveStudentProfile, loading: saveProfileLoading, error: saveProfileError } = useUpdateStudentAdmin()
+
+  const renderDocumentation = () => {
+    if (detailLoading) {
+      return (
+        <div className="space-y-10">
+          <section className="space-y-6">
+            <div className="flex items-center justify-between">
+              <Skeleton className="h-4 w-32 rounded-lg" />
+              <div className="h-px flex-1 bg-slate-200 dark:bg-slate-800 ml-6 opacity-50" />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Skeleton className="h-56 rounded-[2.5rem]" />
+              <Skeleton className="h-56 rounded-[2.5rem]" />
+              <Skeleton className="h-72 md:col-span-2 rounded-[2.5rem]" />
+            </div>
+          </section>
+          <section className="space-y-6">
+            <div className="flex items-center justify-between">
+              <Skeleton className="h-4 w-32 rounded-lg" />
+              <div className="h-px flex-1 bg-slate-200 dark:bg-slate-800 ml-6 opacity-50" />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Skeleton className="h-32 rounded-[2rem]" />
+              <Skeleton className="h-32 rounded-[2rem]" />
+              <Skeleton className="h-32 rounded-[2rem]" />
+            </div>
+          </section>
+        </div>
+      )
+    }
+
+    if (!studentDetail) return null
+
+    return (
+      <>
+        <section className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">KYC Documentation</h3>
+            <div className="h-px flex-1 bg-slate-200 dark:bg-slate-800 ml-6 opacity-30" />
+          </div>
+
+          {studentDetail.kyc ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-3">
+                <Label className="text-[10px] font-black uppercase text-slate-400 ml-2 tracking-widest">Student ID (Front)</Label>
+                <div
+                  className="group relative rounded-[2.5rem] overflow-hidden border-2 border-white dark:border-slate-800 shadow-2xl bg-white dark:bg-slate-900 cursor-zoom-in transition-all hover:scale-[1.01] duration-500"
+                  onClick={() => setExpandedImage({ url: studentDetail.kyc!.studentIdCardFrontPath, alt: "ID Front" })}
+                >
+                  <img src={studentDetail.kyc.studentIdCardFrontPath} alt="ID Front" className="w-full h-52 object-cover" />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[4px]">
+                    <ZoomIn className="h-6 w-6 text-white" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <Label className="text-[10px] font-black uppercase text-slate-400 ml-2 tracking-widest">Student ID (Back)</Label>
+                <div
+                  className="group relative rounded-[2.5rem] overflow-hidden border-2 border-white dark:border-slate-800 shadow-2xl bg-white dark:bg-slate-900 cursor-zoom-in transition-all hover:scale-[1.01] duration-500"
+                  onClick={() => setExpandedImage({ url: studentDetail.kyc!.studentIdCardBackPath, alt: "ID Back" })}
+                >
+                  <img src={studentDetail.kyc.studentIdCardBackPath} alt="ID Back" className="w-full h-52 object-cover" />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[4px]">
+                    <ZoomIn className="h-6 w-6 text-white" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="md:col-span-2 space-y-3">
+                <Label className="text-[10px] font-black uppercase text-slate-400 ml-2 tracking-widest">Verification Selfie</Label>
+                <div className="flex flex-col md:flex-row gap-8 p-6 rounded-[3rem] bg-white dark:bg-slate-900 shadow-2xl border border-white dark:border-slate-800">
+                  <div
+                    className="group relative w-full md:w-56 h-56 shrink-0 rounded-[2rem] overflow-hidden cursor-zoom-in transition-all hover:scale-[1.01] duration-500 shadow-lg"
+                    onClick={() => setExpandedImage({ url: studentDetail.kyc!.selfieImagePath, alt: "Selfie" })}
+                  >
+                    <img src={studentDetail.kyc.selfieImagePath} alt="Selfie" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[4px]">
+                      <ZoomIn className="h-6 w-6 text-white" />
+                    </div>
+                  </div>
+                  <div className="flex-1 space-y-6 py-2">
+                    <div className="p-5 rounded-[2rem] bg-indigo-500/[0.03] border-2 border-indigo-500/10 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <ShieldCheck className="h-4 w-4 text-indigo-500" />
+                        <p className="text-[10px] font-black uppercase text-indigo-500 tracking-[0.2em]">Selfie Analysis</p>
+                      </div>
+                      <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
+                        Match face in selfie with ID card. Check features and lighting.
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Date</p>
+                        <p className="text-xs font-black text-slate-900 dark:text-white">{studentDetail.kyc.submittedAt ? format(new Date(studentDetail.kyc.submittedAt), "MMM d, yy") : 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Type</p>
+                        <Badge variant={studentDetail.kyc.isAnnualRenewal ? "outline" : "secondary"} className="h-5 px-2 rounded-lg text-[8px] font-black uppercase tracking-widest border-2">
+                          {studentDetail.kyc.isAnnualRenewal ? "Renewal" : "New"}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="p-10 text-center rounded-[3rem] border-4 border-dashed border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50">
+              <AlertCircle className="h-8 w-8 text-slate-300 mx-auto mb-4" />
+              <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest">No Documents</h4>
+            </div>
+          )}
+        </section>
+
+        <section className="space-y-6 pt-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Account Identity</h3>
+            <div className="h-px flex-1 bg-slate-200 dark:bg-slate-800 ml-6 opacity-30" />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-5 rounded-[2rem] bg-white dark:bg-slate-900 shadow-xl border border-slate-100 dark:border-slate-800">
+              <Mail className="h-4 w-4 text-[#007AFF] mb-3" />
+              <p className="text-xs font-black text-slate-900 dark:text-white truncate">{studentDetail.email}</p>
+            </div>
+            <div className="p-5 rounded-[2rem] bg-white dark:bg-slate-900 shadow-xl border border-slate-100 dark:border-slate-800">
+              {studentDetail.platform?.toLowerCase() === 'ios' ? (
+                <Apple className="h-4 w-4 text-slate-900 dark:text-white mb-3" />
+              ) : studentDetail.platform?.toLowerCase() === 'android' ? (
+                <Smartphone className="h-4 w-4 text-emerald-600 mb-3" />
+              ) : (
+                <RefreshCw className="h-4 w-4 text-purple-600 mb-3" />
+              )}
+              <p className="text-xs font-black text-slate-900 dark:text-white uppercase truncate">
+                {studentDetail.platform?.toLowerCase() === 'ios' ? 'iOS' :
+                  studentDetail.platform?.toLowerCase() === 'android' ? 'Android' :
+                    studentDetail.platform || 'Cross-Platform'}
+              </p>
+            </div>
+            <div className="p-5 rounded-[2rem] bg-white dark:bg-slate-900 shadow-xl border border-slate-100 dark:border-slate-800">
+              <CalendarIcon className="h-4 w-4 text-emerald-600 mb-3" />
+              <p className="text-xs font-black text-slate-900 dark:text-white">{studentDetail.createdAt ? format(new Date(studentDetail.createdAt), "MMM d, yyyy") : 'N/A'}</p>
+            </div>
+          </div>
+        </section>
+      </>
+    )
+  }
+
+  const renderWorkflow = () => {
+    if (detailLoading) {
+      return <Skeleton className="h-64 rounded-[2.5rem]" />
+    }
+
+    if (!studentDetail) return null
+
+    return (
+      <section className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs font-black uppercase tracking-[0.2em] text-[#007AFF]">Review Workflow</h3>
+          <div className="h-px flex-1 bg-blue-100 dark:bg-blue-900/30 ml-6 opacity-50" />
+        </div>
+
+        <Card className="rounded-[3rem] border-2 border-[#007AFF]/10 shadow-2xl shadow-blue-500/5 bg-gradient-to-br from-blue-50/[0.2] via-white to-white dark:from-blue-900/[0.05] dark:to-slate-900 overflow-hidden">
+          <CardContent className="p-6 md:p-8 space-y-8">
+            {studentDetail.verificationStatus === 'approved' ? (
+              <div className="space-y-6 text-center py-4">
+                <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center mx-auto border-4 border-emerald-500/20 shadow-inner">
+                  <CheckCircle2 className="h-8 w-8 text-emerald-500" />
+                </div>
+                <div>
+                  <h4 className="text-lg font-black text-slate-900 dark:text-white tracking-tight uppercase">Access Granted</h4>
+                  <p className="text-xs text-slate-500 font-bold mt-1">Institutional verification complete.</p>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-5">
+                  <div className="space-y-2.5">
+                    <Label className="text-[10px] font-black uppercase text-slate-500 ml-2 tracking-[0.1em]">Target Institution *</Label>
+                    <Popover open={isComboboxOpen} onOpenChange={setIsComboboxOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          className="w-full h-14 rounded-[1.5rem] border-2 border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 justify-between font-bold text-sm shadow-sm hover:bg-slate-50 transition-all px-5"
+                        >
+                          <span className="truncate">
+                            {selectedInstituteId
+                              ? availableInstitutes.find((inst) => inst.id === selectedInstituteId)?.name
+                              : "Select verified institute"}
+                          </span>
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[300px] md:w-[350px] p-0 rounded-2xl border-2 shadow-2xl" align="start">
+                        <Command className="rounded-xl">
+                          <CommandInput placeholder="Search..." className="h-12 font-bold" />
+                          <CommandList className="max-h-[300px]">
+                            <CommandEmpty className="py-6 text-center text-sm font-bold text-slate-500">No institute found.</CommandEmpty>
+                            <CommandGroup>
+                              {availableInstitutes.map((inst) => (
+                                <CommandItem
+                                  key={inst.id}
+                                  value={inst.name}
+                                  onSelect={() => {
+                                    setSelectedInstituteId(inst.id === selectedInstituteId ? "" : inst.id)
+                                    setIsComboboxOpen(false)
+                                  }}
+                                  className="py-3 px-4 rounded-xl my-1 mx-1 font-bold cursor-pointer"
+                                >
+                                  <Check className={cn("mr-3 h-4 w-4 text-[#007AFF]", selectedInstituteId === inst.id ? "opacity-100" : "opacity-0")} />
+                                  {inst.name}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    <Label className="text-[10px] font-black uppercase text-slate-500 ml-2 tracking-[0.1em]">Verification ID *</Label>
+                    <div className="relative group">
+                      <div className="absolute left-5 top-1/2 -translate-y-1/2 p-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-400 group-focus-within:text-[#007AFF] transition-all">
+                        <ShieldCheck className="h-3.5 w-3.5" />
+                      </div>
+                      <Input
+                        placeholder="Official ID number..."
+                        value={studentIdNumberInput}
+                        onChange={(e) => setStudentIdNumberInput(e.target.value)}
+                        className="h-14 pl-14 rounded-[1.5rem] border-2 border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 font-black text-sm shadow-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-3 pt-2">
+                  <Button
+                    onClick={handleApprove}
+                    disabled={approveRejectLoading || !selectedInstituteId || !studentIdNumberInput.trim()}
+                    className="h-14 rounded-[1.5rem] bg-[#007AFF] hover:bg-blue-600 text-white font-black uppercase text-[11px] tracking-[0.2em] transition-all shadow-xl active:scale-95"
+                  >
+                    {approveRejectLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <><Check className="mr-2 h-5 w-5" /> Confirm & Approve</>}
+                  </Button>
+                  <Button variant="ghost" onClick={handleRejectClick} disabled={approveRejectLoading} className="h-12 rounded-[1.5rem] text-red-500 font-black uppercase text-[10px] tracking-widest">
+                    <X className="mr-2 h-4 w-4" /> Reject Credentials
+                  </Button>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </section>
+    )
+  }
+
+  const renderProfileInfo = () => {
+    if (detailLoading) {
+      return (
+        <div className="space-y-6">
+          <Skeleton className="h-4 w-32 rounded-lg" />
+          <div className="space-y-4">
+            <Skeleton className="h-12 rounded-2xl" />
+            <Skeleton className="h-12 rounded-2xl" />
+            <Skeleton className="h-12 rounded-2xl" />
+          </div>
+        </div>
+      )
+    }
+
+    if (!studentDetail) return null
+
+    return (
+      <section className="space-y-6 pb-6">
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Profile Intelligence</h3>
+          <Button variant="ghost" size="sm" onClick={handleSaveProfile} disabled={saveProfileLoading} className="text-[#007AFF] font-black uppercase text-[10px] tracking-widest h-8 px-4">
+            {saveProfileLoading ? <Loader2 className="h-3 w-3 animate-spin mr-2" /> : <Save className="h-3 w-3 mr-2" />}
+            Sync
+          </Button>
+        </div>
+
+        <div className="space-y-5">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase text-slate-400 ml-2 tracking-widest">First Name</Label>
+              <Input value={profileDraft.firstName} onChange={(e) => setProfileDraft(d => ({ ...d, firstName: e.target.value }))} className="h-12 rounded-2xl bg-slate-50/50 border-2 border-slate-100/50 text-sm font-black" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase text-slate-400 ml-2 tracking-widest">Last Name</Label>
+              <Input value={profileDraft.lastName} onChange={(e) => setProfileDraft(d => ({ ...d, lastName: e.target.value }))} className="h-12 rounded-2xl bg-slate-50/50 border-2 border-slate-100/50 text-sm font-black" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label className="text-[10px] font-black uppercase text-slate-400 ml-2 tracking-widest">Campus</Label>
+            <Input value={profileDraft.university} onChange={(e) => setProfileDraft(d => ({ ...d, university: e.target.value }))} className="h-12 rounded-2xl bg-slate-50/50 border-2 border-slate-100/50 text-sm font-black" />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-[10px] font-black uppercase text-slate-400 ml-2 tracking-widest">Degree</Label>
+            <Input value={profileDraft.degree} onChange={(e) => setProfileDraft(d => ({ ...d, degree: e.target.value }))} className="h-12 rounded-2xl bg-slate-50/50 border-2 border-slate-100/50 text-sm font-black" />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-[10px] font-black uppercase text-slate-400 ml-2 tracking-widest">Admin Notes</Label>
+            <textarea value={profileDraft.notes} onChange={(e) => setProfileDraft(d => ({ ...d, notes: e.target.value }))} className="w-full min-h-[100px] p-4 rounded-[2rem] bg-slate-50/50 border-2 border-slate-100/50 text-sm font-bold outline-none resize-none shadow-inner" placeholder="Internal notes..." />
+          </div>
+          {studentDetail.verificationStatus === 'approved' && (
+            <div className="p-6 rounded-[2.5rem] border-2 border-slate-50 bg-slate-50/20 space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-900">Founders Club</p>
+                <Switch checked={profileDraft.isFoundersClub} onCheckedChange={(v) => setProfileDraft(d => ({ ...d, isFoundersClub: v }))} className="data-[state=checked]:bg-[#007AFF]" />
+              </div>
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-900">Account Active</p>
+                <Switch checked={profileDraft.isActive} onCheckedChange={(v) => setProfileDraft(d => ({ ...d, isActive: v }))} className="data-[state=checked]:bg-[#007AFF]" />
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+    )
+  }
   const { verifyEmail, loading: verifyEmailLoading } = useVerifyStudentEmail()
 
   const [profileDraft, setProfileDraft] = useState({
@@ -115,6 +458,10 @@ export function AdminKYC() {
     profilePicture: "",
     verificationSelfiePath: "",
     isActive: true,
+    gender: "",
+    degree: "",
+    yearOfStudy: "",
+    notes: "",
   })
 
   useEffect(() => {
@@ -139,7 +486,13 @@ export function AdminKYC() {
       profilePicture: studentDetail.profilePicture ?? "",
       verificationSelfiePath: studentDetail.verificationSelfiePath ?? "",
       isActive: studentDetail.isActive,
+      gender: studentDetail.gender ?? "",
+      degree: studentDetail.degree ?? "",
+      yearOfStudy: studentDetail.yearOfStudy ?? "",
+      notes: studentDetail.adminNotes ?? "",
     })
+    setSelectedInstituteId(studentDetail.instituteId ?? "")
+    setStudentIdNumberInput(studentDetail.studentIdNumber ?? "")
   }, [studentDetail?.id, studentDetail?.updatedAt])
 
   // Reset page when status filter changes
@@ -159,7 +512,7 @@ export function AdminKYC() {
 
   const handleApprove = async () => {
     if (!selectedStudentId) return
-    
+
     if (!selectedInstituteId) {
       toast({
         title: "Institute Required",
@@ -177,7 +530,7 @@ export function AdminKYC() {
       return
     }
 
-    const result = await approveReject(selectedStudentId, { 
+    const result = await approveReject(selectedStudentId, {
       action: 'approve',
       instituteId: selectedInstituteId,
       studentIdNumber: studentIdNumberInput.trim(),
@@ -341,6 +694,10 @@ export function AdminKYC() {
       profilePicture: profileDraft.profilePicture.trim() || null,
       verificationSelfiePath: profileDraft.verificationSelfiePath.trim() || null,
       isActive: profileDraft.isActive,
+      gender: profileDraft.gender.trim() || null,
+      degree: profileDraft.degree.trim() || null,
+      yearOfStudy: profileDraft.yearOfStudy.trim() || null,
+      notes: profileDraft.notes.trim() || null,
     }
     const result = await saveStudentProfile(selectedStudentId, payload)
     if (result) {
@@ -497,16 +854,16 @@ export function AdminKYC() {
           <p className="text-muted-foreground mt-1">Manage student verifications and records</p>
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={() => setIsInstitutesDialogOpen(true)}
             className="flex-1 sm:flex-none h-10 font-bold"
           >
             <School className="mr-2 h-4 w-4" />
             <span className="hidden xs:inline">Manage </span>Institutes
           </Button>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={handleRefresh}
             className="flex-1 sm:flex-none h-10 font-bold"
             disabled={pendingLoading || allLoading}
@@ -560,29 +917,65 @@ export function AdminKYC() {
               </div>
 
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {filteredPendingStudents.map((student) => (
-                  <Card key={student.id}>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">
-                        {student.university}
-                      </CardTitle>
-                      <Badge variant="outline">Pending</Badge>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{student.firstName} {student.lastName}</div>
-                      <p className="text-xs text-muted-foreground">
-                        ID: {student.parchiId}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {student.email}
-                      </p>
-                      <div className="mt-4 flex gap-2">
-                        <Button className="w-full" onClick={() => handleReview(student.id)}>
-                          <Eye className="mr-2 h-4 w-4" /> Review
-                        </Button>
+                {pendingStudents.map((student) => (
+                  <div key={student.id} className="group relative p-6 rounded-[2rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-none hover:-translate-y-1 transition-all duration-500 overflow-hidden">
+                    {/* Background Pattern */}
+                    <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.06] transition-opacity">
+                      <ShieldCheck className="w-24 h-24" />
+                    </div>
+
+                    <div className="relative z-10">
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="p-2.5 rounded-2xl bg-blue-50 dark:bg-blue-900/30 text-[#007AFF] border border-blue-100 dark:border-blue-800">
+                          <School className="w-5 h-5" />
+                        </div>
+                        <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/20 rounded-full font-black uppercase text-[10px] tracking-widest px-3 h-6">
+                          Verification Pending
+                        </Badge>
                       </div>
-                    </CardContent>
-                  </Card>
+
+                      <div className="mb-6">
+                        <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">{student.firstName} {student.lastName}</h3>
+                        <div className="flex items-center gap-2 mt-1">
+                          <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{student.university}</p>
+                          <div className="w-1 h-1 rounded-full bg-slate-300" />
+                          <p className="text-[10px] font-black uppercase text-[#007AFF] tracking-tighter">ID: {student.parchiId}</p>
+                        </div>
+                      </div>
+
+                      <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 mb-6 space-y-3">
+                        <div className="flex items-center gap-3">
+                          <Mail className="w-3.5 h-3.5 text-slate-400" />
+                          <p className="text-xs font-bold text-slate-600 dark:text-slate-400 truncate">{student.email}</p>
+                        </div>
+                        <div className="flex items-center gap-3 pt-3 border-t border-slate-200/50 dark:border-slate-700/50">
+                          {student.platform?.toLowerCase() === 'ios' ? (
+                            <>
+                              <Apple className="w-3.5 h-3.5 text-slate-900 dark:text-white" />
+                              <p className="text-[10px] font-black uppercase text-slate-900 dark:text-white tracking-widest">iOS Device</p>
+                            </>
+                          ) : student.platform?.toLowerCase() === 'android' ? (
+                            <>
+                              <Smartphone className="w-3.5 h-3.5 text-emerald-600" />
+                              <p className="text-[10px] font-black uppercase text-emerald-600 tracking-widest">Android Device</p>
+                            </>
+                          ) : (
+                            <>
+                              <RefreshCw className="w-3.5 h-3.5 text-slate-400" />
+                              <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Cross-Platform</p>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      <Button
+                        className="w-full h-12 rounded-2xl bg-[#007AFF] hover:bg-blue-600 text-white font-black uppercase text-[10px] tracking-widest shadow-lg shadow-blue-500/20 transition-all duration-300"
+                        onClick={() => handleReview(student.id)}
+                      >
+                        <Eye className="mr-2 h-4 w-4" /> Begin Review
+                      </Button>
+                    </div>
+                  </div>
                 ))}
               </div>
 
@@ -619,8 +1012,66 @@ export function AdminKYC() {
           )}
         </TabsContent>
 
-        <TabsContent value="all" className="space-y-4">
-          <Card>
+        <TabsContent value="all" className="space-y-6">
+          {stats?.platformDistribution && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card className="group relative overflow-hidden border-none shadow-sm bg-gradient-to-br from-white to-blue-50/50 dark:from-slate-900 dark:to-blue-900/10 transition-all duration-500 hover:shadow-xl hover:shadow-blue-500/10 rounded-[2.5rem]">
+                <div className="absolute -right-4 -top-4 p-8 opacity-5 group-hover:opacity-10 transition-all duration-700">
+                  <RefreshCw className="w-24 h-24 text-blue-600" />
+                </div>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg">
+                      <RefreshCw className="w-5 h-5" />
+                    </div>
+                    <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest bg-blue-50 dark:bg-blue-900/30 px-3 py-1 rounded-full border border-blue-100 dark:border-blue-800">Total Database</span>
+                  </div>
+                  <div className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">
+                    {stats.platformDistribution.reduce((acc, curr) => acc + curr.count, 0).toLocaleString()}
+                  </div>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1">Cross-Platform Reach</p>
+                </CardContent>
+              </Card>
+
+              <Card className="group relative overflow-hidden border-none shadow-sm bg-gradient-to-br from-white to-slate-50/50 dark:from-slate-900 dark:to-slate-900 transition-all duration-500 hover:shadow-xl hover:shadow-slate-500/10 rounded-[2.5rem]">
+                <div className="absolute -right-4 -top-4 p-8 opacity-5 group-hover:opacity-10 transition-all duration-700">
+                  <Apple className="w-24 h-24 text-slate-900 dark:text-white" />
+                </div>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-10 h-10 rounded-2xl bg-slate-900 dark:bg-slate-700 flex items-center justify-center text-white shadow-lg">
+                      <Apple className="w-5 h-5" />
+                    </div>
+                    <span className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-widest bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full border border-slate-200 dark:border-slate-700">iOS Users</span>
+                  </div>
+                  <div className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">
+                    {stats.platformDistribution.find(p => p.platform?.toLowerCase() === 'ios')?.count || 0}
+                  </div>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1">App Store Ecosystem</p>
+                </CardContent>
+              </Card>
+
+              <Card className="group relative overflow-hidden border-none shadow-sm bg-gradient-to-br from-white to-emerald-50/50 dark:from-slate-900 dark:to-emerald-900/10 transition-all duration-500 hover:shadow-xl hover:shadow-emerald-500/10 rounded-[2.5rem]">
+                <div className="absolute -right-4 -top-4 p-8 opacity-5 group-hover:opacity-10 transition-all duration-700">
+                  <Smartphone className="w-24 h-24 text-emerald-600" />
+                </div>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-10 h-10 rounded-2xl bg-emerald-600 flex items-center justify-center text-white shadow-lg">
+                      <Smartphone className="w-5 h-5" />
+                    </div>
+                    <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 dark:bg-emerald-900/30 px-3 py-1 rounded-full border border-emerald-100 dark:border-emerald-800">Android Users</span>
+                  </div>
+                  <div className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">
+                    {stats.platformDistribution.find(p => p.platform?.toLowerCase() === 'android')?.count || 0}
+                  </div>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1">Play Store Ecosystem</p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          <Card className="rounded-[2.5rem] border-none shadow-sm overflow-hidden bg-white dark:bg-slate-900">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
@@ -770,153 +1221,153 @@ export function AdminKYC() {
                 <>
                   <div className="rounded-xl border shadow-sm overflow-hidden bg-white dark:bg-slate-900/50">
                     <div className="overflow-x-auto custom-scrollbar">
-                    {groupByFilter ? (
-                      <Table>
-                        <TableHeader>
-                          <TableRow className="bg-slate-50 dark:bg-slate-900/50">
-                            <TableHead className="font-black uppercase text-[10px] tracking-widest">{groupByFilter === 'university' ? 'Institution' : 'City'}</TableHead>
-                            <TableHead className="font-black uppercase text-[10px] tracking-widest">Total Students</TableHead>
-                            <TableHead className="font-black uppercase text-[10px] tracking-widest text-green-600">Approved</TableHead>
-                            <TableHead className="font-black uppercase text-[10px] tracking-widest text-yellow-600">Pending</TableHead>
-                            <TableHead className="font-black uppercase text-[10px] tracking-widest text-red-600">Rejected</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {groupedData.map((group) => (
-                            <TableRow key={`group-${group.group}`} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
-                              <TableCell className="font-black text-slate-900 dark:text-white">{group.group}</TableCell>
-                              <TableCell className="font-bold">{group.total}</TableCell>
-                              <TableCell>
-                                <Badge variant="default" className="bg-green-500/10 text-green-600 border-green-500/20 hover:bg-green-500/20">
-                                  {group.approved}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20">
-                                  {group.pending}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant="destructive" className="bg-red-500/10 text-red-600 border-red-500/20 hover:bg-red-500/20">
-                                  {group.rejected}
-                                </Badge>
-                              </TableCell>
+                      {groupByFilter ? (
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="bg-slate-50 dark:bg-slate-900/50">
+                              <TableHead className="font-black uppercase text-[10px] tracking-widest">{groupByFilter === 'university' ? 'Institution' : 'City'}</TableHead>
+                              <TableHead className="font-black uppercase text-[10px] tracking-widest">Total Students</TableHead>
+                              <TableHead className="font-black uppercase text-[10px] tracking-widest text-green-600">Approved</TableHead>
+                              <TableHead className="font-black uppercase text-[10px] tracking-widest text-yellow-600">Pending</TableHead>
+                              <TableHead className="font-black uppercase text-[10px] tracking-widest text-red-600">Rejected</TableHead>
                             </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    ) : (
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                          <TableHead>Name</TableHead>
-                          <TableHead>Institute</TableHead>
-                          <TableHead>Parchi ID</TableHead>
-                          <TableHead>Email</TableHead>
-                          <TableHead>Email Status</TableHead>
-                          <TableHead>Platform</TableHead>
-                          <TableHead>KYC Status</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredAllStudents.map((student) => (
-                          <TableRow key={student.id}>
-                            <TableCell className="font-medium">
-                              {student.firstName} {student.lastName}
-                            </TableCell>
-                            <TableCell>{student.university}</TableCell>
-                            <TableCell>{student.parchiId}</TableCell>
-                            <TableCell>{student.email}</TableCell>
-                            <TableCell>
-                              <Badge variant={student.emailConfirmed ? "default" : "destructive"} className="text-xs">
-                                {student.emailConfirmed ? "Verified" : "Unverified"}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              {student.platform === 'ios' ? (
-                                <div className="flex items-center gap-1.5 text-slate-600">
-                                  <Apple className="h-3.5 w-3.5" />
-                                  <span className="text-[10px] font-bold uppercase tracking-tighter">iOS</span>
-                                </div>
-                              ) : student.platform === 'android' ? (
-                                <div className="flex items-center gap-1.5 text-green-600">
-                                  <Smartphone className="h-3.5 w-3.5" />
-                                  <span className="text-[10px] font-bold uppercase tracking-tighter">Android</span>
-                                </div>
-                              ) : (
-                                <span className="text-xs text-muted-foreground">-</span>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant={getStatusVariant(student.verificationStatus)}>
-                                {getStatusText(student.verificationStatus)}
-                              </Badge>
-                              {student.verificationStatus === 'rejected' && student.reviewNotes && (
-                                <TooltipProvider>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <div className="text-[10px] text-destructive mt-1 max-w-[150px] truncate leading-tight font-medium cursor-help">
-                                        ↳ {student.reviewNotes}
-                                      </div>
-                                    </TooltipTrigger>
-                                    <TooltipContent side="right" className="max-w-xs p-3 text-xs bg-slate-900 text-white border-slate-800 shadow-2xl">
-                                      <p className="font-bold mb-1 uppercase tracking-tighter opacity-60">Rejection Reason</p>
-                                      <p className="leading-relaxed">{student.reviewNotes}</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
-                              )}
-                              {!student.isActive && student.verificationStatus === 'approved' && (
-                                <Badge variant="secondary" className="ml-2">Inactive</Badge>
-                              )}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" className="h-8 w-8 p-0">
-                                    <span className="sr-only">Open menu</span>
-                                    <MoreHorizontal className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                  <DropdownMenuItem onClick={() => handleReview(student.id)}>
-                                    <Eye className="mr-2 h-4 w-4" /> View Details
-                                  </DropdownMenuItem>
-                                  <DropdownMenuSeparator />
-                                  {student.isActive ? (
-                                    <DropdownMenuItem onClick={() => handleToggleStatus(student)} className="text-red-600">
-                                      <X className="mr-2 h-4 w-4" /> Deactivate Account
-                                    </DropdownMenuItem>
+                          </TableHeader>
+                          <TableBody>
+                            {groupedData.map((group) => (
+                              <TableRow key={`group-${group.group}`} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
+                                <TableCell className="font-black text-slate-900 dark:text-white">{group.group}</TableCell>
+                                <TableCell className="font-bold">{group.total}</TableCell>
+                                <TableCell>
+                                  <Badge variant="default" className="bg-green-500/10 text-green-600 border-green-500/20 hover:bg-green-500/20">
+                                    {group.approved}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>
+                                  <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20">
+                                    {group.pending}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>
+                                  <Badge variant="destructive" className="bg-red-500/10 text-red-600 border-red-500/20 hover:bg-red-500/20">
+                                    {group.rejected}
+                                  </Badge>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      ) : (
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Name</TableHead>
+                              <TableHead>Institute</TableHead>
+                              <TableHead>Parchi ID</TableHead>
+                              <TableHead>Email</TableHead>
+                              <TableHead>Email Status</TableHead>
+                              <TableHead>Platform</TableHead>
+                              <TableHead>KYC Status</TableHead>
+                              <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {filteredAllStudents.map((student) => (
+                              <TableRow key={student.id}>
+                                <TableCell className="font-medium">
+                                  {student.firstName} {student.lastName}
+                                </TableCell>
+                                <TableCell>{student.university}</TableCell>
+                                <TableCell>{student.parchiId}</TableCell>
+                                <TableCell>{student.email}</TableCell>
+                                <TableCell>
+                                  <Badge variant={student.emailConfirmed ? "default" : "destructive"} className="text-xs">
+                                    {student.emailConfirmed ? "Verified" : "Unverified"}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>
+                                  {student.platform?.toLowerCase() === 'ios' ? (
+                                    <div className="flex items-center gap-1.5 text-slate-600">
+                                      <Apple className="h-3.5 w-3.5" />
+                                      <span className="text-[10px] font-bold uppercase tracking-tighter">iOS</span>
+                                    </div>
+                                  ) : student.platform?.toLowerCase() === 'android' ? (
+                                    <div className="flex items-center gap-1.5 text-green-600">
+                                      <Smartphone className="h-3.5 w-3.5" />
+                                      <span className="text-[10px] font-bold uppercase tracking-tighter">Android</span>
+                                    </div>
                                   ) : (
-                                    <DropdownMenuItem onClick={() => handleToggleStatus(student)} className="text-green-600">
-                                      <Check className="mr-2 h-4 w-4" /> Activate Account
-                                    </DropdownMenuItem>
+                                    <span className="text-xs text-muted-foreground">{student.platform || "-"}</span>
                                   )}
-                                  <DropdownMenuItem onClick={() => handleDeleteClick(student)} className="text-red-600">
-                                    <Trash2 className="mr-2 h-4 w-4" /> Delete Student
-                                  </DropdownMenuItem>
-                                  {!student.emailConfirmed && (
-                                    <>
-                                      <DropdownMenuSeparator />
-                                      <DropdownMenuItem onClick={() => handleVerifyEmail(student.id)} className="text-blue-600">
-                                        <Mail className="mr-2 h-4 w-4" /> Verify Email
+                                </TableCell>
+                                <TableCell>
+                                  <Badge variant={getStatusVariant(student.verificationStatus)}>
+                                    {getStatusText(student.verificationStatus)}
+                                  </Badge>
+                                  {student.verificationStatus === 'rejected' && student.reviewNotes && (
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <div className="text-[10px] text-destructive mt-1 max-w-[150px] truncate leading-tight font-medium cursor-help">
+                                            ↳ {student.reviewNotes}
+                                          </div>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="right" className="max-w-xs p-3 text-xs bg-slate-900 text-white border-slate-800 shadow-2xl">
+                                          <p className="font-bold mb-1 uppercase tracking-tighter opacity-60">Rejection Reason</p>
+                                          <p className="leading-relaxed">{student.reviewNotes}</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  )}
+                                  {!student.isActive && student.verificationStatus === 'approved' && (
+                                    <Badge variant="secondary" className="ml-2">Inactive</Badge>
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" className="h-8 w-8 p-0">
+                                        <span className="sr-only">Open menu</span>
+                                        <MoreHorizontal className="h-4 w-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                      <DropdownMenuItem onClick={() => handleReview(student.id)}>
+                                        <Eye className="mr-2 h-4 w-4" /> View Details
                                       </DropdownMenuItem>
-                                    </>
-                                  )}
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                      </Table>
-                    )}
+                                      <DropdownMenuSeparator />
+                                      {student.isActive ? (
+                                        <DropdownMenuItem onClick={() => handleToggleStatus(student)} className="text-red-600">
+                                          <X className="mr-2 h-4 w-4" /> Deactivate Account
+                                        </DropdownMenuItem>
+                                      ) : (
+                                        <DropdownMenuItem onClick={() => handleToggleStatus(student)} className="text-green-600">
+                                          <Check className="mr-2 h-4 w-4" /> Activate Account
+                                        </DropdownMenuItem>
+                                      )}
+                                      <DropdownMenuItem onClick={() => handleDeleteClick(student)} className="text-red-600">
+                                        <Trash2 className="mr-2 h-4 w-4" /> Delete Student
+                                      </DropdownMenuItem>
+                                      {!student.emailConfirmed && (
+                                        <>
+                                          <DropdownMenuSeparator />
+                                          <DropdownMenuItem onClick={() => handleVerifyEmail(student.id)} className="text-blue-600">
+                                            <Mail className="mr-2 h-4 w-4" /> Verify Email
+                                          </DropdownMenuItem>
+                                        </>
+                                      )}
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      )}
+                    </div>
                   </div>
-                </div>
 
-                {!groupByFilter && allPagination && allPagination.pages > 1 && (
+                  {!groupByFilter && allPagination && allPagination.pages > 1 && (
                     <div className="mt-4">
                       <Pagination>
                         <PaginationContent>
@@ -967,495 +1418,94 @@ export function AdminKYC() {
           setSelectedStudentId(null)
         }
       }}>
-        <DialogContent className="max-w-[95vw] sm:max-w-3xl max-h-[90vh] overflow-y-auto custom-scrollbar">
-          <DialogHeader>
-            <DialogTitle>Student details & KYC</DialogTitle>
-            <DialogDescription>
-              {studentDetail
-                ? `Edit profile (Parchi ID is read-only) and review KYC for ${studentDetail.firstName} ${studentDetail.lastName}.`
-                : "Loading student details..."}
-            </DialogDescription>
-          </DialogHeader>
-
-          {detailLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-              <span className="ml-2 text-muted-foreground">Loading student details...</span>
-            </div>
-          ) : detailError ? (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Error</AlertTitle>
-              <AlertDescription>{detailError}</AlertDescription>
-            </Alert>
-          ) : studentDetail ? (
-              <div className="space-y-8 py-4">
-                {/* Section 1: Identity */}
-                <div className="space-y-4 border-b border-slate-100 dark:border-slate-800 pb-8">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-600">
-                        <Smartphone className="w-4 h-4" />
-                      </div>
-                      <h3 className="text-sm font-black uppercase tracking-widest text-slate-900 dark:text-white">Identity & Account</h3>
+        <DialogContent className="w-[95vw] max-w-[1400px] sm:max-w-[95vw] lg:max-w-[1400px] max-h-[95vh] overflow-hidden p-0 bg-slate-50 dark:bg-slate-950 border-none shadow-2xl">
+          <DialogTitle className="sr-only">KYC Verification Portal</DialogTitle>
+          <DialogDescription className="sr-only">Review and verify student documentation and profile information.</DialogDescription>
+          <div className="flex flex-col h-full max-h-[95vh]">
+            {/* Header */}
+            <div className="px-6 md:px-8 py-5 md:py-6 bg-white dark:bg-slate-900 border-b flex items-center justify-between shrink-0 shadow-sm z-20">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-3 md:gap-4">
+                  <div className="p-2 md:p-2.5 rounded-2xl bg-[#007AFF]/10 text-[#007AFF] border border-[#007AFF]/20 hidden sm:block">
+                    <ShieldCheck className="w-5 h-5 md:w-6 md:h-6" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 md:gap-3 flex-wrap">
+                      <DialogTitle className="text-xl md:text-2xl font-black tracking-tighter text-slate-900 dark:text-white truncate">
+                        KYC Portal
+                      </DialogTitle>
+                      {studentDetail && (
+                        <Badge variant={getStatusVariant(studentDetail.verificationStatus)} className="h-5 md:h-6 px-2 md:px-3 rounded-full font-black uppercase text-[8px] md:text-[10px] tracking-widest shadow-sm">
+                          {getStatusText(studentDetail.verificationStatus)}
+                        </Badge>
+                      )}
                     </div>
-                    <Button type="button" onClick={handleSaveProfile} disabled={saveProfileLoading} className="shadow-lg shadow-blue-500/20">
-                      {saveProfileLoading ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <div className="text-xs md:text-sm font-bold text-slate-500 mt-0.5 md:mt-1 flex items-center gap-2 truncate">
+                      {studentDetail ? (
+                        <>
+                          <span className="hidden xs:inline">Reviewing </span><span className="text-slate-900 dark:text-slate-200 font-black">{studentDetail.firstName} {studentDetail.lastName}</span>
+                        </>
                       ) : (
-                        <Save className="mr-2 h-4 w-4" />
-                      )}
-                      Save Changes
-                    </Button>
-                  </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2 sm:col-span-2">
-                    <Label>Parchi ID</Label>
-                    <Input value={studentDetail.parchiId} readOnly className="bg-muted font-mono" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="draft-fn">First name</Label>
-                    <Input id="draft-fn" value={profileDraft.firstName} onChange={(e) => setProfileDraft((d) => ({ ...d, firstName: e.target.value }))} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="draft-ln">Last name</Label>
-                    <Input id="draft-ln" value={profileDraft.lastName} onChange={(e) => setProfileDraft((d) => ({ ...d, lastName: e.target.value }))} />
-                  </div>
-                  <div className="space-y-2 sm:col-span-2">
-                    <Label htmlFor="draft-email">Email</Label>
-                    <Input id="draft-email" type="email" value={profileDraft.email} onChange={(e) => setProfileDraft((d) => ({ ...d, email: e.target.value }))} />
-                    <div className="flex items-center gap-2 mt-1 flex-wrap">
-                      <span className="text-xs text-muted-foreground">Confirmation (read-only):</span>
-                      <Badge variant={studentDetail.emailConfirmed ? "default" : "destructive"} className="text-xs">
-                        {studentDetail.emailConfirmed ? "Verified" : "Unverified"}
-                      </Badge>
-                      {!studentDetail.emailConfirmed && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="h-7 text-xs"
-                          onClick={() => handleVerifyEmail(studentDetail.id)}
-                          disabled={verifyEmailLoading}
-                        >
-                          {verifyEmailLoading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Mail className="h-3 w-3 mr-1" />}
-                          Verify manually
-                        </Button>
+                        <Skeleton className="h-3 md:h-4 w-32 md:w-48 rounded-lg" />
                       )}
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="draft-phone">Phone</Label>
-                    <Input id="draft-phone" value={profileDraft.phone} onChange={(e) => setProfileDraft((d) => ({ ...d, phone: e.target.value }))} />
-                  </div>
                 </div>
-
-                {/* Section 2: Academic Info */}
-                <div className="space-y-6 border-b border-slate-100 dark:border-slate-800 pb-8">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-600">
-                      <School className="w-4 h-4" />
-                    </div>
-                    <h3 className="text-sm font-black uppercase tracking-widest text-slate-900 dark:text-white">Academic Records</h3>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <div className="space-y-2 sm:col-span-2">
-                      <Label htmlFor="draft-uni">University / Institute (Student Declared)</Label>
-                      <Input id="draft-uni" value={profileDraft.university} onChange={(e) => setProfileDraft((d) => ({ ...d, university: e.target.value }))} className="bg-slate-50 dark:bg-slate-900/50" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="draft-gy">Graduation year</Label>
-                      <Input id="draft-gy" type="number" value={profileDraft.graduationYear} onChange={(e) => setProfileDraft((d) => ({ ...d, graduationYear: e.target.value }))} placeholder="Optional" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="draft-dob">Date of birth</Label>
-                      <Input id="draft-dob" type="date" value={profileDraft.dateOfBirth} onChange={(e) => setProfileDraft((d) => ({ ...d, dateOfBirth: e.target.value }))} />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Section 3: System Status & Engagement */}
-                <div className="space-y-6">
-                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-600">
-                      <Check className="w-4 h-4" />
-                    </div>
-                    <h3 className="text-sm font-black uppercase tracking-widest text-slate-900 dark:text-white">System Verification</h3>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                   <div className="space-y-2">
-                    <Label htmlFor="draft-institute">Institute</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          className={cn(
-                            "w-full justify-between font-normal",
-                            !profileDraft.instituteId && "text-muted-foreground"
-                          )}
-                        >
-                          {profileDraft.instituteId
-                            ? availableInstitutes.find(
-                                (inst) => inst.id === profileDraft.instituteId
-                              )?.name
-                            : "Select institute"}
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[400px] p-0">
-                        <Command>
-                          <CommandInput placeholder="Search institute..." />
-                          <CommandList>
-                            <CommandEmpty>No institute found.</CommandEmpty>
-                            <CommandGroup>
-                              <CommandItem
-                                value="__none__"
-                                onSelect={() => {
-                                  setProfileDraft((d) => ({ ...d, instituteId: "" }))
-                                }}
-                              >
-                                <Check
-                                  className={cn(
-                                    "mr-2 h-4 w-4",
-                                    profileDraft.instituteId === "" ? "opacity-100" : "opacity-0"
-                                  )}
-                                />
-                                — None —
-                              </CommandItem>
-                              {availableInstitutes.map((inst) => (
-                                <CommandItem
-                                  key={inst.id}
-                                  value={inst.name}
-                                  onSelect={() => {
-                                    setProfileDraft((d) => ({ ...d, instituteId: inst.id }))
-                                  }}
-                                >
-                                  <Check
-                                    className={cn(
-                                      "mr-2 h-4 w-4",
-                                      profileDraft.instituteId === inst.id ? "opacity-100" : "opacity-0"
-                                    )}
-                                  />
-                                  <div className="flex items-center gap-2">
-                                    <School className="h-4 w-4 text-muted-foreground" />
-                                    {inst.name}
-                                  </div>
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="draft-student-id">Student ID Number</Label>
-                    <Input id="draft-student-id" value={profileDraft.studentIdNumber} onChange={(e) => setProfileDraft((d) => ({ ...d, studentIdNumber: e.target.value }))} placeholder="Assigned by admin" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="draft-vs">Verification status</Label>
-                    <Select
-                      value={profileDraft.verificationStatus}
-                      onValueChange={(v) => setProfileDraft((d) => ({ ...d, verificationStatus: v as Student["verificationStatus"] }))}
-                    >
-                      <SelectTrigger id="draft-vs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="approved">Approved</SelectItem>
-                        <SelectItem value="rejected">Rejected</SelectItem>
-                        <SelectItem value="expired">Expired</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="draft-exp">Verification expires at</Label>
-                    <Input
-                      id="draft-exp"
-                      type="datetime-local"
-                      value={profileDraft.verificationExpiresAt}
-                      onChange={(e) => setProfileDraft((d) => ({ ...d, verificationExpiresAt: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="draft-savings">Total savings (PKR)</Label>
-                    <Input
-                      id="draft-savings"
-                      type="number"
-                      step="0.01"
-                      value={profileDraft.totalSavings}
-                      onChange={(e) => setProfileDraft((d) => ({ ...d, totalSavings: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="draft-red">Total redemptions</Label>
-                    <Input
-                      id="draft-red"
-                      type="number"
-                      min={0}
-                      value={profileDraft.totalRedemptions}
-                      onChange={(e) => setProfileDraft((d) => ({ ...d, totalRedemptions: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-2 sm:col-span-2">
-                    <Label htmlFor="draft-pfp">Profile picture URL</Label>
-                    <Input id="draft-pfp" value={profileDraft.profilePicture} onChange={(e) => setProfileDraft((d) => ({ ...d, profilePicture: e.target.value }))} />
-                  </div>
-                  <div className="space-y-2 sm:col-span-2">
-                    <Label htmlFor="draft-selfie-path">Verification selfie URL</Label>
-                    <Input
-                      id="draft-selfie-path"
-                      value={profileDraft.verificationSelfiePath}
-                      onChange={(e) => setProfileDraft((d) => ({ ...d, verificationSelfiePath: e.target.value }))}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between rounded-lg border p-3 sm:col-span-2">
-                    <Label htmlFor="draft-fc">Founders Club member</Label>
-                    <Switch
-                      id="draft-fc"
-                      checked={profileDraft.isFoundersClub}
-                      onCheckedChange={(v) => setProfileDraft((d) => ({ ...d, isFoundersClub: v }))}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between rounded-lg border p-3 sm:col-span-2">
-                    <Label htmlFor="draft-active">Account active</Label>
-                    <Switch
-                      id="draft-active"
-                      checked={profileDraft.isActive}
-                      onCheckedChange={(v) => setProfileDraft((d) => ({ ...d, isActive: v }))}
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-muted-foreground pt-2">
-                  <div>
-                    <span className="font-medium text-foreground">Verified at: </span>
-                    {studentDetail.verifiedAt ? new Date(studentDetail.verifiedAt).toLocaleString() : "—"}
-                  </div>
-                  <div>
-                    <span className="font-medium text-foreground">Verified by: </span>
-                    {studentDetail.verifiedBy?.email ?? "—"}
-                  </div>
-                  <div>
-                    <span className="font-medium text-foreground">Institute: </span>
-                    {studentDetail.instituteName ?? "—"}
-                  </div>
-                  <div>
-                    <span className="font-medium text-foreground">Student ID: </span>
-                    {studentDetail.studentIdNumber ?? "—"}
-                  </div>
-                  <div>
-                    <span className="font-medium text-foreground">Created: </span>
-                    {studentDetail.createdAt ? new Date(studentDetail.createdAt).toLocaleString() : "—"}
-                  </div>
-                  <div>
-                    <span className="font-medium text-foreground">Updated: </span>
-                    {studentDetail.updatedAt ? new Date(studentDetail.updatedAt).toLocaleString() : "—"}
-                  </div>
-                </div>
+              </div>
+              <div className="flex items-center gap-2 md:gap-3 ml-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => refetchDetail()}
+                  disabled={detailLoading}
+                  className="rounded-xl md:rounded-2xl border-slate-200 dark:border-slate-800 font-bold text-[10px] md:text-xs h-8 md:h-10 px-3 md:px-4 hover:bg-slate-50 transition-all shrink-0"
+                >
+                  <RefreshCw className={`h-3 w-3 md:h-3.5 md:w-3.5 sm:mr-2 ${detailLoading ? 'animate-spin' : ''}`} />
+                  <span className="hidden sm:inline">Sync Data</span>
+                </Button>
+                <Button variant="ghost" size="icon" onClick={() => setIsReviewOpen(false)} className="rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0 h-8 w-8 md:h-10 md:w-10">
+                  <X className="h-4 w-4 md:h-5 md:w-5 text-slate-400" />
+                </Button>
               </div>
             </div>
 
-            <div className="space-y-4">
-                <h3 className="text-sm font-semibold">KYC documents</h3>
-                {studentDetail.kyc ? (() => {
-                  const kyc = studentDetail.kyc as NonNullable<typeof studentDetail.kyc>
-                  return (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-slate-50/50 dark:bg-slate-900/20 p-6 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-xs font-black uppercase tracking-widest text-blue-600">Verification Selfie</Label>
-                    <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-100">Live Capture</Badge>
-                  </div>
-                  <div
-                    className="border-2 border-white dark:border-slate-800 rounded-2xl p-1 bg-white dark:bg-slate-900 shadow-xl cursor-pointer hover:scale-[1.02] transition-all duration-300 relative group"
-                    onClick={() => setExpandedImage({
-                      url: kyc.selfieImagePath,
-                      alt: "Selfie"
-                    })}
-                  >
-                    <img
-                      src={kyc.selfieImagePath}
-                      alt="Selfie"
-                      className="w-full h-auto rounded-xl object-contain max-h-[400px]"
-                    />
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/40 rounded-xl transition-all duration-500 backdrop-blur-0 group-hover:backdrop-blur-[2px]">
-                      <ZoomIn className="h-10 w-10 text-white opacity-0 group-hover:opacity-100 scale-50 group-hover:scale-100 transition-all duration-500" />
-                    </div>
-                  </div>
+            <div className="flex-1 overflow-hidden bg-slate-50/30 dark:bg-slate-950/30">
+              {/* Mobile Tabs View */}
+              <Tabs defaultValue="docs" className="h-full flex flex-col lg:hidden">
+                <div className="px-6 py-3 bg-white dark:bg-slate-900 border-b">
+                  <TabsList className="w-full p-1 rounded-2xl bg-slate-100 dark:bg-slate-800 border h-11">
+                    <TabsTrigger value="docs" className="flex-1 rounded-xl font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 data-[state=active]:shadow-sm">Documentation</TabsTrigger>
+                    <TabsTrigger value="workflow" className="flex-1 rounded-xl font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 data-[state=active]:shadow-sm">Review & Profile</TabsTrigger>
+                  </TabsList>
                 </div>
 
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-xs font-black uppercase tracking-widest text-indigo-600">Student ID (Front)</Label>
-                    <Badge variant="outline" className="bg-indigo-50 text-indigo-600 border-indigo-100">Official Document</Badge>
+                <TabsContent value="docs" className="flex-1 overflow-y-auto m-0 outline-none custom-scrollbar p-6">
+                  {renderDocumentation()}
+                </TabsContent>
+
+                <TabsContent value="workflow" className="flex-1 overflow-y-auto m-0 outline-none custom-scrollbar p-6">
+                  <div className="space-y-8 pb-10">
+                    {renderWorkflow()}
+                    {renderProfileInfo()}
                   </div>
-                  <div
-                    className="border-2 border-white dark:border-slate-800 rounded-2xl p-1 bg-white dark:bg-slate-900 shadow-xl cursor-pointer hover:scale-[1.02] transition-all duration-300 relative group"
-                    onClick={() => setExpandedImage({
-                      url: kyc.studentIdCardFrontPath,
-                      alt: "Student ID Front"
-                    })}
-                  >
-                    <img
-                      src={kyc.studentIdCardFrontPath}
-                      alt="Student ID Front"
-                      className="w-full h-auto rounded-xl object-contain max-h-[400px]"
-                    />
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/40 rounded-xl transition-all duration-500 backdrop-blur-0 group-hover:backdrop-blur-[2px]">
-                      <ZoomIn className="h-10 w-10 text-white opacity-0 group-hover:opacity-100 scale-50 group-hover:scale-100 transition-all duration-500" />
-                    </div>
-                  </div>
+                </TabsContent>
+              </Tabs>
+
+              {/* Desktop Side-by-Side View */}
+              <div className="hidden lg:flex h-full overflow-hidden">
+                {/* Left Column: Document Review */}
+                <div className="flex-1 overflow-y-auto p-8 space-y-10 custom-scrollbar border-r border-slate-200/50 dark:border-slate-800/50">
+                  {renderDocumentation()}
                 </div>
 
-                <div className="space-y-4 md:col-span-2">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-xs font-black uppercase tracking-widest text-slate-500">Student ID (Back)</Label>
-                  </div>
-                  <div
-                    className="border-2 border-slate-100 dark:border-slate-800 rounded-2xl p-1 bg-slate-50 dark:bg-slate-900 shadow-sm cursor-pointer hover:scale-[1.01] transition-all duration-300 relative group"
-                    onClick={() => setExpandedImage({
-                      url: kyc.studentIdCardBackPath,
-                      alt: "Student ID Back"
-                    })}
-                  >
-                    <img
-                      src={kyc.studentIdCardBackPath}
-                      alt="Student ID Back"
-                      className="w-full h-auto rounded-xl object-contain max-h-[200px]"
-                    />
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-xl transition-all duration-500">
-                      <ZoomIn className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-all duration-500" />
-                    </div>
-                  </div>
+                {/* Right Column: Profile Edits & Decisions */}
+                <div className="w-[420px] bg-white dark:bg-slate-900 shrink-0 overflow-y-auto p-8 space-y-10 custom-scrollbar shadow-[-10px_0_30px_-15px_rgba(0,0,0,0.05)]">
+                  {renderWorkflow()}
+                  {renderProfileInfo()}
                 </div>
-
-                <div className="col-span-1 md:col-span-2 flex flex-wrap items-center gap-6 text-xs text-slate-500 border-t border-slate-200 dark:border-slate-800 pt-6">
-                  {kyc.submittedAt && (
-                    <div className="flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                      <span className="font-bold uppercase tracking-tighter">Submitted:</span>
-                      {new Date(kyc.submittedAt).toLocaleString()}
-                    </div>
-                  )}
-                  {kyc.isAnnualRenewal && (
-                    <Badge variant="outline" className="rounded-full bg-amber-50 text-amber-600 border-amber-100 px-3">Annual Renewal</Badge>
-                  )}
-                </div>
-              </div>
-                  )
-                })() : (
-                  <p className="text-sm text-muted-foreground">No KYC submission on file.</p>
-                )}
               </div>
             </div>
-          ) : (
-            <div className="text-center py-12 text-muted-foreground">
-              Could not load this student.
-            </div>
-          )}
-
-          <DialogFooter className="gap-2 sm:gap-0">
-            {!studentDetail?.emailConfirmed && (
-              <Button
-                variant="secondary"
-                onClick={() => handleVerifyEmail(studentDetail!.id)}
-                disabled={verifyEmailLoading || !studentDetail}
-              >
-                {verifyEmailLoading ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Mail className="mr-2 h-4 w-4" />
-                )}
-                Verify Email
-              </Button>
-            )}
-            
-            {studentDetail?.verificationStatus !== 'approved' && (
-              <div className="flex flex-col gap-4 mr-auto w-full sm:w-auto sm:flex-row sm:items-end bg-blue-50/50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-100 dark:border-blue-800">
-                <div className="grid gap-1.5">
-                  <Label htmlFor="institute-select" className="text-[10px] font-black uppercase tracking-widest text-blue-600">Verified Institute *</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        id="institute-select"
-                        variant="outline"
-                        role="combobox"
-                        className={cn(
-                          "w-[240px] justify-between font-medium bg-white dark:bg-slate-900",
-                          !selectedInstituteId && "text-muted-foreground"
-                        )}
-                      >
-                        {selectedInstituteId
-                          ? availableInstitutes.find(
-                              (inst) => inst.id === selectedInstituteId
-                            )?.name
-                          : "Select institute"}
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[300px] p-0" align="start">
-                      <Command>
-                        <CommandInput placeholder="Search institute..." />
-                        <CommandList>
-                          <CommandEmpty>No institute found.</CommandEmpty>
-                          <CommandGroup>
-                            {availableInstitutes.map((inst) => (
-                              <CommandItem
-                                key={inst.id}
-                                value={inst.name}
-                                onSelect={() => setSelectedInstituteId(inst.id)}
-                              >
-                                <Check
-                                  className={cn(
-                                    "mr-2 h-4 w-4",
-                                    selectedInstituteId === inst.id ? "opacity-100" : "opacity-0"
-                                  )}
-                                />
-                                {inst.name}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                <div className="grid gap-1.5">
-                  <Label htmlFor="student-id-input" className="text-[10px] font-black uppercase tracking-widest text-blue-600">Assigned ID *</Label>
-                  <Input
-                    id="student-id-input"
-                    placeholder="Enter ID number"
-                    value={studentIdNumberInput}
-                    onChange={(e) => setStudentIdNumberInput(e.target.value)}
-                    className="w-[180px] bg-white dark:bg-slate-900 font-mono"
-                    autoComplete="off"
-                  />
-                </div>
-              </div>
-            )}
-
-            <Button
-              variant="destructive"
-              onClick={handleRejectClick}
-              disabled={approveRejectLoading || !studentDetail}
-            >
-              <X className="mr-2 h-4 w-4" />
-              Reject
-            </Button>
-            <Button
-              onClick={handleApprove}
-              disabled={approveRejectLoading || !studentDetail || studentDetail?.verificationStatus === 'approved'}
-            >
-              {approveRejectLoading ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Check className="mr-2 h-4 w-4" />
-              )}
-              {studentDetail?.verificationStatus === 'approved' ? 'Approved' : 'Approve'}
-            </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -1529,12 +1579,7 @@ export function AdminKYC() {
         }
       }}>
         <DialogContent className="max-w-5xl max-h-[95vh] p-0 border-none bg-transparent shadow-none">
-          <DialogHeader className="sr-only">
-            <DialogTitle>Document Preview</DialogTitle>
-            <DialogDescription>
-              View the full-size student verification document.
-            </DialogDescription>
-          </DialogHeader>
+          <DialogTitle className="sr-only">Document Preview</DialogTitle>
           {expandedImage && (
             <div className="relative">
               <img

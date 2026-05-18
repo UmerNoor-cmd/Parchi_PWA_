@@ -125,14 +125,26 @@ export function useAllStudents(filters?: StudentsFilter): UseAllStudentsResult {
   const search = filters?.search
   const institute = filters?.institute
   const emailVerified = filters?.emailVerified
-  const groupBy = filters?.groupBy
+  const university = filters?.university
+  const gender = filters?.gender
+  const kycStatus = filters?.kycStatus
+  const minRedemptions = filters?.minRedemptions
+  const maxRedemptions = filters?.maxRedemptions
+  const dateFrom = filters?.dateFrom
+  const dateTo = filters?.dateTo
+  const hasRedeemed = filters?.hasRedeemed
+  const foundersClub = filters?.foundersClub
 
   const fetchStudents = useCallback(async (newFilters?: StudentsFilter) => {
     try {
       setLoading(true)
       setError(null)
 
-      const filtersToUse = newFilters || { status, page, limit, search, institute, emailVerified, groupBy }
+      const filtersToUse = newFilters || { 
+        status, page, limit, search, institute, emailVerified,
+        university, gender, kycStatus, minRedemptions, maxRedemptions,
+        dateFrom, dateTo, hasRedeemed, foundersClub
+      }
       const response = await getAllStudents(filtersToUse)
       // Backend returns: { data: { items: [...], pagination: {...} }, status, message }
       const studentsArray = response?.data?.items || []
@@ -161,7 +173,11 @@ export function useAllStudents(filters?: StudentsFilter): UseAllStudentsResult {
     } finally {
       setLoading(false)
     }
-  }, [status, page, limit, search, institute, emailVerified, groupBy])
+  }, [
+    status, page, limit, search, institute, emailVerified,
+    university, gender, kycStatus, minRedemptions, maxRedemptions,
+    dateFrom, dateTo, hasRedeemed, foundersClub
+  ])
 
   useEffect(() => {
     fetchStudents()
@@ -189,6 +205,7 @@ export function useStudentDetail(id: string | null): UseStudentDetailResult {
 
     try {
       setLoading(true)
+      setStudent(null)
       setError(null)
 
       const data = await getStudentDetailsForReview(id)

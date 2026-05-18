@@ -231,7 +231,7 @@ export async function apiRequest(
       ...options,
       signal: controller.signal,
       headers: {
-        'Content-Type': 'application/json',
+        ...(options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
         ...(token && { Authorization: `Bearer ${token}` }),
         ...options.headers,
       },
@@ -396,6 +396,7 @@ export interface AdminBranch {
   latitude: number | null
   longitude: number | null
   is_active: boolean
+  qr_auto_approve: boolean
   created_at: string
   merchant?: {
     business_name: string
@@ -410,6 +411,7 @@ export interface UpdateBranchRequest {
   latitude?: number
   longitude?: number
   isActive?: boolean
+  qrAutoApprove?: boolean
 }
 
 export interface UpdateMerchantRequest {
@@ -492,6 +494,7 @@ const transformBranchResponse = (branch: any): AdminBranch => {
     latitude: branch.latitude,
     longitude: branch.longitude,
     is_active: branch.isActive,
+    qr_auto_approve: branch.qrAutoApprove ?? false,
     created_at: branch.createdAt,
     merchant: branch.merchantName ? {
       business_name: branch.merchantName
@@ -957,6 +960,27 @@ export interface Student {
 
 export interface StudentDetail extends Student {
   kyc: StudentKYC | null;
+  gender?: string | null;
+  degree?: string | null;
+  yearOfStudy?: string | null;
+  adminNotes?: string | null;
+  leaderboardRank?: number;
+  accountAgeDays?: number;
+  loyaltyProgress?: {
+    merchantName: string;
+    merchantLogo: string | null;
+    current: number;
+    goal: number;
+    percentage: number;
+  }[];
+  recentRedemptions?: {
+    id: string;
+    date: string;
+    merchantName: string;
+    branchName: string;
+    offerTitle: string;
+    isBonusApplied: boolean;
+  }[];
 }
 
 export interface UpdateStudentAdminRequest {
@@ -977,6 +1001,10 @@ export interface UpdateStudentAdminRequest {
   profilePicture?: string | null;
   verificationSelfiePath?: string | null;
   isActive?: boolean;
+  gender?: string | null;
+  degree?: string | null;
+  yearOfStudy?: string | null;
+  notes?: string | null;
 }
 
 export interface ApiResponse<T> {
@@ -1009,13 +1037,22 @@ export interface ApproveRejectStudentRequest {
 }
 
 export interface StudentsFilter {
-  status?: 'pending' | 'approved' | 'rejected' | 'expired';
+  status?: 'pending' | 'approved' | 'rejected' | 'expired' | 'suspended';
   page?: number;
   limit?: number;
   search?: string; // Server-side search query
   institute?: string;
   emailVerified?: boolean;
   groupBy?: 'university' | 'city';
+  university?: string;
+  gender?: string;
+  kycStatus?: string; // Comma separated for multi-select
+  minRedemptions?: number;
+  maxRedemptions?: number;
+  dateFrom?: string;
+  dateTo?: string;
+  hasRedeemed?: boolean;
+  foundersClub?: boolean;
 }
 
 // ========== Student KYC API Functions ==========
@@ -1060,11 +1097,53 @@ export const getAllStudents = async (
   if (filters?.groupBy) {
     queryParams.append('groupBy', filters.groupBy);
   }
+  if (filters?.university && filters.university.trim()) {
+    queryParams.append('university', filters.university.trim());
+  }
+  if (filters?.gender) {
+    queryParams.append('gender', filters.gender);
+  }
+  if (filters?.kycStatus) {
+    queryParams.append('kycStatus', filters.kycStatus);
+  }
+  if (filters?.minRedemptions !== undefined) {
+    queryParams.append('minRedemptions', filters.minRedemptions.toString());
+  }
+  if (filters?.maxRedemptions !== undefined) {
+    queryParams.append('maxRedemptions', filters.maxRedemptions.toString());
+  }
+  if (filters?.dateFrom) {
+    queryParams.append('dateFrom', filters.dateFrom);
+  }
+  if (filters?.dateTo) {
+    queryParams.append('dateTo', filters.dateTo);
+  }
+  if (filters?.hasRedeemed !== undefined) {
+    queryParams.append('hasRedeemed', filters.hasRedeemed.toString());
+  }
+  if (filters?.foundersClub !== undefined) {
+    queryParams.append('foundersClub', filters.foundersClub.toString());
+  }
 
   const endpoint = `/admin/students${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
   return apiRequest(endpoint, {
     method: 'GET',
   });
+};
+
+/**
+ * Replace student KYC selfie (Admin)
+ */
+export const updateStudentSelfie = async (id: string, file: File): Promise<{ selfieImageUrl: string }> => {
+  const formData = new FormData();
+  formData.append('file', file);
+  
+  const response = await apiRequest(`/admin/students/${id}/selfie`, {
+    method: 'POST',
+    body: formData,
+    // Note: apiRequest should handle multipart/form-data by NOT setting Content-Type to application/json
+  });
+  return response.data;
 };
 
 export interface StudentVerificationResponse {
@@ -1567,6 +1646,7 @@ export interface AdminDashboardStats {
   foundersClubMembers: number;
   kycPerformance?: {
     medianDaysToFirstRedemption: number;
+    monthlyTrend?: { month: string; days: number }[];
   };
   kycRejectionStats?: KycRejectionStats;
   activeUserTracking?: ActiveUserTracking;
@@ -1664,6 +1744,7 @@ export interface RedemptionVolumeDataPoint {
 
 export interface RedemptionAnalytics {
   uniqueRedeemers: number;
+  totalRegisteredStudents: number;
   volumeTrends: {
     daily: RedemptionVolumeDataPoint[];
     weekly: RedemptionVolumeDataPoint[];
@@ -1691,8 +1772,15 @@ export interface RedemptionAnalytics {
  * Get redemption & behavioral engine analytics
  * Requires admin authentication
  */
-export const getRedemptionAnalytics = async (): Promise<RedemptionAnalytics> => {
-  const response = await apiRequest('/admin/dashboard/redemption-analytics', {
+export const getRedemptionAnalytics = async (startDate?: Date, endDate?: Date, studentId?: string | null): Promise<RedemptionAnalytics> => {
+  const queryParams = new URLSearchParams();
+  if (startDate) queryParams.append('startDate', startDate.toISOString());
+  if (endDate) queryParams.append('endDate', endDate.toISOString());
+  if (studentId) queryParams.append('studentId', studentId);
+
+  const endpoint = `/admin/dashboard/redemption-analytics${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+  
+  const response = await apiRequest(endpoint, {
     method: 'GET',
   });
   return response.data;
@@ -2182,4 +2270,86 @@ export const getAdminCorporateRedemptions = async (merchantId: string, startDate
     method: 'GET',
   });
   return response.data;
+};
+export interface SignupDropoff {
+  stages: {
+    stage: string;
+    count: number;
+    percentOfTotal: number;
+    dropoffPct: number;
+  }[];
+}
+
+/**
+ * Fetch detailed signup dropoff/funnel statistics
+ */
+export async function getSignupDropoff(): Promise<SignupDropoff> {
+  const response = await apiRequest('/admin/dashboard/signup-funnel', {
+    method: 'GET',
+  });
+  return response.data;
+}
+
+// ── QR Redemptions ───────────────────────────────────────────────────────────
+
+export interface QrSettings {
+  branchId: string;
+  branchName: string;
+  qrAutoApprove: boolean;
+  qrDeepLink: string;
+}
+
+export interface QrPendingRequest {
+  id: string;
+  status: string;
+  expiresAt: string;
+  createdAt: string;
+  student: {
+    id: string;
+    parchiId: string;
+    firstName: string;
+    lastName: string;
+    university: string;
+    verificationStatus: string;
+    totalRedemptions: number;
+    profilePicture: string | null;
+  };
+  offer: {
+    id: string;
+    title: string;
+    discountType: string;
+    discountValue: number;
+    maxDiscountAmount: number | null;
+    imageUrl: string | null;
+    formattedDiscount: string;
+  };
+}
+
+export const getQrSettings = async (): Promise<QrSettings> => {
+  const response = await apiRequest('/qr-redemptions/settings', { method: 'GET' });
+  return response.data;
+};
+
+export const updateQrSettings = async (qrAutoApprove: boolean): Promise<QrSettings> => {
+  const response = await apiRequest('/qr-redemptions/settings', {
+    method: 'PATCH',
+    body: JSON.stringify({ qrAutoApprove }),
+  });
+  return response.data;
+};
+
+export const getPendingQrRequests = async (): Promise<QrPendingRequest[]> => {
+  const response = await apiRequest('/qr-redemptions/pending', { method: 'GET' });
+  return response.data;
+};
+
+export const approveQrRequest = async (requestId: string): Promise<void> => {
+  await apiRequest(`/qr-redemptions/${requestId}/approve`, { method: 'PATCH' });
+};
+
+export const rejectQrRequest = async (requestId: string, rejectionReason?: string): Promise<void> => {
+  await apiRequest(`/qr-redemptions/${requestId}/reject`, {
+    method: 'PATCH',
+    body: JSON.stringify({ rejectionReason }),
+  });
 };
