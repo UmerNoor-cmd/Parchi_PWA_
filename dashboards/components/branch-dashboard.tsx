@@ -707,9 +707,11 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
                             placeholder="12345"
                             value={parchiIdInput}
                             onChange={(e) => {
-                              // Only allow numbers
+                              // Only allow numbers, max 5 characters
                               const numbersOnly = e.target.value.replace(/\D/g, '')
-                              setParchiIdInput(numbersOnly)
+                              if (numbersOnly.length <= 5) {
+                                setParchiIdInput(numbersOnly)
+                              }
                             }}
                             className="!text-5xl font-mono h-20 border-0 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/30 tracking-widest text-center"
                             style={{ fontSize: '3rem' }}
