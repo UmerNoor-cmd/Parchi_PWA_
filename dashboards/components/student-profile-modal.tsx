@@ -45,7 +45,8 @@ import {
   Upload,
   ChevronLeft,
   ChevronRight,
-  Eye
+  Eye,
+  X
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { 
@@ -93,7 +94,10 @@ export function StudentProfileModal({
     yearOfStudy: "",
     verificationStatus: "",
     isFoundersClub: false,
-    notes: ""
+    notes: "",
+    profilePicture: "",
+    verificationSelfiePath: "",
+    dateOfBirth: ""
   })
 
   // Selfie Replace State
@@ -128,7 +132,8 @@ export function StudentProfileModal({
         isFoundersClub: details.isFoundersClub || false,
         notes: details.adminNotes || "",
         profilePicture: details.profilePicture || "",
-        verificationSelfiePath: details.verificationSelfiePath || ""
+        verificationSelfiePath: details.verificationSelfiePath || "",
+        dateOfBirth: details.dateOfBirth ? details.dateOfBirth.slice(0, 10) : ""
       })
     } catch (err) {
       toast({
@@ -159,7 +164,8 @@ export function StudentProfileModal({
         isFoundersClub: editForm.isFoundersClub,
         notes: editForm.notes,
         profilePicture: editForm.profilePicture || null,
-        verificationSelfiePath: editForm.verificationSelfiePath || null
+        verificationSelfiePath: editForm.verificationSelfiePath || null,
+        dateOfBirth: editForm.dateOfBirth.trim() || null
       })
       toast({
         title: "Success",
@@ -271,8 +277,20 @@ export function StudentProfileModal({
                     </div>
                     <div className="flex items-center gap-1">
                       <CalendarIcon className="w-4 h-4" />
-                      Joined {format(new Date(student.createdAt), "MMM d, yyyy")}
+                      Joined {student.createdAt ? format(new Date(student.createdAt), "MMM d, yyyy") : 'N/A'}
                     </div>
+                    {student.dateOfBirth && (
+                      <div className="flex items-center gap-1">
+                        <Award className="w-4 h-4 text-pink-500" />
+                        Born {(() => {
+                          try {
+                            return format(new Date(student.dateOfBirth), "MMM d, yyyy");
+                          } catch (e) {
+                            return student.dateOfBirth.slice(0, 10);
+                          }
+                        })()}
+                      </div>
+                    )}
                     <div className="flex items-center gap-1">
                       <MapPin className="w-4 h-4" />
                       {student.university}
@@ -481,6 +499,10 @@ export function StudentProfileModal({
                       <div className="space-y-2">
                         <Label>Phone Number</Label>
                         <Input value={editForm.phone} onChange={e => setEditForm({...editForm, phone: e.target.value})} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Date of Birth</Label>
+                        <Input type="date" value={editForm.dateOfBirth} onChange={e => setEditForm({...editForm, dateOfBirth: e.target.value})} />
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">

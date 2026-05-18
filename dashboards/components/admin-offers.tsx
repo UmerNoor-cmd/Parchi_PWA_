@@ -326,8 +326,8 @@ export function AdminOffers() {
         maxDiscountAmount: Number(formData.maxDiscountAmount) || undefined,
         validFrom: formData.validFrom,
         validUntil: formData.validUntil,
-        dailyLimit: (formData.dailyLimit !== undefined && formData.dailyLimit !== null && formData.dailyLimit !== '') ? Number(formData.dailyLimit) : undefined,
-        totalLimit: (formData.totalLimit !== undefined && formData.totalLimit !== null && formData.totalLimit !== '') ? Number(formData.totalLimit) : undefined,
+        dailyLimit: (formData.dailyLimit !== undefined && formData.dailyLimit !== null && (formData.dailyLimit as any) !== '') ? Number(formData.dailyLimit) : undefined,
+        totalLimit: (formData.totalLimit !== undefined && formData.totalLimit !== null && (formData.totalLimit as any) !== '') ? Number(formData.totalLimit) : undefined,
         imageUrl: formData.imageUrl,
         scheduleType: formData.scheduleType,
         additionalItem: formData.additionalItem || null,
@@ -1068,7 +1068,31 @@ export function AdminOffers() {
                                   <TableCell>{getStatusBadge(offer.status)}</TableCell>
                                   <TableCell className="text-right">
                                     <div className="flex justify-end gap-2">
-                                      <Button variant="ghost" size="sm" onClick={() => { setEditingOffer(offer); setFormData({ ...offer }); setIsCreateOpen(true); }}>
+                                      <Button variant="ghost" size="sm" onClick={() => {
+                                        setEditingOffer(offer);
+                                        setFormData({
+                                          merchantId: offer.merchantId,
+                                          title: offer.title,
+                                          description: offer.description || undefined,
+                                          discountType: offer.discountType,
+                                          discountValue: offer.discountValue,
+                                          minOrderValue: offer.minOrderValue || undefined,
+                                          maxDiscountAmount: offer.maxDiscountAmount || undefined,
+                                          validFrom: offer.validFrom.split('T')[0],
+                                          validUntil: offer.validUntil.split('T')[0],
+                                          dailyLimit: offer.dailyLimit ?? undefined,
+                                          totalLimit: offer.totalLimit ?? undefined,
+                                          imageUrl: offer.imageUrl || undefined,
+                                          scheduleType: offer.scheduleType || 'always',
+                                          allowedDays: offer.allowedDays || [0, 1, 2, 3, 4, 5, 6],
+                                          startTime: offer.startTime || undefined,
+                                          endTime: offer.endTime || undefined,
+                                          additionalItem: offer.additionalItem || undefined,
+                                          notes: offer.notes || undefined,
+                                          termsConditions: offer.termsConditions || undefined,
+                                        });
+                                        setIsCreateOpen(true);
+                                      }}>
                                         <Pencil className="h-4 w-4" />
                                       </Button>
                                       {offer.status === 'pending_approval' && (

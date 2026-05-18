@@ -223,7 +223,7 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
         const fullParchiId = parchiIdInput
         // Include merchant logo so the redemption record stores the branding snapshot
         const merchantLogoUrl = studentDetails.merchantLogoUrl
-          ?? studentDetails.offer?.merchant?.logoPath
+          ?? studentDetails.merchant?.logoPath
           ?? null
         await createRedemption({
           parchiId: fullParchiId,

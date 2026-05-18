@@ -131,7 +131,7 @@ export function AdminRedemptionEngine({
     return (
       <div className="flex h-[50vh] flex-col items-center justify-center gap-4">
         <p className="text-muted-foreground">Failed to load redemption analytics</p>
-        <Button onClick={fetchData}>Retry</Button>
+        <Button onClick={() => fetchData()}>Retry</Button>
       </div>
     )
   }

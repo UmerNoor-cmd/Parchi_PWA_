@@ -16,7 +16,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Switch } from "@/components/ui/switch"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Check, X, Search, Eye, MoreHorizontal, Loader2, AlertCircle, RefreshCw, ChevronLeft, ChevronRight, ZoomIn, Trash2, Save, Mail, Apple, Smartphone, ShieldCheck, CheckCircle2, School, Calendar as CalendarIcon, ChevronsUpDown } from "lucide-react"
+import { Check, X, Search, Eye, MoreHorizontal, Loader2, AlertCircle, RefreshCw, ChevronLeft, ChevronRight, ZoomIn, Trash2, Save, Mail, Apple, Smartphone, ShieldCheck, CheckCircle2, School, Calendar as CalendarIcon, ChevronsUpDown, Phone, Cake } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -235,19 +235,40 @@ export function AdminKYC({
             <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Account Identity</h3>
             <div className="h-px flex-1 bg-slate-200 dark:bg-slate-800 ml-6 opacity-30" />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="p-5 rounded-[2rem] bg-white dark:bg-slate-900 shadow-xl border border-slate-100 dark:border-slate-800">
-              <Mail className="h-4 w-4 text-[#007AFF] mb-3" />
+              <Mail className="h-4 w-4 text-[#007AFF] mb-2" />
+              <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-1">Email Address</p>
               <p className="text-xs font-black text-slate-900 dark:text-white truncate">{studentDetail.email}</p>
             </div>
             <div className="p-5 rounded-[2rem] bg-white dark:bg-slate-900 shadow-xl border border-slate-100 dark:border-slate-800">
+              <Phone className="h-4 w-4 text-emerald-600 mb-2" />
+              <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-1">Phone Number</p>
+              <p className="text-xs font-black text-slate-900 dark:text-white truncate">{studentDetail.phone || 'N/A'}</p>
+            </div>
+            <div className="p-5 rounded-[2rem] bg-white dark:bg-slate-900 shadow-xl border border-slate-100 dark:border-slate-800">
+              <Cake className="h-4 w-4 text-pink-500 mb-2" />
+              <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-1">Date of Birth</p>
+              <p className="text-xs font-black text-slate-900 dark:text-white truncate">
+                {(() => {
+                  if (!studentDetail.dateOfBirth) return 'N/A';
+                  try {
+                    return format(new Date(studentDetail.dateOfBirth), "MMMM d, yyyy");
+                  } catch (e) {
+                    return studentDetail.dateOfBirth.slice(0, 10);
+                  }
+                })()}
+              </p>
+            </div>
+            <div className="p-5 rounded-[2rem] bg-white dark:bg-slate-900 shadow-xl border border-slate-100 dark:border-slate-800">
               {studentDetail.platform?.toLowerCase() === 'ios' ? (
-                <Apple className="h-4 w-4 text-slate-900 dark:text-white mb-3" />
+                <Apple className="h-4 w-4 text-slate-900 dark:text-white mb-2" />
               ) : studentDetail.platform?.toLowerCase() === 'android' ? (
-                <Smartphone className="h-4 w-4 text-emerald-600 mb-3" />
+                <Smartphone className="h-4 w-4 text-emerald-600 mb-2" />
               ) : (
-                <RefreshCw className="h-4 w-4 text-purple-600 mb-3" />
+                <RefreshCw className="h-4 w-4 text-purple-600 mb-2" />
               )}
+              <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-1">Platform</p>
               <p className="text-xs font-black text-slate-900 dark:text-white uppercase truncate">
                 {studentDetail.platform?.toLowerCase() === 'ios' ? 'iOS' :
                   studentDetail.platform?.toLowerCase() === 'android' ? 'Android' :
@@ -255,8 +276,11 @@ export function AdminKYC({
               </p>
             </div>
             <div className="p-5 rounded-[2rem] bg-white dark:bg-slate-900 shadow-xl border border-slate-100 dark:border-slate-800">
-              <CalendarIcon className="h-4 w-4 text-emerald-600 mb-3" />
-              <p className="text-xs font-black text-slate-900 dark:text-white">{studentDetail.createdAt ? format(new Date(studentDetail.createdAt), "MMM d, yyyy") : 'N/A'}</p>
+              <CalendarIcon className="h-4 w-4 text-purple-500 mb-2" />
+              <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-1">Joined Date</p>
+              <p className="text-xs font-black text-slate-900 dark:text-white truncate">
+                {studentDetail.createdAt ? format(new Date(studentDetail.createdAt), "MMM d, yyyy") : 'N/A'}
+              </p>
             </div>
           </div>
         </section>
@@ -417,6 +441,16 @@ export function AdminKYC({
           <div className="space-y-2">
             <Label className="text-[10px] font-black uppercase text-slate-400 ml-2 tracking-widest">Degree</Label>
             <Input value={profileDraft.degree} onChange={(e) => setProfileDraft(d => ({ ...d, degree: e.target.value }))} className="h-12 rounded-2xl bg-slate-50/50 border-2 border-slate-100/50 text-sm font-black" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase text-slate-400 ml-2 tracking-widest">Phone Number</Label>
+              <Input value={profileDraft.phone} onChange={(e) => setProfileDraft(d => ({ ...d, phone: e.target.value }))} className="h-12 rounded-2xl bg-slate-50/50 border-2 border-slate-100/50 text-sm font-black" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase text-slate-400 ml-2 tracking-widest">Date of Birth</Label>
+              <Input type="date" value={profileDraft.dateOfBirth} onChange={(e) => setProfileDraft(d => ({ ...d, dateOfBirth: e.target.value }))} className="h-12 rounded-2xl bg-slate-50/50 border-2 border-slate-100/50 text-sm font-black" />
+            </div>
           </div>
           <div className="space-y-2">
             <Label className="text-[10px] font-black uppercase text-slate-400 ml-2 tracking-widest">Admin Notes</Label>
