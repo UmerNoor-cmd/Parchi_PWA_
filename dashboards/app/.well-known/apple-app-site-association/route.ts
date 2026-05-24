@@ -15,6 +15,10 @@ const AASA = {
             "/": "/merchant/*",
             comment: "Match all merchant deep-link pages",
           },
+          {
+            "/": "/redeem/*",
+            comment: "Match all QR redemption deep-link pages",
+          },
         ],
       },
     ],

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { LayoutDashboard, Users, FileText, LogOut, CheckCircle2, ShoppingCart, Loader2, Store, Bell, UserX, Settings, TrendingUp, Activity, Briefcase } from "lucide-react"
+import { LayoutDashboard, Users, FileText, LogOut, CheckCircle2, ShoppingCart, Loader2, Store, Bell, UserX, Settings, TrendingUp, Activity, Briefcase, QrCode } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 import { DASHBOARD_COLORS } from "@/lib/colors"
@@ -70,6 +70,11 @@ export function AdminSidebarContent({ activeTab, onTabChange, onLogout }: AdminS
       id: "branches",
       label: "Branches",
       icon: Store,
+    },
+    {
+      id: "qr-codes",
+      label: "QR Codes",
+      icon: QrCode,
     },
     {
       id: "offers",

@@ -86,6 +86,7 @@ import { AdminAnalytics } from "./admin-analytics"
 import { AdminRedemptionEngine } from "./admin-redemption-engine"
 import { AdminBrandPortfolio } from "./admin-brand-portfolio"
 import { AdminStudents } from "./admin-students"
+import { AdminQrCodes } from "./admin-qr-codes"
 import { getAdminDashboardStats, getTopPerformingMerchants, AdminDashboardStats, getSignupDropoff, SignupDropoff } from "@/lib/api-client"
 
 import { toast } from "sonner"
@@ -871,6 +872,8 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           {activeTab === "merchants" && <AdminMerchants />}
 
           {activeTab === "branches" && <AdminBranches />}
+
+          {activeTab === "qr-codes" && <AdminQrCodes />}
 
           {activeTab === "offers" && <AdminOffers />}
 

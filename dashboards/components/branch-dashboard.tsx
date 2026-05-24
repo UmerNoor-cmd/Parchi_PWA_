@@ -361,7 +361,7 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
     ctx.stroke()
 
     // QR image (load from qrserver.com)
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(`parchi://redeem/${qrSettings.branchId}`)}&format=png&margin=0`
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(`https://www.parchipakistan.com/redeem/${qrSettings.branchId}`)}&format=png&margin=0`
     const img = new Image()
     img.crossOrigin = "anonymous"
     img.onload = () => {
@@ -655,7 +655,7 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
                       <div className="flex flex-col items-center gap-4">
                         <div className="p-3 rounded-xl border-2 bg-white shadow-sm" style={{ borderColor: `${colors.primary}30` }}>
                           <img
-                            src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`parchi://redeem/${qrSettings.branchId}`)}&format=png&margin=4`}
+                            src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`https://www.parchipakistan.com/redeem/${qrSettings.branchId}`)}&format=png&margin=4`}
                             alt="Branch QR Code"
                             className="w-48 h-48"
                           />
