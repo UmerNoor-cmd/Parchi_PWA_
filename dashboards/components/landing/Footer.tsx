@@ -8,8 +8,13 @@ export function Footer() {
                 <div className="grid gap-8 lg:grid-cols-4">
                     <div className="space-y-4">
                         <div className="flex items-center gap-2">
-                            {/* Placeholder for white logo version if available */}
-                            <span className="text-2xl font-bold font-heading">Parchi</span>
+                            <Image
+                                src="/ParchiFullTextNewBlue.svg"
+                                alt="Parchi Logo"
+                                width={120}
+                                height={40}
+                                className="h-9 w-auto brightness-0 invert"
+                            />
                         </div>
                         <p className="text-sm text-blue-100">
                             Pakistan's first student exclusive discount ecosystem.

@@ -48,7 +48,7 @@ export function AboutUsSection() {
                         brands. Not just deals. Infrastructure.
                     </p>
                     <span className="flex-shrink-0 rounded-sm bg-primary px-5 py-3 font-sans text-[10px] font-bold uppercase tracking-[0.12em] text-white">
-                        Est. 2024 · Karachi
+                        Est. 2026 · Karachi
                     </span>
                 </div>
             </div>

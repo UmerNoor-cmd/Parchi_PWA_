@@ -1,4 +1,5 @@
 import { AnimatedIntro } from "@/components/landing/AnimatedIntro"
+import { LandingNavbar } from "@/components/landing/LandingNavbar"
 import { HeroSection } from "@/components/landing/HeroSection"
 import { HowItWorksSection } from "@/components/landing/HowItWorksSection"
 import { MerchantShowcaseSection } from "@/components/landing/MerchantShowcaseSection"
@@ -21,15 +22,17 @@ export default async function LandingPage() {
   return (
     <main className="flex flex-col min-h-screen">
       <AnimatedIntro />
+      <LandingNavbar />
       <HeroSection />
-      <HowItWorksSection />
-      <MerchantShowcaseSection brands={brands} />
-      <StudentFeaturesSection />
-      <MerchantFeaturesSection />
-      <AboutUsSection />
-      <FAQSection />
+      <section id="how-it-works"><HowItWorksSection /></section>
+      <section id="brands"><MerchantShowcaseSection brands={brands} /></section>
+      <section id="features">
+        <StudentFeaturesSection />
+        <MerchantFeaturesSection />
+      </section>
+      <section id="about"><AboutUsSection /></section>
+      <section id="faq"><FAQSection /></section>
       <Footer />
     </main>
-
   )
 }
