@@ -196,7 +196,9 @@ export function AdminAuditLogs() {
             APPROVE_OFFER: "bg-purple-100 text-purple-800",
             REJECT_OFFER: "bg-amber-100 text-amber-800",
             CREATE_REDEMPTION: "bg-orange-100 text-orange-800",
+            CREATE_QR_REDEMPTION: "bg-orange-100 text-orange-800",
             REJECT_REDEMPTION: "bg-red-100 text-red-800",
+            REJECT_QR_REDEMPTION: "bg-red-100 text-red-800",
             CREATE_STUDENT: "bg-cyan-100 text-cyan-800",
             CREATE_MERCHANT: "bg-teal-100 text-teal-800",
             CREATE_OFFER: "bg-violet-100 text-violet-800",
@@ -253,7 +255,9 @@ export function AdminAuditLogs() {
             { value: "APPROVE_OFFER", label: "Offer Approved", type: 'accept' },
             { value: "REJECT_OFFER", label: "Offer Rejected", type: 'reject' },
             { value: "CREATE_REDEMPTION", label: "Redemption Created", type: 'accept' },
+            { value: "CREATE_QR_REDEMPTION", label: "QR Redemption Created", type: 'accept' },
             { value: "REJECT_REDEMPTION", label: "Redemption Rejected", type: 'reject' },
+            { value: "REJECT_QR_REDEMPTION", label: "QR Redemption Rejected", type: 'reject' },
             { value: "UPDATE_OFFER", label: "Offer Updated", type: 'accept' },
         ]
 
@@ -483,7 +487,7 @@ export function AdminAuditLogs() {
                                                 {logs.map((log) => {
                                                     const datetime = formatDateTime(log.createdAt)
                                                     const isReject = log.action.includes('REJECT')
-                                                    const isAccept = log.action.includes('APPROVE') || log.action.includes('CREATE_REDEMPTION')
+                                                    const isAccept = log.action.includes('APPROVE') || log.action.includes('CREATE_REDEMPTION') || log.action.includes('CREATE_QR_REDEMPTION')
 
                                                     return (
                                                         <TableRow
@@ -541,7 +545,7 @@ export function AdminAuditLogs() {
                                                                                 )}
                                                                                 {(log.newValues.verificationStatus || log.newValues.status) && (
                                                                                     <Badge
-                                                                                        variant={(log.newValues.verificationStatus || log.newValues.status) === 'approved' || (log.action === 'CREATE_REDEMPTION') ? 'default' : 'destructive'}
+                                                                                        variant={(log.newValues.verificationStatus || log.newValues.status) === 'approved' || log.action.includes('CREATE_REDEMPTION') ? 'default' : 'destructive'}
                                                                                         className="text-[9px] h-4 px-1"
                                                                                     >
                                                                                         {log.newValues.verificationStatus || log.newValues.status || 'Verified'}
@@ -808,10 +812,20 @@ export function AdminAuditLogs() {
                             )}
 
                             {/* Redemption Details Section */}
-                            {selectedLog.action === 'CREATE_REDEMPTION' && selectedLog.newValues && (
+                            {(selectedLog.action === 'CREATE_REDEMPTION' || selectedLog.action === 'CREATE_QR_REDEMPTION') && selectedLog.newValues && (
                                 <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
-                                    <h4 className="font-semibold mb-3 text-orange-900">Redemption Summary</h4>
+                                    <h4 className="font-semibold mb-3 text-orange-900">
+                                        {selectedLog.action === 'CREATE_QR_REDEMPTION' ? 'QR Redemption Summary' : 'Redemption Summary'}
+                                    </h4>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                        {selectedLog.action === 'CREATE_QR_REDEMPTION' && selectedLog.newValues.method && (
+                                            <div>
+                                                <span className="text-muted-foreground">Method:</span>{' '}
+                                                <span className="font-medium">
+                                                    {selectedLog.newValues.method === 'auto_approve' ? 'Auto-approved' : 'Manual approve'}
+                                                </span>
+                                            </div>
+                                        )}
                                         <div>
                                             <span className="text-muted-foreground">Parchi ID:</span>{' '}
                                             <span className="font-semibold text-orange-600">
