@@ -63,6 +63,7 @@ export interface CorporateMerchant {
   bannerUrl: string | null;
   termsAndConditions: string | null;
   redemptionFee?: number;
+  restaurantListPinnedPosition?: number | null;
 }
 
 export interface CorporateMerchantsResponse {
@@ -1763,6 +1764,35 @@ export const getTopPerformingMerchants = async (
   return response.data;
 };
 
+export interface TopWeeklyRedeemer {
+  id: string;
+  firstName: string;
+  lastName: string;
+  university: string;
+  parchiId: string | null;
+  profilePicture: string | null;
+  redemptionCount: number;
+}
+
+/**
+ * Get top weekly redeemers (isolated)
+ * Requires admin authentication
+ */
+export const getTopWeeklyRedeemers = async (
+  limit: number = 10,
+): Promise<TopWeeklyRedeemer[]> => {
+  const params = new URLSearchParams();
+  if (limit) params.append('limit', String(limit));
+
+  const queryString = params.toString();
+  const url = `/admin/dashboard/top-weekly-redeemers${queryString ? `?${queryString}` : ''}`;
+
+  const response = await apiRequest(url, {
+    method: 'GET',
+  });
+  return response.data;
+};
+
 // ========== Redemption & Behavioral Engine ==========
 
 export interface RedemptionVolumeDataPoint {
@@ -1965,6 +1995,21 @@ export const setFeaturedBrands = async (data: SetFeaturedBrandsRequest): Promise
   const response = await apiRequest('/merchants/brands/featured', {
     method: 'PUT',
     body: JSON.stringify(data),
+  });
+  return response.data;
+};
+
+/**
+ * Set pin position for merchant in student "All Restaurants" list
+ * Requires admin authentication
+ */
+export const setRestaurantListPin = async (
+  merchantId: string,
+  position: number | null,
+): Promise<{ id: string; restaurantListPinnedPosition: number | null }> => {
+  const response = await apiRequest(`/merchants/corporate/${merchantId}/restaurant-list-pin`, {
+    method: 'PUT',
+    body: JSON.stringify({ position }),
   });
   return response.data;
 };

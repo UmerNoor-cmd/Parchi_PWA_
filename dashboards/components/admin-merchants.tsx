@@ -15,7 +15,7 @@ import { TestMerchantAlert } from "./test-merchant-alert"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useMerchants } from "@/hooks/use-merchants"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { updateCorporateMerchant, toggleCorporateMerchant, deleteCorporateMerchant, adminResetPassword, CorporateMerchant, getBrands, setFeaturedBrands, Brand, FeaturedBrand } from "@/lib/api-client"
+import { updateCorporateMerchant, toggleCorporateMerchant, deleteCorporateMerchant, adminResetPassword, CorporateMerchant, getBrands, setFeaturedBrands, setRestaurantListPin, Brand, FeaturedBrand } from "@/lib/api-client"
 import { SupabaseStorageService } from "@/lib/storage"
 import { useToast } from "@/hooks/use-toast"
 import { MERCHANT_CATEGORIES, getSubcategoriesForCategory } from "@/lib/merchant-categories"
@@ -65,6 +65,7 @@ export function AdminMerchants() {
   const [isResettingPassword, setIsResettingPassword] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [merchantToDelete, setMerchantToDelete] = useState<CorporateMerchant | null>(null)
+  const [savingPinFor, setSavingPinFor] = useState<string | null>(null)
   const [isDeletingMerchant, setIsDeletingMerchant] = useState(false)
 
   // Merchants are already filtered server-side based on searchQuery
@@ -200,6 +201,43 @@ export function AdminMerchants() {
         description: "Failed to update merchant status",
         variant: "destructive"
       })
+    }
+  }
+
+  const handleSaveRestaurantListPin = async (
+    merchant: CorporateMerchant,
+    rawValue: string,
+  ) => {
+    const trimmed = rawValue.trim()
+    const position = trimmed === "" ? null : parseInt(trimmed, 10)
+    if (trimmed !== "" && (isNaN(position!) || position! < 1)) {
+      toast({
+        title: "Invalid position",
+        description: "Enter a positive number or leave blank to clear",
+        variant: "destructive",
+      })
+      return
+    }
+    if (position === merchant.restaurantListPinnedPosition) return
+
+    try {
+      setSavingPinFor(merchant.id)
+      await setRestaurantListPin(merchant.id, position)
+      toast({
+        title: "Pin updated",
+        description: position
+          ? `${merchant.businessName} pinned at position ${position}`
+          : `Pin cleared for ${merchant.businessName}`,
+      })
+      refetch()
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to update pin position",
+        variant: "destructive",
+      })
+    } finally {
+      setSavingPinFor(null)
     }
   }
 
@@ -532,6 +570,7 @@ export function AdminMerchants() {
                       <TableHead>Contact</TableHead>
                       <TableHead>Category</TableHead>
                       <TableHead>Redemption Fee</TableHead>
+                      <TableHead>All Restaurants Pin</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
@@ -570,6 +609,28 @@ export function AdminMerchants() {
                           <span className="font-medium">
                             PKR {merchant.redemptionFee ?? 0}
                           </span>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2 max-w-[120px]">
+                            <Input
+                              type="number"
+                              min={1}
+                              placeholder="—"
+                              className="h-8 w-16"
+                              defaultValue={merchant.restaurantListPinnedPosition ?? ""}
+                              key={`${merchant.id}-${merchant.restaurantListPinnedPosition ?? "none"}`}
+                              disabled={savingPinFor === merchant.id}
+                              onBlur={(e) => handleSaveRestaurantListPin(merchant, e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  e.currentTarget.blur()
+                                }
+                              }}
+                            />
+                            {savingPinFor === merchant.id && (
+                              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell>
                           <Badge variant={getStatusVariant(merchant.isActive)}>

@@ -89,7 +89,7 @@ import { AdminRedemptionEngine } from "./admin-redemption-engine"
 import { AdminBrandPortfolio } from "./admin-brand-portfolio"
 import { AdminStudents } from "./admin-students"
 import { AdminQrCodes } from "./admin-qr-codes"
-import { getAdminDashboardStats, getTopPerformingMerchants, AdminDashboardStats, getSignupDropoff, SignupDropoff } from "@/lib/api-client"
+import { getAdminDashboardStats, getTopPerformingMerchants, getTopWeeklyRedeemers, AdminDashboardStats, TopWeeklyRedeemer, getSignupDropoff, SignupDropoff } from "@/lib/api-client"
 import { orderStagesForChart, signupStepNumber } from "@/lib/signup-funnel-display"
 
 import { toast } from "sonner"
@@ -341,6 +341,82 @@ const TopPerformingMerchants = ({
          </div>
       </Card>
     </div>
+  );
+};
+
+const TopWeeklyRedeemers = () => {
+  const [redeemers, setRedeemers] = useState<TopWeeklyRedeemer[]>([]);
+  const [loading, setLoading] = useState(true);
+  const colors = DASHBOARD_COLORS("admin");
+
+  useEffect(() => {
+    const fetchRedeemers = async () => {
+      setLoading(true);
+      try {
+        const data = await getTopWeeklyRedeemers(10);
+        setRedeemers(data);
+      } catch (error) {
+        console.error('Failed to fetch top weekly redeemers:', error);
+        toast.error('Failed to load top weekly redeemers');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchRedeemers();
+  }, []);
+
+  return (
+    <Card className="border-slate-200/60 dark:border-slate-800 shadow-sm">
+      <CardHeader>
+        <CardTitle style={{ color: colors.primary }}>Top Weekly Redeemers</CardTitle>
+        <CardDescription>Students with the most redemptions in the last 7 days</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="space-y-3">
+            {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-14 w-full rounded-xl" />)}
+          </div>
+        ) : redeemers.length > 0 ? (
+          <div className="space-y-2">
+            {redeemers.map((student, idx) => (
+              <div
+                key={student.id}
+                className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800"
+              >
+                <div className="flex items-center gap-4 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-white dark:bg-slate-800 flex items-center justify-center font-black text-xs text-slate-500 border border-slate-200 dark:border-slate-700 shrink-0">
+                    #{idx + 1}
+                  </div>
+                  {student.profilePicture ? (
+                    <img src={student.profilePicture} alt="" className="w-10 h-10 rounded-full object-cover border border-slate-100" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center font-bold text-indigo-600 text-xs shrink-0">
+                      {student.firstName.charAt(0)}{student.lastName.charAt(0)}
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <p className="font-bold text-slate-900 dark:text-white truncate">
+                      {student.firstName} {student.lastName}
+                    </p>
+                    <p className="text-xs text-slate-500 truncate">
+                      {student.university}{student.parchiId ? ` · ${student.parchiId}` : ''}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right shrink-0 ml-4">
+                  <p className="text-lg font-black text-indigo-600">{student.redemptionCount}</p>
+                  <p className="text-[10px] font-bold uppercase text-slate-400">This week</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="py-12 text-center text-slate-400 font-medium">
+            No redemptions in the last 7 days
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 
@@ -778,6 +854,9 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                           merchants={stats?.topPerformingMerchants || null}
                           isLoading={isLoading}
                         />
+                      </div>
+                      <div className="mb-8">
+                        <TopWeeklyRedeemers />
                       </div>
                       {/* Student Analytics */}
                       <div className="space-y-6">
