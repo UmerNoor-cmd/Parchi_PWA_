@@ -1059,6 +1059,28 @@ export interface StudentsFilter {
   dateTo?: string;
   hasRedeemed?: boolean;
   foundersClub?: boolean;
+  filters?: StudentFilterClause[];
+}
+
+export interface StudentFilterClause {
+  field: string;
+  operator: string;
+  value?: string | string[] | number | boolean;
+}
+
+export interface StudentFilterFieldMeta {
+  key: string;
+  label: string;
+  type: 'string' | 'enum' | 'number' | 'date' | 'boolean' | 'nested';
+  operators: string[];
+  enumOptions?: { value: string; label: string }[];
+  nested?: boolean;
+}
+
+export interface StudentExportResult {
+  blob: Blob;
+  truncated: boolean;
+  total?: number;
 }
 
 // ========== Student KYC API Functions ==========
@@ -1130,11 +1152,72 @@ export const getAllStudents = async (
   if (filters?.foundersClub !== undefined) {
     queryParams.append('foundersClub', filters.foundersClub.toString());
   }
+  if (filters?.filters && filters.filters.length > 0) {
+    queryParams.append('filters', JSON.stringify(filters.filters));
+  }
 
   const endpoint = `/admin/students${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
   return apiRequest(endpoint, {
     method: 'GET',
   });
+};
+
+/**
+ * Get student filter field metadata for the filter builder
+ */
+export const getStudentFilterFields = async (): Promise<StudentFilterFieldMeta[]> => {
+  const response = await apiRequest('/admin/students/filter-fields', {
+    method: 'GET',
+  });
+  return response.data;
+};
+
+/**
+ * Export students as CSV with the same filters as the list endpoint
+ */
+export const exportStudents = async (
+  filters?: StudentsFilter,
+): Promise<StudentExportResult> => {
+  const queryParams = new URLSearchParams();
+  if (filters?.search && filters.search.trim()) {
+    queryParams.append('search', filters.search.trim());
+  }
+  if (filters?.filters && filters.filters.length > 0) {
+    queryParams.append('filters', JSON.stringify(filters.filters));
+  }
+
+  const token = typeof window !== 'undefined'
+    ? localStorage.getItem('access_token')
+    : null;
+
+  const response = await fetch(
+    `${API_BASE_URL}/admin/students/export${queryParams.toString() ? `?${queryParams.toString()}` : ''}`,
+    {
+      method: 'GET',
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+    },
+  );
+
+  if (!response.ok) {
+    const text = await response.text();
+    let message = 'Export failed';
+    try {
+      const json = JSON.parse(text);
+      message = Array.isArray(json.message) ? json.message.join(', ') : json.message || message;
+    } catch {
+      message = text || message;
+    }
+    throw { statusCode: response.status, message, error: 'ExportError' };
+  }
+
+  const blob = await response.blob();
+  const truncated = response.headers.get('X-Export-Truncated') === 'true';
+  const totalHeader = response.headers.get('X-Export-Total');
+  const total = totalHeader ? parseInt(totalHeader, 10) : undefined;
+
+  return { blob, truncated, total };
 };
 
 /**

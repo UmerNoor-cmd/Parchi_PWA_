@@ -134,6 +134,7 @@ export function useAllStudents(filters?: StudentsFilter): UseAllStudentsResult {
   const dateTo = filters?.dateTo
   const hasRedeemed = filters?.hasRedeemed
   const foundersClub = filters?.foundersClub
+  const dynamicFilters = filters?.filters
 
   const fetchStudents = useCallback(async (newFilters?: StudentsFilter) => {
     try {
@@ -143,7 +144,7 @@ export function useAllStudents(filters?: StudentsFilter): UseAllStudentsResult {
       const filtersToUse = newFilters || { 
         status, page, limit, search, institute, emailVerified,
         university, gender, kycStatus, minRedemptions, maxRedemptions,
-        dateFrom, dateTo, hasRedeemed, foundersClub
+        dateFrom, dateTo, hasRedeemed, foundersClub, filters: dynamicFilters
       }
       const response = await getAllStudents(filtersToUse)
       // Backend returns: { data: { items: [...], pagination: {...} }, status, message }
@@ -176,7 +177,7 @@ export function useAllStudents(filters?: StudentsFilter): UseAllStudentsResult {
   }, [
     status, page, limit, search, institute, emailVerified,
     university, gender, kycStatus, minRedemptions, maxRedemptions,
-    dateFrom, dateTo, hasRedeemed, foundersClub
+    dateFrom, dateTo, hasRedeemed, foundersClub, dynamicFilters
   ])
 
   useEffect(() => {
