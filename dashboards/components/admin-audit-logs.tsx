@@ -205,6 +205,8 @@ export function AdminAuditLogs() {
             UPDATE_OFFER: "bg-sky-100 text-sky-800",
             EDIT_OFFER: "bg-sky-100 text-sky-800",
             UPDATE_PROFILE: "bg-yellow-100 text-yellow-800",
+            SEND_BROADCAST_NOTIFICATION: "bg-fuchsia-100 text-fuchsia-800",
+            SEND_QUEUE_NOTIFICATION: "bg-fuchsia-100 text-fuchsia-800",
         }
         return colorMap[action] || "bg-gray-100 text-gray-800"
     }
