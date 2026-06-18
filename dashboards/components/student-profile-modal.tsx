@@ -238,7 +238,7 @@ export function StudentProfileModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto p-0 gap-0">
+      <DialogContent className="max-w-6xl sm:max-w-6xl max-h-[95vh] overflow-y-auto p-0 gap-0">
         <DialogHeader className="sr-only">
           <DialogTitle>Student Profile Details</DialogTitle>
           <DialogDescription>Manage student information, KYC, and redemptions.</DialogDescription>
