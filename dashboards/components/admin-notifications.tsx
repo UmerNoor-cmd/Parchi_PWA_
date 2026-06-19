@@ -38,7 +38,7 @@ import { sendBroadcastNotification, sendQueueItem, getNotificationTargets, getNo
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
 import { useNotificationQueue, useNotificationHistory } from "@/hooks/use-notifications"
-import { Loader2, Image as ImageIcon, X, Send, RefreshCw, Eye, Settings } from "lucide-react"
+import { Loader2, Image as ImageIcon, X, Send, RefreshCw, Eye, Settings, AlertTriangle } from "lucide-react"
 
 // Helper for relative time (e.g., "2 hours ago")
 const timeAgo = (dateString: string) => {
@@ -561,21 +561,31 @@ function NotificationQueue() {
           </AlertDialogHeader>
 
           {previewItem && (
-            <div className="mx-auto w-[280px] rounded-2xl border bg-slate-50 p-3 shadow-inner">
-              <div className="rounded-xl bg-white p-3 shadow-sm border">
-                <div className="flex items-start gap-2">
-                  {previewItem.image_url && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={previewItem.image_url} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0" />
-                  )}
-                  <div className="min-w-0">
-                    <p className="font-semibold text-sm truncate">{previewItem.title}</p>
-                    <p className="text-xs text-muted-foreground line-clamp-3 mt-0.5">{previewItem.content}</p>
+            <>
+              <div className="flex items-start gap-3 p-3 rounded-lg border border-amber-200 bg-amber-50 text-amber-800">
+                <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
+                <p className="text-sm">
+                  This will immediately push a live notification to <strong>{previewItem.target_topic}</strong>.
+                  This action cannot be undone — double-check the content below before confirming.
+                </p>
+              </div>
+
+              <div className="mx-auto w-[280px] rounded-2xl border bg-slate-50 p-3 shadow-inner">
+                <div className="rounded-xl bg-white p-3 shadow-sm border">
+                  <div className="flex items-start gap-2">
+                    {previewItem.image_url && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={previewItem.image_url} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0" />
+                    )}
+                    <div className="min-w-0">
+                      <p className="font-semibold text-sm truncate">{previewItem.title}</p>
+                      <p className="text-xs text-muted-foreground line-clamp-3 mt-0.5">{previewItem.content}</p>
+                    </div>
                   </div>
                 </div>
+                <p className="text-[10px] text-center text-muted-foreground mt-2">Preview on device</p>
               </div>
-              <p className="text-[10px] text-center text-muted-foreground mt-2">Preview on device</p>
-            </div>
+            </>
           )}
 
           <AlertDialogFooter>
