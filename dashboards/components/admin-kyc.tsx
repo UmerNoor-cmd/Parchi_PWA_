@@ -174,10 +174,10 @@ export function AdminKYC({
               <div className="space-y-3">
                 <Label className="text-[10px] font-black uppercase text-slate-400 ml-2 tracking-widest">Student ID (Front)</Label>
                 <div
-                  className="group relative rounded-[2.5rem] overflow-hidden border-2 border-white dark:border-slate-800 shadow-2xl bg-white dark:bg-slate-900 cursor-zoom-in transition-all hover:scale-[1.01] duration-500"
+                  className="group relative aspect-[3/4] w-full max-w-xs mx-auto rounded-[2.5rem] overflow-hidden border-2 border-white dark:border-slate-800 shadow-2xl bg-slate-50 dark:bg-slate-900 cursor-zoom-in transition-all hover:scale-[1.01] duration-500"
                   onClick={() => setExpandedImage({ url: studentDetail.kyc!.studentIdCardFrontPath, alt: "ID Front" })}
                 >
-                  <img src={studentDetail.kyc.studentIdCardFrontPath} alt="ID Front" className="w-full h-52 object-cover" />
+                  <img src={studentDetail.kyc.studentIdCardFrontPath} alt="ID Front" className="w-full h-full object-contain" />
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[4px]">
                     <ZoomIn className="h-6 w-6 text-white" />
                   </div>
@@ -187,10 +187,10 @@ export function AdminKYC({
               <div className="space-y-3">
                 <Label className="text-[10px] font-black uppercase text-slate-400 ml-2 tracking-widest">Student ID (Back)</Label>
                 <div
-                  className="group relative rounded-[2.5rem] overflow-hidden border-2 border-white dark:border-slate-800 shadow-2xl bg-white dark:bg-slate-900 cursor-zoom-in transition-all hover:scale-[1.01] duration-500"
+                  className="group relative aspect-[3/4] w-full max-w-xs mx-auto rounded-[2.5rem] overflow-hidden border-2 border-white dark:border-slate-800 shadow-2xl bg-slate-50 dark:bg-slate-900 cursor-zoom-in transition-all hover:scale-[1.01] duration-500"
                   onClick={() => setExpandedImage({ url: studentDetail.kyc!.studentIdCardBackPath, alt: "ID Back" })}
                 >
-                  <img src={studentDetail.kyc.studentIdCardBackPath} alt="ID Back" className="w-full h-52 object-cover" />
+                  <img src={studentDetail.kyc.studentIdCardBackPath} alt="ID Back" className="w-full h-full object-contain" />
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[4px]">
                     <ZoomIn className="h-6 w-6 text-white" />
                   </div>
@@ -201,10 +201,10 @@ export function AdminKYC({
                 <Label className="text-[10px] font-black uppercase text-slate-400 ml-2 tracking-widest">Verification Selfie</Label>
                 <div className="flex flex-col md:flex-row gap-8 p-6 rounded-[3rem] bg-white dark:bg-slate-900 shadow-2xl border border-white dark:border-slate-800">
                   <div
-                    className="group relative w-full md:w-56 h-56 shrink-0 rounded-[2rem] overflow-hidden cursor-zoom-in transition-all hover:scale-[1.01] duration-500 shadow-lg"
+                    className="group relative w-full md:w-56 aspect-[3/4] shrink-0 rounded-[2rem] overflow-hidden cursor-zoom-in transition-all hover:scale-[1.01] duration-500 shadow-lg bg-slate-50 dark:bg-slate-800"
                     onClick={() => setExpandedImage({ url: studentDetail.kyc!.selfieImagePath, alt: "Selfie" })}
                   >
-                    <img src={studentDetail.kyc.selfieImagePath} alt="Selfie" className="w-full h-full object-cover" />
+                    <img src={studentDetail.kyc.selfieImagePath} alt="Selfie" className="w-full h-full object-contain" />
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[4px]">
                       <ZoomIn className="h-6 w-6 text-white" />
                     </div>
@@ -1654,11 +1654,11 @@ export function AdminKYC({
         <DialogContent className="max-w-5xl max-h-[95vh] p-0 border-none bg-transparent shadow-none">
           <DialogTitle className="sr-only">Document Preview</DialogTitle>
           {expandedImage && (
-            <div className="relative">
+            <div className="relative flex items-center justify-center bg-black/80 rounded-lg p-4">
               <img
                 src={expandedImage.url}
                 alt={expandedImage.alt}
-                className="w-full h-auto max-h-[90vh] object-contain rounded-lg"
+                className="w-auto h-auto max-w-full max-h-[85vh] object-contain rounded-lg"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = '/placeholder.svg?height=600&width=800'
                 }}

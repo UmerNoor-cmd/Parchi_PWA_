@@ -60,10 +60,10 @@ export function AdminSelfieChanges({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-xs font-bold uppercase tracking-widest">Current Selfie</Label>
-                    <div className="aspect-square max-w-[200px] rounded-xl border overflow-hidden bg-muted">
+                    <div className="aspect-[3/4] max-w-[200px] rounded-xl border overflow-hidden bg-muted">
                       {req.student.verificationSelfie ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={req.student.verificationSelfie} alt="Current selfie" className="w-full h-full object-cover" />
+                        <img src={req.student.verificationSelfie} alt="Current selfie" className="w-full h-full object-contain" />
                       ) : (
                         <div className="flex items-center justify-center h-full text-muted-foreground text-sm">No selfie</div>
                       )}
@@ -71,9 +71,9 @@ export function AdminSelfieChanges({
                   </div>
                   <div className="space-y-2">
                     <Label className="text-xs font-bold uppercase tracking-widest">Proposed Selfie</Label>
-                    <div className="aspect-square max-w-[200px] rounded-xl border overflow-hidden bg-muted ring-2 ring-blue-500/30">
+                    <div className="aspect-[3/4] max-w-[200px] rounded-xl border overflow-hidden bg-muted ring-2 ring-blue-500/30">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={req.newSelfiePath} alt="Proposed selfie" className="w-full h-full object-cover" />
+                      <img src={req.newSelfiePath} alt="Proposed selfie" className="w-full h-full object-contain" />
                     </div>
                   </div>
                 </div>
@@ -81,9 +81,9 @@ export function AdminSelfieChanges({
                 <div className="space-y-2">
                   <Label className="text-xs font-bold uppercase tracking-widest">ID Card (for reference)</Label>
                   {req.student.idCardFrontPath ? (
-                    <div className="max-w-[320px] rounded-xl border overflow-hidden">
+                    <div className="aspect-[3/4] max-w-[320px] rounded-xl border overflow-hidden bg-muted">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={req.student.idCardFrontPath} alt="ID card front" className="w-full object-contain" />
+                      <img src={req.student.idCardFrontPath} alt="ID card front" className="w-full h-full object-contain" />
                     </div>
                   ) : (
                     <p className="text-sm text-muted-foreground">ID card unavailable (student approved before KYC preservation).</p>
