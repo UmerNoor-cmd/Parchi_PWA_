@@ -28,6 +28,7 @@ import { getActiveInstitutes } from "@/lib/api-client"
 
 import { AdminInstitutesDialog } from "./admin-institutes-dialog"
 import { AdminSelfieChanges } from "./admin-selfie-changes"
+import { useSelfieChangeRequests } from "@/hooks/use-selfie-change-requests"
 import { cn } from "@/lib/utils"
 
 export function AdminKYC({
@@ -121,6 +122,7 @@ export function AdminKYC({
   }), [statusFilter, allPage, debouncedSearch, debouncedInstitute, emailVerifiedFilter, groupByFilter])
 
   const { students: allStudents, loading: allLoading, error: allError, pagination: allPagination, refetch: refetchAll } = useAllStudents(allStudentsFilters)
+  const selfieChangeState = useSelfieChangeRequests('pending')
   const { student: studentDetail, loading: detailLoading, error: detailError, refetch: refetchDetail } = useStudentDetail(selectedStudentId)
   const { approveReject, loading: approveRejectLoading, error: approveRejectError } = useApproveRejectStudent()
   const { updateStatus, loading: updateStatusLoading, error: updateStatusError } = useUpdateStudentStatus()
@@ -562,6 +564,7 @@ export function AdminKYC({
   const handleRefresh = () => {
     refetchPending()
     refetchAll()
+    selfieChangeState.refetch()
   }
 
   const handleReview = (studentId: string) => {
@@ -915,9 +918,9 @@ export function AdminKYC({
             variant="outline"
             onClick={handleRefresh}
             className="flex-1 sm:flex-none h-10 font-bold"
-            disabled={pendingLoading || allLoading}
+            disabled={pendingLoading || allLoading || selfieChangeState.loading}
           >
-            <RefreshCw className={cn("mr-2 h-4 w-4", (pendingLoading || allLoading) && "animate-spin")} />
+            <RefreshCw className={cn("mr-2 h-4 w-4", (pendingLoading || allLoading || selfieChangeState.loading) && "animate-spin")} />
             Refresh
           </Button>
         </div>
@@ -935,7 +938,7 @@ export function AdminKYC({
               All Students {allPagination ? `(${allPagination.total})` : ''}
             </TabsTrigger>
             <TabsTrigger value="selfie" className="flex-1 sm:flex-none px-4 font-bold">
-              Selfie Changes
+              Selfie Changes {!selfieChangeState.loading ? `(${selfieChangeState.requests.length})` : ''}
             </TabsTrigger>
           </TabsList>
         </div>
@@ -1477,7 +1480,7 @@ export function AdminKYC({
         </TabsContent>
 
         <TabsContent value="selfie" className="space-y-4">
-          <AdminSelfieChanges />
+          <AdminSelfieChanges {...selfieChangeState} />
         </TabsContent>
       </Tabs>
 

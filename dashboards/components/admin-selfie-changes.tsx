@@ -6,10 +6,18 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Loader2, RefreshCw, Check, X } from "lucide-react"
-import { useSelfieChangeRequests } from "@/hooks/use-selfie-change-requests"
+import type { useSelfieChangeRequests } from "@/hooks/use-selfie-change-requests"
 
-export function AdminSelfieChanges() {
-  const { requests, loading, error, resolvingId, refetch, resolve } = useSelfieChangeRequests()
+type SelfieChangeRequestsState = ReturnType<typeof useSelfieChangeRequests>
+
+export function AdminSelfieChanges({
+  requests,
+  loading,
+  error,
+  resolvingId,
+  refetch,
+  resolve,
+}: SelfieChangeRequestsState) {
   const [notes, setNotes] = useState<Record<string, string>>({})
 
   return (
