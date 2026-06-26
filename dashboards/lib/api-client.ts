@@ -2557,7 +2557,7 @@ export const updateSubcategory = async (
   if (isActive !== undefined) body.isActive = isActive;
   if (sortOrder !== undefined) body.sortOrder = sortOrder;
 
-  const response = await apiRequest(`/admin/subcategories/${id}`, {
+  const response = await apiRequest(`/admin/categories/subcategories/${id}`, {
     method: 'PUT',
     body: JSON.stringify(body),
   });
@@ -2573,7 +2573,7 @@ export const updateSubcategory = async (
   };
 };
 export const deleteSubcategory = async (id: string): Promise<void> => {
-  await apiRequest(`/admin/subcategories/${id}`, {
+  await apiRequest(`/admin/categories/subcategories/${id}`, {
     method: 'DELETE',
   });
 };
