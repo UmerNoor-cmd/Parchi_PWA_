@@ -22,6 +22,13 @@ interface AccountCreationProps {
   emailPrefix?: string | null
 }
 
+const parsePakistaniPhone = (value: string) => value.replace(/\D/g, '').slice(0, 11)
+
+const formatPakistaniPhone = (digits: string) => {
+  if (digits.length <= 4) return digits
+  return `${digits.slice(0, 4)}-${digits.slice(4)}`
+}
+
 export function AccountCreation({ role = 'admin', corporateId, emailPrefix }: AccountCreationProps) {
   const colors = DASHBOARD_COLORS(role === 'corporate' ? 'corporate' : 'admin')
   const { toast } = useToast()
@@ -453,10 +460,10 @@ export function AccountCreation({ role = 'admin', corporateId, emailPrefix }: Ac
               <Label htmlFor="branch-contact">Contact Phone</Label>
               <Input
                 id="branch-contact"
-                placeholder="03001234567"
-                value={branchData.contact}
-                onChange={(e) => setBranchData(prev => ({ ...prev, contact: e.target.value.replace(/\D/g, '') }))}
-                maxLength={11}
+                placeholder="0300-1234567"
+                value={formatPakistaniPhone(branchData.contact)}
+                onChange={(e) => setBranchData(prev => ({ ...prev, contact: parsePakistaniPhone(e.target.value) }))}
+                maxLength={12}
               />
             </div>
 
@@ -725,10 +732,10 @@ export function AccountCreation({ role = 'admin', corporateId, emailPrefix }: Ac
                     <Label htmlFor="corp-contact">Contact Phone</Label>
                     <Input
                       id="corp-contact"
-                      placeholder="03001234567"
-                      value={corporateData.contact}
-                      onChange={(e) => setCorporateData(prev => ({ ...prev, contact: e.target.value.replace(/\D/g, '') }))}
-                      maxLength={11}
+                      placeholder="0300-1234567"
+                      value={formatPakistaniPhone(corporateData.contact)}
+                      onChange={(e) => setCorporateData(prev => ({ ...prev, contact: parsePakistaniPhone(e.target.value) }))}
+                      maxLength={12}
                       required
                     />
                   </div>
