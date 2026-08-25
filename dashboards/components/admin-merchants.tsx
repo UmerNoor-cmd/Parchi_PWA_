@@ -441,11 +441,11 @@ export function AdminMerchants() {
   }
 
   const handleAddFeaturedBrand = (brandId: string) => {
-    if (featuredBrands.length >= 6) {
+    if (featuredBrands.length >= 8) {
       toast({
         variant: "destructive",
         title: "Limit Reached",
-        description: "You can only feature up to 6 brands",
+        description: "You can only feature up to 8 brands",
       })
       return
     }
@@ -537,7 +537,7 @@ export function AdminMerchants() {
             <div>
               <CardTitle>Featured Brands</CardTitle>
               <CardDescription>
-                Customize which 6 brands appear on top for students
+                Customize which 8 brands appear on top for students
               </CardDescription>
             </div>
             <Button
@@ -1134,7 +1134,7 @@ export function AdminMerchants() {
           <DialogHeader>
             <DialogTitle>Manage Featured Brands</DialogTitle>
             <DialogDescription>
-              Select up to 6 brands to feature on top. Drag to reorder.
+              Select up to 8 brands to feature on top. Drag to reorder.
             </DialogDescription>
           </DialogHeader>
 
@@ -1147,7 +1147,7 @@ export function AdminMerchants() {
             <div className="grid gap-4 py-4">
               {/* Featured Brands List */}
               <div className="space-y-2">
-                <Label>Featured Brands (Top 6)</Label>
+                <Label>Featured Brands (Top 8)</Label>
                 <div className="border rounded-lg p-4 space-y-2 min-h-[200px]">
                   {!Array.isArray(featuredBrands) || featuredBrands.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
@@ -1259,7 +1259,7 @@ export function AdminMerchants() {
                               variant="outline"
                               size="sm"
                               onClick={() => handleAddFeaturedBrand(brand.id)}
-                              disabled={featuredBrands.length >= 6}
+                              disabled={featuredBrands.length >= 8}
                             >
                               <Plus className="h-4 w-4 mr-2" />
                               Add
