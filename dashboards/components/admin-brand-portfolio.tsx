@@ -9,8 +9,6 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import {
-  BarChart,
-  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -62,6 +60,7 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 const METRIC_LABELS: Record<string, string> = {
   total_redemptions: "Total Redemptions",
@@ -70,6 +69,27 @@ const METRIC_LABELS: Record<string, string> = {
 }
 
 const WEEK_COLORS = ["#94a3b8", "#64748b", "#3b82f6", "#1d4ed8"]
+const REACH_TOTAL_COLOR = "#94a3b8"
+
+function ReachMetricBar({
+  value,
+  max,
+  color,
+}: {
+  value: number
+  max: number
+  color: string
+}) {
+  const width = max > 0 ? Math.max(4, (value / max) * 100) : 0
+  return (
+    <div className="flex items-center gap-3">
+      <div className="h-2 flex-1 rounded-full bg-muted">
+        <div className="h-2 rounded-full" style={{ width: `${width}%`, backgroundColor: color }} />
+      </div>
+      <span className="w-14 text-right text-sm font-semibold tabular-nums">{value.toLocaleString()}</span>
+    </div>
+  )
+}
 
 function TrendIcon({ direction }: { direction: "up" | "down" | "flat" }) {
   if (direction === "up")   return <TrendingUp   className="h-4 w-4 text-green-500"   />
@@ -273,6 +293,14 @@ export function AdminBrandPortfolio() {
     ? { text: "Moderate",    cls: "text-yellow-600" }
     : { text: "Concentrated", cls: "text-red-600"  }
 
+  const reachBrands = brandReach.slice(0, 20)
+  const reachTotals = {
+    uniqueRedeemers: brandReach.reduce((sum, b) => sum + b.uniqueRedeemers, 0),
+    totalRedemptions: brandReach.reduce((sum, b) => sum + b.totalRedemptions, 0),
+  }
+  const maxUniqueReach = Math.max(...reachBrands.map((b) => b.uniqueRedeemers), 1)
+  const maxTotalReach = Math.max(...reachBrands.map((b) => b.totalRedemptions), 1)
+
   return (
     <div className="space-y-8 pb-10">
       {/* Header */}
@@ -368,39 +396,116 @@ export function AdminBrandPortfolio() {
           </Card>
         </TabsContent>
 
-        {/* ── Unique Redeemers per Brand ── */}
+        {/* ── Brand Reach & Redemptions ── */}
         <TabsContent value="reach">
           <Card>
             <CardHeader>
-              <CardTitle style={{ color: colors.primary }}>Unique Redeemers per Brand</CardTitle>
-              <CardDescription>Individual brand reach — distinct students who have redeemed (all-time)</CardDescription>
+              <CardTitle style={{ color: colors.primary }}>Brand Reach &amp; Redemptions</CardTitle>
+              <CardDescription>
+                All-time partner performance — distinct students vs total redemption events.
+              </CardDescription>
             </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={Math.max(300, brandReach.length * 36)}>
-                <BarChart
-                  layout="vertical"
-                  data={brandReach.slice(0, 20).map(b => ({
-                    name: b.businessName,
-                    uniqueRedeemers: b.uniqueRedeemers,
-                    totalRedemptions: b.totalRedemptions,
-                  }))}
-                  margin={{ top: 4, right: 24, left: 4, bottom: 0 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" horizontal={false} />
-                  <XAxis type="number" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} allowDecimals={false} />
-                  <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} tickLine={false} width={130} />
-                  <Tooltip
-                    contentStyle={{ fontSize: 12 }}
-                    formatter={(value: number, key: string) => [
-                      value,
-                      key === "uniqueRedeemers" ? "Unique Redeemers" : "Total Redemptions",
-                    ]}
-                  />
-                  <Legend wrapperStyle={{ fontSize: 11 }} />
-                  <Bar dataKey="uniqueRedeemers"  name="Unique Redeemers"  fill={colors.primary} radius={[0, 4, 4, 0]} barSize={14} />
-                  <Bar dataKey="totalRedemptions" name="Total Redemptions" fill="#94a3b8"         radius={[0, 4, 4, 0]} barSize={14} />
-                </BarChart>
-              </ResponsiveContainer>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="rounded-lg border p-4">
+                  <div className="mb-2 flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                    <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: colors.primary }} />
+                    Unique Redeemers
+                  </div>
+                  <p className="text-2xl font-bold tabular-nums" style={{ color: colors.primary }}>
+                    {reachTotals.uniqueRedeemers.toLocaleString()}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">Distinct students who redeemed</p>
+                </div>
+                <div className="rounded-lg border p-4">
+                  <div className="mb-2 flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                    <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: REACH_TOTAL_COLOR }} />
+                    Total Redemptions
+                  </div>
+                  <p className="text-2xl font-bold tabular-nums text-slate-600">
+                    {reachTotals.totalRedemptions.toLocaleString()}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">All redemption events across brands</p>
+                </div>
+              </div>
+
+              {reachBrands.length === 0 ? (
+                <p className="py-12 text-center text-sm text-muted-foreground">No redemption data yet</p>
+              ) : (
+                <div className="overflow-x-auto rounded-lg border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="min-w-[180px]">Brand</TableHead>
+                        <TableHead className="min-w-[220px]">
+                          <span className="inline-flex items-center gap-2">
+                            <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: colors.primary }} />
+                            Unique Redeemers
+                          </span>
+                        </TableHead>
+                        <TableHead className="min-w-[220px]">
+                          <span className="inline-flex items-center gap-2">
+                            <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: REACH_TOTAL_COLOR }} />
+                            Total Redemptions
+                          </span>
+                        </TableHead>
+                        <TableHead className="w-[120px] text-right">Avg / Student</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {reachBrands.map((brand) => {
+                        const avgPerStudent =
+                          brand.uniqueRedeemers > 0
+                            ? (brand.totalRedemptions / brand.uniqueRedeemers).toFixed(1)
+                            : "—"
+
+                        return (
+                          <TableRow key={brand.merchantId}>
+                            <TableCell>
+                              <div className="flex items-center gap-3 min-w-0">
+                                {brand.logoPath ? (
+                                  <img
+                                    src={brand.logoPath}
+                                    alt={brand.businessName}
+                                    className="h-8 w-8 shrink-0 rounded-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted">
+                                    <span className="text-[10px] font-bold">
+                                      {brand.businessName.slice(0, 2).toUpperCase()}
+                                    </span>
+                                  </div>
+                                )}
+                                <div className="min-w-0">
+                                  <p className="truncate text-sm font-medium">{brand.businessName}</p>
+                                  <p className="truncate text-xs text-muted-foreground">{brand.category ?? "General"}</p>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <ReachMetricBar
+                                value={brand.uniqueRedeemers}
+                                max={maxUniqueReach}
+                                color={colors.primary}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <ReachMetricBar
+                                value={brand.totalRedemptions}
+                                max={maxTotalReach}
+                                color={REACH_TOTAL_COLOR}
+                              />
+                            </TableCell>
+                            <TableCell className="text-right text-sm font-medium tabular-nums text-muted-foreground">
+                              {avgPerStudent}
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
