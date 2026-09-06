@@ -1979,7 +1979,46 @@ export const getRedemptionAnalytics = async (startDate?: Date, endDate?: Date, s
   if (studentId) queryParams.append('studentId', studentId);
 
   const endpoint = `/admin/dashboard/redemption-analytics${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-  
+
+  const response = await apiRequest(endpoint, {
+    method: 'GET',
+  });
+  return response.data;
+};
+
+// ========== New Approved Signups Analytics ==========
+
+export interface ApprovedSignupsAnalytics {
+  /** Approved students verified within the selected window (all-time when no range). */
+  totalApproved: number;
+  /** Approved students verified in the current calendar month. */
+  thisMonth: number;
+  /** Approved students verified in the previous calendar month. */
+  lastMonth: number;
+  /** MoM change % (1 decimal). 0 when lastMonth is 0. */
+  changePercent: number;
+  volumeTrends: {
+    daily: RedemptionVolumeDataPoint[];
+    weekly: RedemptionVolumeDataPoint[];
+    monthly: RedemptionVolumeDataPoint[];
+    yearly: RedemptionVolumeDataPoint[];
+  };
+}
+
+/**
+ * Get "new signups that have been approved" volume trends (day/week/month/year).
+ * Requires admin authentication.
+ */
+export const getApprovedSignupsAnalytics = async (
+  startDate?: Date,
+  endDate?: Date,
+): Promise<ApprovedSignupsAnalytics> => {
+  const queryParams = new URLSearchParams();
+  if (startDate) queryParams.append('startDate', startDate.toISOString());
+  if (endDate) queryParams.append('endDate', endDate.toISOString());
+
+  const endpoint = `/admin/dashboard/approved-signups-analytics${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+
   const response = await apiRequest(endpoint, {
     method: 'GET',
   });

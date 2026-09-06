@@ -86,6 +86,7 @@ import { AdminAccountDeletion } from "./admin-account-deletion"
 import { AdminSystemConfig } from "./admin-system-config"
 import AdminCategories from "./admin-categories"
 import { AdminAnalytics } from "./admin-analytics"
+import { AdminApprovedSignups } from "./admin-approved-signups"
 import { AdminRedemptionEngine } from "./admin-redemption-engine"
 import { AdminBrandPortfolio } from "./admin-brand-portfolio"
 import { AdminStudents } from "./admin-students"
@@ -919,7 +920,10 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             )}
 
           {activeTab === "analytics" && (
-            <AdminAnalytics stats={stats} signupFunnel={funnelData} isFiltered={!!dateRange?.from} key={lastUpdated.getTime()} />
+            <div className="space-y-8">
+              <AdminAnalytics stats={stats} signupFunnel={funnelData} isFiltered={!!dateRange?.from} key={lastUpdated.getTime()} />
+              <AdminApprovedSignups />
+            </div>
           )}
 
           {activeTab === "redemption-engine" && (
