@@ -56,10 +56,14 @@ function formatBucketLabel(date: string, granularity: Granularity): string {
     return date
   }
   if (granularity === "1M") {
-    // "YYYY-MM" -> "Jan 25"
+    // "YYYY-MM" -> "Sep 1, 2026" (buckets are anchored to the 1st of the month)
     const [year, month] = date.split("-")
-    const d = new Date(Number(year), Number(month) - 1)
-    return d.toLocaleDateString("en-US", { month: "short", year: "2-digit" })
+    const d = new Date(Number(year), Number(month) - 1, 1)
+    return d.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    })
   }
   // "YYYY-MM-DD" -> "Apr 30"
   const d = new Date(date + "T00:00:00")
