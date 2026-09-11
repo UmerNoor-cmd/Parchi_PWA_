@@ -8,7 +8,7 @@ import { MerchantFeaturesSection } from "@/components/landing/MerchantFeaturesSe
 import { AboutUsSection } from "@/components/landing/AboutUsSection"
 import { FAQSection } from "@/components/landing/FAQSection"
 import { Footer } from "@/components/landing/Footer"
-import { getPublicBrands } from "@/lib/api-client"
+import { getPublicBrands, getPublicStats } from "@/lib/api-client"
 
 export default async function LandingPage() {
   let brands: any[] = [];
@@ -17,6 +17,19 @@ export default async function LandingPage() {
     brands = response.data || [];
   } catch (error) {
     console.error("Error fetching public brands:", error);
+  }
+
+  let stats = {
+    totalMerchants: 0,
+    totalStudents: 0,
+    totalRedemptions: 0,
+    redemptionsThisMonth: 0,
+  };
+  try {
+    const response = await getPublicStats();
+    stats = response.data || stats;
+  } catch (error) {
+    console.error("Error fetching public stats:", error);
   }
 
   return (
@@ -30,7 +43,7 @@ export default async function LandingPage() {
         <StudentFeaturesSection />
         <MerchantFeaturesSection />
       </section>
-      <section id="about"><AboutUsSection /></section>
+      <section id="about"><AboutUsSection stats={stats} /></section>
       <section id="faq"><FAQSection /></section>
       <Footer />
     </main>

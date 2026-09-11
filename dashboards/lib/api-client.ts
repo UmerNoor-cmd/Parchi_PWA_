@@ -383,6 +383,22 @@ export async function getPublicBrands(): Promise<{ data: Partial<CorporateMercha
 }
 
 /**
+ * Fetch platform-wide stats for the landing page (Public)
+ */
+export async function getPublicStats(): Promise<{
+  data: {
+    totalMerchants: number;
+    totalStudents: number;
+    totalRedemptions: number;
+    redemptionsThisMonth: number;
+  };
+}> {
+  return apiRequest('/merchants/public/stats', {
+    method: 'GET',
+  });
+}
+
+/**
  * Fetch corporate redemption report
  */
 export async function getCorporateRedemptionReport(

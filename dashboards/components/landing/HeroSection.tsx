@@ -302,7 +302,7 @@ export function HeroSection() {
                         className="text-center mb-10 max-w-2xl"
                     >
                         <p className="text-lg md:text-xl text-muted-foreground font-sans leading-relaxed">
-                            Show your student ID at 200+ restaurants across Pakistan — and save every time you eat out.
+                            Show your student ID at partner restaurants across Karachi — and save every time you eat out.
                         </p>
                     </motion.div>
 

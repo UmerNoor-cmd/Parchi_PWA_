@@ -1,8 +1,17 @@
-const STATS = [
-    { num: "50", sup: "k+", label: "Students saving" },
-    { num: "200", sup: "+", label: "Partner restaurants" },
-    { num: "40", sup: "+", label: "Cities nationwide" },
-]
+type AboutUsStats = {
+    totalMerchants: number
+    totalStudents: number
+    totalRedemptions: number
+    redemptionsThisMonth: number
+}
+
+function formatStat(n: number): { num: string; sup: string } {
+    if (n >= 1000) {
+        const k = n / 1000
+        return { num: (Number.isInteger(k) ? k : k.toFixed(1)).toString(), sup: "k+" }
+    }
+    return { num: String(n), sup: n > 0 ? "+" : "" }
+}
 
 const PILLARS = [
     {
@@ -12,8 +21,8 @@ const PILLARS = [
     },
     {
         num: "02",
-        title: "National Reach",
-        desc: "From Karachi to Kashmir — one unified network that recognizes your student status everywhere you go.",
+        title: "Karachi First",
+        desc: "Launching in Karachi — one unified network that recognizes your student status across the city.",
     },
     {
         num: "03",
@@ -22,7 +31,13 @@ const PILLARS = [
     },
 ]
 
-export function AboutUsSection() {
+export function AboutUsSection({ stats }: { stats: AboutUsStats }) {
+    const STATS = [
+        { ...formatStat(stats.totalStudents), label: "Students saving" },
+        { ...formatStat(stats.totalMerchants), label: "Partner restaurants" },
+        { ...formatStat(stats.totalRedemptions), label: "Redemptions to date" },
+    ]
+
     return (
         <section className="w-full overflow-hidden bg-background">
 
@@ -121,10 +136,10 @@ export function AboutUsSection() {
                     <div className="grid grid-cols-2 gap-8 md:flex md:flex-col md:gap-7">
                         <div className="flex flex-col items-center text-center md:items-start md:text-left">
                             <div className="font-heading text-[clamp(28px,4vw,52px)] font-extrabold leading-none tracking-[-0.04em] text-black">
-                                ₨2<span className="text-primary">M+</span>
+                                {stats.redemptionsThisMonth}<span className="text-primary">+</span>
                             </div>
                             <div className="mt-2 max-w-[110px] text-[11px] leading-tight tracking-[0.02em] text-black/50 md:max-w-none md:text-[12px]">
-                                Saved by students this month alone
+                                Redemptions this month alone
                             </div>
                         </div>
 
