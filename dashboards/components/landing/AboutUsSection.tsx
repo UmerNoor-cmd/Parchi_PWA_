@@ -93,7 +93,16 @@ export function AboutUsSection({ stats }: { stats: AboutUsStats }) {
 
                     {/* Left: stat cards */}
                     <div className="order-2 lg:order-1">
-                        <div className="mx-auto grid w-full max-w-[560px] grid-cols-2 gap-3 rounded-3xl bg-primary p-3 shadow-xl md:gap-4 md:p-4">
+                        {/* Grid geometry as inline styles: new arbitrary Tailwind classes weren't reaching the browser's stylesheet */}
+                        <div
+                            className="mx-auto w-full"
+                            style={{
+                                display: "grid",
+                                gridTemplateColumns: "repeat(2, minmax(0, 250px))",
+                                justifyContent: "center",
+                                gap: "clamp(16px, 3vw, 32px)",
+                            }}
+                        >
                             {cards.map((c, i) => (
                                 <motion.div
                                     key={c.title}
@@ -101,19 +110,19 @@ export function AboutUsSection({ stats }: { stats: AboutUsStats }) {
                                     whileInView={{ opacity: 1, y: 0 }}
                                     viewport={{ once: true, margin: "-60px" }}
                                     transition={{ duration: 0.5, delay: i * 0.08, ease: "easeOut" }}
-                                    className="flex flex-col rounded-2xl border border-black/[0.05] bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md md:p-6"
+                                    className="flex flex-col rounded-2xl border border-black/[0.06] bg-white p-3.5 shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-md md:p-4"
                                 >
-                                    <h3 className="font-sans text-sm font-semibold text-foreground md:text-base">{c.title}</h3>
+                                    <h3 className="font-sans text-sm font-semibold text-foreground">{c.title}</h3>
 
-                                    <div className="mt-5 flex items-end justify-between gap-2 border-b border-black/10 pb-3 md:mt-8">
-                                        <ArrowUp className="mb-1 h-5 w-5 flex-shrink-0 text-primary md:h-6 md:w-6" strokeWidth={1.5} />
+                                    <div className="mt-4 flex items-end justify-between gap-2 border-b border-black/10 pb-2.5 md:mt-5">
+                                        <ArrowUp className="mb-0.5 h-4 w-4 flex-shrink-0 text-primary md:h-5 md:w-5" strokeWidth={1.5} />
                                         {/* Body font on purpose: every bundled Hagrid file is a trial whose digits render as "TRIAL ONLY" */}
-                                        <span className="font-sans text-3xl font-extrabold leading-none tracking-tighter text-primary md:text-5xl">
+                                        <span className="font-sans text-2xl font-extrabold leading-none tracking-tighter text-primary md:text-4xl">
                                             {c.value !== undefined ? <CountUp value={c.value} /> : c.text}
                                         </span>
                                     </div>
 
-                                    <p className="mt-3 text-[11px] leading-snug text-muted-foreground md:text-xs">
+                                    <p className="mt-2.5 text-[11px] leading-snug text-muted-foreground">
                                         {c.desc[0]}
                                         <span className="font-semibold text-primary">{c.desc[1]}</span>
                                         {c.desc[2]}

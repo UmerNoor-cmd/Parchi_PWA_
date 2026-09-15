@@ -4,13 +4,12 @@ import Link from "next/link"
 import Image from "next/image"
 import { motion } from "framer-motion"
 import { ParchiCard } from "./ParchiCard"
-import { ParchiWordmark } from "./ParchiWordmark"
 
 export function HeroSection() {
     return (
         <section className="hero-section relative w-full overflow-hidden bg-background">
 
-            {/* Hero spacing and watermark geometry as plain CSS, rendered with the component, so
+            {/* Hero layout as plain CSS, rendered with the component, so
                 they never depend on a freshly generated Tailwind stylesheet (Safari can keep a stale one) */}
             <style>{`
                 .hero-section {
@@ -31,22 +30,6 @@ export function HeroSection() {
                 .hero-cta { margin-top: 1.5rem; gap: 1.25rem; }
                 .hero-cta img { height: 3.75rem; width: auto; }
                 @media (min-width: 1024px) { .hero-cta img { height: 4rem; } }
-
-                .hero-wordmark {
-                    position: absolute;
-                    z-index: -10;
-                    left: 50%;
-                    top: 50%;
-                    width: min(100%, 520px);
-                    max-width: none;
-                    aspect-ratio: 304.4 / 80.91;
-                    transform: translate(-50%, -50%);
-                    color: var(--primary);
-                    opacity: 0.1;
-                    pointer-events: none;
-                    user-select: none;
-                }
-                @media (min-width: 1024px) { .hero-wordmark { left: 56%; top: 30%; width: min(62%, 860px); } }
             `}</style>
 
             {/* Background */}
@@ -61,9 +44,6 @@ export function HeroSection() {
 
             <div className="hero-main relative z-10">
                 <div className="container relative z-10 px-4 mx-auto grid items-center gap-16 lg:grid-cols-[1.15fr_1fr] lg:gap-8">
-
-                    {/* Faded wordmark centred between the copy and the card; the grid is its stacking context */}
-                    <ParchiWordmark aria-hidden className="hero-wordmark" />
 
                     {/* ── Left: copy ── */}
                     <div className="text-center lg:text-left">

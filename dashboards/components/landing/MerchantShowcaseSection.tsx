@@ -14,10 +14,17 @@ interface MerchantShowcaseSectionProps {
     brands?: Brand[]
 }
 
+// Square, rounded tile shared by logos and skeletons so every brand reads the same size
+const LOGO_TILE = "mx-3 h-[72px] w-[72px] flex-shrink-0 overflow-hidden rounded-2xl md:mx-5 md:h-[96px] md:w-[96px]"
+
+// Marquee pace: seconds for one logo to travel one tile width. Higher = slower.
+// Speed stays the same no matter how many brands a row holds.
+const SECONDS_PER_LOGO_A = 6
+const SECONDS_PER_LOGO_B = 7.2
+
 /**
- * Bare logo — deliberately wrapper-free (no card, border, shadow or background).
- * The logo sits directly on the section surface so the wall reads as a single
- * continuous band of brands rather than a grid of boxes.
+ * Logo as a 1:1 rounded tile (app-icon style). The image covers the tile so
+ * wide and square logos end up the same visual size.
  */
 function BrandLogo({ brand, apiBaseUrl }: { brand: Brand; apiBaseUrl: string }) {
     const src = brand.logoPath
@@ -27,18 +34,18 @@ function BrandLogo({ brand, apiBaseUrl }: { brand: Brand; apiBaseUrl: string }) 
         : null
 
     return (
-        <div className="parchi-brand-logo flex-shrink-0 mx-7 md:mx-11 flex h-[58px] w-[132px] items-center justify-center select-none md:h-[74px] md:w-[168px]">
+        <div className={`parchi-brand-logo ${LOGO_TILE} flex items-center justify-center bg-white ring-1 ring-black/5 select-none`}>
             {src ? (
                 <Image
                     src={src}
                     alt={brand.businessName}
-                    width={168}
-                    height={74}
-                    className="max-h-full w-auto object-contain transition-opacity duration-300"
+                    width={96}
+                    height={96}
+                    className="h-full w-full object-cover transition-opacity duration-300"
                     unoptimized
                 />
             ) : (
-                <span className="text-center font-heading text-[13px] font-extrabold uppercase leading-tight tracking-[0.04em] text-black/35 md:text-[15px]">
+                <span className="px-2 text-center font-heading text-[10px] font-extrabold uppercase leading-tight tracking-[0.04em] text-black/35 md:text-[12px]">
                     {brand.businessName}
                 </span>
             )}
@@ -50,17 +57,19 @@ function MarqueeTrack({
     brands,
     apiBaseUrl,
     reverse = false,
-    duration,
+    secondsPerLogo,
 }: {
     brands: Brand[]
     apiBaseUrl: string
     reverse?: boolean
-    duration: number
+    secondsPerLogo: number
 }) {
     // Repeat enough times that the lane stays full on wide screens even with few
     // brands. Must stay even so the -50% keyframe lands on an exact seam.
     const reps = Math.max(4, Math.ceil(16 / Math.max(brands.length, 1)) * 2)
     const items = Array.from({ length: reps }).flatMap(() => brands)
+    // One loop scrolls half the track
+    const duration = (items.length / 2) * secondsPerLogo
 
     return (
         <div className="relative w-full overflow-hidden">
@@ -150,16 +159,16 @@ export function MerchantShowcaseSection({ brands = [] }: MerchantShowcaseSection
                 {brands.length > 0 ? (
                     <div className="flex flex-col gap-2 md:gap-4">
                         {rowA.length > 0 && (
-                            <MarqueeTrack brands={rowA} apiBaseUrl={apiBaseUrl} reverse={false} duration={95} />
+                            <MarqueeTrack brands={rowA} apiBaseUrl={apiBaseUrl} reverse={false} secondsPerLogo={SECONDS_PER_LOGO_A} />
                         )}
                         {rowB.length > 0 && (
-                            <MarqueeTrack brands={rowB} apiBaseUrl={apiBaseUrl} reverse={true} duration={115} />
+                            <MarqueeTrack brands={rowB} apiBaseUrl={apiBaseUrl} reverse={true} secondsPerLogo={SECONDS_PER_LOGO_B} />
                         )}
                     </div>
                 ) : (
                     /* Skeleton placeholder shown locally when API is unreachable */
                     <div className="flex flex-col gap-2 md:gap-4">
-                        {[95, 115].map((dur, row) => (
+                        {[SECONDS_PER_LOGO_A * 12, SECONDS_PER_LOGO_B * 12].map((dur, row) => (
                             <div key={row} className="relative w-full overflow-hidden">
                                 <div
                                     className="pointer-events-none absolute bottom-0 left-0 top-0 z-10 w-16 md:w-40"
@@ -181,7 +190,7 @@ export function MerchantShowcaseSection({ brands = [] }: MerchantShowcaseSection
                                     {Array.from({ length: 24 }).map((_, i) => (
                                         <div
                                             key={i}
-                                            className="mx-7 h-[58px] w-[132px] flex-shrink-0 animate-pulse rounded-lg bg-gray-200 md:mx-11 md:h-[74px] md:w-[168px]"
+                                            className={`${LOGO_TILE} animate-pulse bg-gray-200`}
                                         />
                                     ))}
                                 </div>
