@@ -1,375 +1,208 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
-import { motion, useAnimationControls, AnimatePresence } from "framer-motion"
+import { useLayoutEffect, useState } from "react"
 import Image from "next/image"
 
 /**
- * Realistic Paper Tear Intro v8.0 — High-Tier
+ * Paper Tear Intro v9 — plays once per browser.
  *
- * Enhancements over original:
- * 1. Tear PROPAGATES top→bottom over 0.25s before the split
- * 2. Dense jagged path (40+ points) with micro-serrations inside macro-jags
- * 3. SVG fiber strands that stretch across the gap then snap
- * 4. Multi-layer torn edge: white fibrous face + warm exposed interior + deep shadow
- * 5. Pre-tear paper stress: subtle bulge/warp on the sheet before it breaks
- * 6. Each half has a slight perspective warp (skewY) as it peels away from centre
- * 7. Ambient dust/particle flash at the moment of tear
+ * Every motion is a CSS keyframe on transform/opacity/visibility, so it runs on
+ * the compositor thread and stays smooth while the landing page hydrates.
+ * No React state changes happen during the animation.
+ *
+ * Timeline (ms):
+ *    0–1000  logo hold
+ * 1000–1150  sheet stress bulge
+ * 1150–1370  crack draws top → bottom
+ *      1370  rip: sheet hidden, halves fly apart (650ms), logo + flash fade
+ *      2050  overlay hidden; component unmounts at TOTAL_MS
  */
+
+const STORAGE_KEY = "parchi-intro-seen"
+const INTRO_ATTR = "data-parchi-intro"
+const TOTAL_MS = 2300
+
+const MODE_KEY = "__parchiIntro"
+
+declare global {
+  interface Window { [MODE_KEY]?: "play" | "skip" }
+}
+
+// Runs during HTML parse, before first paint, so returning visitors never see a
+// flash of the overlay. Marks the intro as seen as soon as it starts playing.
+// The decision is kept on `window` too: React can wipe <html> attributes if it
+// has to re-render the document after a hydration error.
+const GATE_SCRIPT = `(function(){var m="play";try{if(localStorage.getItem("${STORAGE_KEY}")){m="skip"}else{localStorage.setItem("${STORAGE_KEY}","1")}}catch(e){}window.${MODE_KEY}=m;document.documentElement.setAttribute("${INTRO_ATTR}",m)})()`
 
 // ---------- torn edge path generation ----------
 // 40-point path with macro waves + micro serrations
-function buildTearPath(): string[] {
-  const pts: string[] = []
-  const steps = 40
-  for (let i = 0; i <= steps; i++) {
-    const y = (i / steps) * 100
-    // macro wave
-    const macro = Math.sin(i * 0.55 + 1.2) * 2.8
-    // micro serration — alternating spike
-    const micro = (i % 2 === 0 ? 1 : -1) * (0.6 + Math.abs(Math.sin(i * 1.7)) * 1.1)
-    // stress cluster — extra chaos in the middle 30–70% zone
-    const stress = (y > 30 && y < 70) ? Math.sin(i * 2.3) * 1.4 : 0
-    const x = 50 + macro + micro + stress
-    pts.push(`${x.toFixed(2)}% ${y.toFixed(2)}%`)
-  }
-  return pts
-}
+const TEAR_POINTS = Array.from({ length: 41 }, (_, i) => {
+  const y = (i / 40) * 100
+  const macro = Math.sin(i * 0.55 + 1.2) * 2.8
+  const micro = (i % 2 === 0 ? 1 : -1) * (0.6 + Math.abs(Math.sin(i * 1.7)) * 1.1)
+  const stress = y > 30 && y < 70 ? Math.sin(i * 2.3) * 1.4 : 0
+  return { x: 50 + macro + micro + stress, y }
+})
 
-const TEAR_PTS = buildTearPath()
-const TEAR_PATH = TEAR_PTS.join(", ")
+const TEAR_PATH = TEAR_POINTS.map(p => `${p.x.toFixed(2)}% ${p.y.toFixed(2)}%`).join(", ")
 const LEFT_CLIP = `polygon(0% 0%, ${TEAR_PATH}, 0% 100%)`
 const RIGHT_CLIP = `polygon(100% 0%, ${TEAR_PATH}, 100% 100%)`
+const CRACK_POLYLINE = TEAR_POINTS.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(" ")
 
-// Fiber strand data — random-ish positions along the tear
-const FIBER_COUNT = 14
-const fibers = Array.from({ length: FIBER_COUNT }, (_, i) => {
-  const y = 4 + (i / (FIBER_COUNT - 1)) * 92            // spread top→bottom
-  const idx = Math.round((y / 100) * TEAR_PTS.length)
-  const xStr = parseFloat(TEAR_PTS[Math.min(idx, TEAR_PTS.length - 1)])
-  const xEnd = xStr + 0.5 + Math.random() * 1.5            // slight rightward lean
-  const len = 0.8 + Math.random() * 1.6                   // strand width
-  const opacity = 0.5 + Math.random() * 0.4
-  const delay = 0.02 + Math.random() * 0.06
-  return { y, xStr, xEnd, len, opacity, delay }
-})
+const PAPER_TEXTURE = "bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')]"
+
+const CSS = `
+html[${INTRO_ATTR}="skip"] .pi-root { display: none; }
+@media (prefers-reduced-motion: reduce) { .pi-root { display: none; } }
+
+.pi-root { animation: pi-hide 1ms 2050ms forwards; }
+.pi-layer { position: absolute; inset: 0; }
+.pi-gpu { will-change: transform, opacity; backface-visibility: hidden; }
+
+.pi-sheet { animation: pi-stress 150ms 1000ms ease-in-out, pi-hide 1ms 1370ms forwards; }
+.pi-crack { transform: translateY(-100%); animation: pi-slide-in 220ms 1150ms cubic-bezier(.55,0,.8,.4) forwards, pi-hide 1ms 1370ms forwards; }
+.pi-crack > svg { transform: translateY(100%); animation: pi-slide-in 220ms 1150ms cubic-bezier(.55,0,.8,.4) forwards; }
+
+.pi-left  { transform-origin: 30% 50%; animation: pi-left 650ms 1370ms cubic-bezier(.5,0,.45,1) forwards; }
+.pi-right { transform-origin: 70% 50%; animation: pi-right 650ms 1370ms cubic-bezier(.5,0,.45,1) forwards; }
+
+.pi-logo { animation: pi-logo-out 180ms 1370ms ease-out forwards; }
+.pi-bar  { transform: scaleX(0); animation: pi-bar 900ms ease-out forwards; }
+.pi-flash { opacity: 0; animation: pi-flash 250ms 1370ms ease-out forwards; }
+
+@keyframes pi-hide { to { visibility: hidden; } }
+@keyframes pi-stress {
+  33% { transform: scale(1.008, .997); }
+  66% { transform: scale(.996, 1.005); }
+}
+@keyframes pi-slide-in { to { transform: translateY(0); } }
+@keyframes pi-left {
+  from { transform: translate3d(0, 0, 0) rotate(0) scaleX(1); }
+  to   { transform: translate3d(-145%, -120px, 0) rotate(-38deg) scaleX(.88); }
+}
+@keyframes pi-right {
+  from { transform: translate3d(0, 0, 0) rotate(0) scaleX(1); }
+  to   { transform: translate3d(145%, 155px, 0) rotate(46deg) scaleX(.88); }
+}
+@keyframes pi-logo-out { to { opacity: 0; transform: scale(1.18); } }
+@keyframes pi-bar { to { transform: scaleX(1); } }
+@keyframes pi-flash { from { opacity: .25; } to { opacity: 0; } }
+`
+
+function PaperHalf({ side }: { side: "left" | "right" }) {
+  const clipPath = side === "left" ? LEFT_CLIP : RIGHT_CLIP
+  const dir = side === "left" ? 1 : -1
+
+  return (
+    <div className={`pi-layer pi-gpu pi-${side}`} style={{ zIndex: 10 }}>
+      {/* Exposed paper interior — warm cream */}
+      <div className="pi-layer" style={{ clipPath, background: "#e8dfc8", transform: `translateX(${5 * dir}px)` }} />
+      {/* White fibrous torn edge */}
+      <div className="pi-layer bg-white" style={{ clipPath, transform: `translateX(${2.5 * dir}px)` }} />
+      {/* Blue face */}
+      <div className="pi-layer bg-[#0051FF]" style={{ clipPath }}>
+        <div className={`pi-layer opacity-[0.10] mix-blend-multiply ${PAPER_TEXTURE}`} />
+        {/* Peel shadow — darkens near the tear edge */}
+        <div
+          className="pi-layer"
+          style={{ background: `linear-gradient(to ${side === "left" ? "left" : "right"}, rgba(0,0,30,0.30) 0%, transparent 12%)` }}
+        />
+      </div>
+    </div>
+  )
+}
 
 // ---------- component ----------
 export function AnimatedIntro() {
   const [isVisible, setIsVisible] = useState(true)
-  const [tearProgress, setTearProgress] = useState(0)   // 0–1 as tear travels down
-  const [isRipped, setIsRipped] = useState(false)
-  const [showFibers, setShowFibers] = useState(false)
-  const [fibersSnap, setFibersSnap] = useState(false)
 
-  const leftControls = useAnimationControls()
-  const rightControls = useAnimationControls()
-  const logoControls = useAnimationControls()
-  const sheetControls = useAnimationControls()
+  useLayoutEffect(() => {
+    const root = document.documentElement
+    let mode = window[MODE_KEY]
 
-  // Propagating tear clip — only reveals the jagged path down to `tearProgress`
-  const progressLeft = tearProgress < 1
-    ? `polygon(0% 0%, 50% 0%, 50% ${(tearProgress * 100).toFixed(1)}%, 0% ${(tearProgress * 100).toFixed(1)}%)`
-    : LEFT_CLIP
-  const progressRight = tearProgress < 1
-    ? `polygon(100% 0%, 50% 0%, 50% ${(tearProgress * 100).toFixed(1)}%, 100% ${(tearProgress * 100).toFixed(1)}%)`
-    : RIGHT_CLIP
+    // Client-side navigation: the gate script didn't run, so decide here.
+    if (!mode) {
+      try {
+        mode = localStorage.getItem(STORAGE_KEY) ? "skip" : "play"
+        if (mode === "play") localStorage.setItem(STORAGE_KEY, "1")
+      } catch {
+        mode = "play"
+      }
+      window[MODE_KEY] = mode
+    }
 
-  useEffect(() => {
-    async function run() {
-      // ── 1. Logo hold (1.0s) ─────────────────────────────────────────────
-      await new Promise(r => setTimeout(r, 1000))
-
-      // ── 2. Pre-tear stress — sheet bulges slightly (0.15s) ──────────────
-      sheetControls.start({
-        scaleX: [1, 1.008, 0.996, 1],
-        scaleY: [1, 0.997, 1.005, 1],
-        transition: { duration: 0.15, ease: "easeInOut" }
-      })
-
-      await new Promise(r => setTimeout(r, 150))
-
-      // ── 3. Tear propagates top→bottom (0.22s) ───────────────────────────
-      const propagateDuration = 220
-      const start = performance.now()
-
-      await new Promise<void>(resolve => {
-        function tick(now: number) {
-          const t = Math.min((now - start) / propagateDuration, 1)
-          // ease-in: tear accelerates as it goes (paper snaps faster as it propagates)
-          const eased = t * t * (3 - 2 * t)
-          setTearProgress(eased)
-          if (t < 1) requestAnimationFrame(tick)
-          else resolve()
-        }
-        requestAnimationFrame(tick)
-      })
-
-      // ── 4. Full tear snaps — fibers appear ─────────────────────────────
-      setIsRipped(true)
-      setShowFibers(true)
-
-      // Flash logo out
-      logoControls.start({
-        opacity: [1, 0],
-        scale: [1, 1.18],
-        transition: { duration: 0.18, ease: "easeOut" }
-      })
-
-      // Short pause — fibers are taut
-      await new Promise(r => setTimeout(r, 80))
-      setFibersSnap(true)   // fibers snap/fade
-
-      // ── 5. Halves explode apart (0.55s) ─────────────────────────────────
-      const ease: any = [0.20, 1, 0.35, 1]
-
-      leftControls.start({
-        x: [0, -55, -170, "-145%"],
-        y: [0, -20, -65, -120],
-        rotate: [0, -10, -20, -38],
-        skewY: [0, -4, -7, 0],
-        scaleX: [1, 1.04, 0.96, 0.88],
-        transition: { duration: 0.55, times: [0, 0.18, 0.5, 1], ease }
-      })
-
-      rightControls.start({
-        x: [0, 55, 170, "145%"],
-        y: [0, 28, 85, 155],
-        rotate: [0, 14, 26, 46],
-        skewY: [0, 4, 7, 0],
-        scaleX: [1, 1.04, 0.96, 0.88],
-        transition: { duration: 0.55, times: [0, 0.18, 0.5, 1], ease }
-      })
-
-      await new Promise(r => setTimeout(r, 800))
+    const finish = () => {
+      window[MODE_KEY] = "skip"
+      root.setAttribute(INTRO_ATTR, "skip")
       setIsVisible(false)
     }
 
-    run()
-  }, [leftControls, rightControls, logoControls, sheetControls])
+    if (mode === "skip") {
+      finish()
+      return
+    }
 
-  // Thin line showing where the tear is actively propagating
-  const crackY = `${(tearProgress * 100).toFixed(1)}%`
+    const timer = setTimeout(finish, TOTAL_MS)
+    return () => clearTimeout(timer)
+  }, [])
+
+  if (!isVisible) return null
 
   return (
-    <AnimatePresence>
-      {isVisible && (
-        <div className="fixed inset-0 z-[9999] overflow-hidden pointer-events-none bg-transparent">
+    <>
+      <script dangerouslySetInnerHTML={{ __html: GATE_SCRIPT }} />
+      <style dangerouslySetInnerHTML={{ __html: CSS }} />
 
-          {/* ── Solid backing — visible only before tear ────────────────── */}
-          {!isRipped && (
-            <motion.div
-              className="absolute inset-0 bg-[#0051FF] z-0"
-              animate={sheetControls}
-              style={{ transformOrigin: "50% 50%" }}
-            >
-              <div className="absolute inset-0 opacity-[0.10] mix-blend-multiply bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')]" />
-            </motion.div>
-          )}
+      <div className="pi-root fixed inset-0 z-[9999] overflow-hidden pointer-events-none" aria-hidden>
+        <PaperHalf side="left" />
+        <PaperHalf side="right" />
 
-          {/* ── Propagating crack line ───────────────────────────────────── */}
-          {!isRipped && tearProgress > 0 && tearProgress < 1 && (
-            <div
-              className="absolute z-[15] pointer-events-none"
-              style={{
-                top: crackY,
-                left: "48%",
-                width: "4%",
-                height: "2px",
-                background: "rgba(255,255,255,0.9)",
-                filter: "blur(0.5px)",
-                boxShadow: "0 0 6px 2px rgba(255,255,255,0.5)",
-                transform: "translateY(-1px)",
-              }}
-            />
-          )}
-
-          {/* ── LEFT HALF ───────────────────────────────────────────────── */}
-          <motion.div
-            initial={{ x: 0, y: 0, rotate: 0, skewY: 0, scaleX: 1 }}
-            animate={leftControls}
-            style={{
-              position: "absolute",
-              inset: 0,
-              clipPath: isRipped ? LEFT_CLIP : progressLeft,
-              transformOrigin: "30% 50%",
-              zIndex: 10,
-            }}
-          >
-            {/* Blue face */}
-            <div className="absolute inset-0 bg-[#0051FF]">
-              <div className="absolute inset-0 opacity-[0.10] mix-blend-multiply bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')]" />
-              {/* Peel shadow — darkens near the tear edge as it peels */}
-              {isRipped && (
-                <div
-                  className="absolute inset-0 pointer-events-none"
-                  style={{
-                    background: "linear-gradient(to left, rgba(0,0,30,0.30) 0%, transparent 12%)",
-                  }}
-                />
-              )}
-            </div>
-
-            {/* Torn edge layers — right side of left piece */}
-            {/* 1. Exposed paper interior — warm cream colour */}
-            <div
-              className="absolute inset-0"
-              style={{
-                clipPath: LEFT_CLIP,
-                background: "#e8dfc8",
-                zIndex: -3,
-                transform: "translateX(5px)",
-              }}
-            />
-            {/* 2. White fibrous surface */}
-            <div
-              className="absolute inset-0 bg-white"
-              style={{
-                clipPath: LEFT_CLIP,
-                zIndex: -2,
-                transform: "translateX(2.5px)",
-              }}
-            />
-            {/* 3. Cast shadow from right piece */}
-            <div
-              className="absolute inset-0 bg-black/50"
-              style={{
-                clipPath: LEFT_CLIP,
-                zIndex: -4,
-                filter: "blur(7px)",
-                transform: "translateX(9px)",
-              }}
-            />
-          </motion.div>
-
-          {/* ── RIGHT HALF ──────────────────────────────────────────────── */}
-          <motion.div
-            initial={{ x: 0, y: 0, rotate: 0, skewY: 0, scaleX: 1 }}
-            animate={rightControls}
-            style={{
-              position: "absolute",
-              inset: 0,
-              clipPath: isRipped ? RIGHT_CLIP : progressRight,
-              transformOrigin: "70% 50%",
-              zIndex: 10,
-            }}
-          >
-            <div className="absolute inset-0 bg-[#0051FF]">
-              <div className="absolute inset-0 opacity-[0.10] mix-blend-multiply bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')]" />
-              {isRipped && (
-                <div
-                  className="absolute inset-0 pointer-events-none"
-                  style={{
-                    background: "linear-gradient(to right, rgba(0,0,30,0.30) 0%, transparent 12%)",
-                  }}
-                />
-              )}
-            </div>
-
-            {/* Torn edge — left side of right piece */}
-            <div
-              className="absolute inset-0"
-              style={{
-                clipPath: RIGHT_CLIP,
-                background: "#e8dfc8",
-                zIndex: -3,
-                transform: "translateX(-5px)",
-              }}
-            />
-            <div
-              className="absolute inset-0 bg-white"
-              style={{
-                clipPath: RIGHT_CLIP,
-                zIndex: -2,
-                transform: "translateX(-2.5px)",
-              }}
-            />
-            <div
-              className="absolute inset-0 bg-black/50"
-              style={{
-                clipPath: RIGHT_CLIP,
-                zIndex: -4,
-                filter: "blur(7px)",
-                transform: "translateX(-9px)",
-              }}
-            />
-          </motion.div>
-
-          {/* ── SVG Fiber strands ────────────────────────────────────────── */}
-          {showFibers && (
-            <svg
-              className="absolute inset-0 w-full h-full pointer-events-none"
-              style={{ zIndex: 25 }}
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              {fibers.map((f, i) => (
-                <motion.line
-                  key={i}
-                  x1={`${f.xStr - f.len / 2}%`}
-                  y1={`${f.y}%`}
-                  x2={`${f.xEnd + f.len / 2}%`}
-                  y2={`${f.y + 0.15}%`}
-                  stroke="white"
-                  strokeWidth={0.6 + Math.random() * 0.8}
-                  strokeLinecap="round"
-                  initial={{ opacity: f.opacity, scaleX: 1 }}
-                  animate={fibersSnap ? {
-                    opacity: [f.opacity, f.opacity * 0.8, 0],
-                    scaleX: [1, 1.4, 0],
-                    y: [0, (i % 2 === 0 ? -3 : 3)],
-                  } : {}}
-                  transition={{
-                    duration: 0.18,
-                    delay: f.delay,
-                    ease: "easeOut",
-                  }}
-                  style={{ transformOrigin: `${f.xStr}% ${f.y}%` }}
-                />
-              ))}
-            </svg>
-          )}
-
-          {/* ── Tear flash — white burst at snap moment ──────────────────── */}
-          {isRipped && (
-            <motion.div
-              initial={{ opacity: 0.25 }}
-              animate={{ opacity: 0 }}
-              transition={{ duration: 0.25, ease: "easeOut" }}
-              className="absolute inset-0 bg-white pointer-events-none"
-              style={{ zIndex: 24 }}
-            />
-          )}
-
-          {/* ── Logo ─────────────────────────────────────────────────────── */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-[20]">
-            <motion.div
-              initial={{ opacity: 1, scale: 1 }}
-              animate={logoControls}
-              className="flex flex-col items-center"
-            >
-              <Image
-                src="/ParchiFullTextNewBlue.svg"
-                alt="Parchi Logo"
-                width={320}
-                height={140}
-                className="brightness-0 invert drop-shadow-[0_30px_60px_rgba(0,0,0,0.45)]"
-                priority
-              />
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: "100%" }}
-                transition={{ duration: 0.9, ease: "easeOut" }}
-                className="h-[4px] bg-white/70 mt-12 rounded-full shadow-2xl"
-              />
-              <p className="text-white font-medium tracking-[0.45em] mt-10 text-[11px] uppercase opacity-90 drop-shadow-lg">
-                Fintech for Pakistan&apos;s Students
-              </p>
-            </motion.div>
-          </div>
-
-          <div className="absolute inset-0 pointer-events-none opacity-[0.08] mix-blend-overlay bg-[url('https://www.transparenttextures.com/patterns/p6-dark.png')] z-[30]" />
+        {/* ── Solid sheet — covers the halves until the rip ───────────── */}
+        <div className="pi-layer pi-gpu pi-sheet bg-[#0051FF]" style={{ zIndex: 15 }}>
+          <div className={`pi-layer opacity-[0.10] mix-blend-multiply ${PAPER_TEXTURE}`} />
+          <div className="pi-layer opacity-[0.08] mix-blend-overlay bg-[url('https://www.transparenttextures.com/patterns/p6-dark.png')]" />
         </div>
-      )}
-    </AnimatePresence>
+
+        {/* ── Crack — revealed top→bottom by a sliding mask ────────────── */}
+        <div className="pi-layer pi-gpu pi-crack overflow-hidden" style={{ zIndex: 16 }}>
+          <svg
+            className="pi-layer pi-gpu h-full w-full"
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <polyline
+              points={CRACK_POLYLINE}
+              fill="none"
+              stroke="white"
+              strokeWidth={2.5}
+              strokeLinejoin="round"
+              vectorEffect="non-scaling-stroke"
+            />
+          </svg>
+        </div>
+
+        {/* ── Logo ─────────────────────────────────────────────────────── */}
+        <div className="pi-layer flex flex-col items-center justify-center" style={{ zIndex: 20 }}>
+          <div className="pi-gpu pi-logo flex flex-col items-center">
+            <Image
+              src="/ParchiFullTextNewBlue.svg"
+              alt="Parchi Logo"
+              width={320}
+              height={140}
+              className="brightness-0 invert drop-shadow-[0_30px_60px_rgba(0,0,0,0.45)]"
+              priority
+            />
+            <div className="pi-bar h-[4px] self-stretch bg-white/70 mt-12 rounded-full shadow-2xl" />
+            <p className="text-white font-medium tracking-[0.45em] mt-10 text-[11px] uppercase opacity-90 drop-shadow-lg">
+              Fintech for Pakistan&apos;s Students
+            </p>
+          </div>
+        </div>
+
+        {/* ── Tear flash — white burst at snap moment ──────────────────── */}
+        <div className="pi-layer pi-flash bg-white" style={{ zIndex: 24 }} />
+      </div>
+    </>
   )
 }

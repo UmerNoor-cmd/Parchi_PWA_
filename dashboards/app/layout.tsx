@@ -58,7 +58,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    // suppressHydrationWarning: AnimatedIntro's gate script sets data-parchi-intro before hydration
+    <html lang="en" suppressHydrationWarning>
       <body className={`${manrope.variable} ${hagrid.variable} font-sans antialiased`}>
         <AuthProvider>
           {children}
