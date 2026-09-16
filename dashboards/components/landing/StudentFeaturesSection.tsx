@@ -1,4 +1,26 @@
-import { Trophy, Star, Gift, Medal } from "lucide-react"
+import Image from "next/image"
+import { Trophy, Star, Gift } from "lucide-react"
+
+// Real app screenshots (739×1600), shown in CSS phone frames
+const SCREEN_WIDTH = 739
+const SCREEN_HEIGHT = 1600
+
+function PhoneShot({ src, alt, className = "" }: { src: string; alt: string; className?: string }) {
+    return (
+        <div
+            className={`overflow-hidden rounded-[1.6rem] border-[5px] border-gray-950 bg-gray-950 shadow-2xl shadow-black/40 md:rounded-[2.2rem] md:border-[7px] ${className}`}
+        >
+            <Image
+                src={src}
+                alt={alt}
+                width={SCREEN_WIDTH}
+                height={SCREEN_HEIGHT}
+                sizes="(min-width: 768px) 240px, 160px"
+                className="h-auto w-full rounded-[1.25rem] md:rounded-[1.7rem]"
+            />
+        </div>
+    )
+}
 
 export function StudentFeaturesSection() {
     return (
@@ -53,41 +75,23 @@ export function StudentFeaturesSection() {
                         </div>
                     </div>
 
-                    {/* Right Side: Visuals/Cards */}
-                    <div className="mx-auto flex w-full max-w-[500px] flex-col items-center justify-center space-y-6 lg:max-w-none">
-                        {/* Mock Leaderboard Card */}
-                        <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl border border-gray-100 p-6 transform rotate-2 hover:rotate-0 transition-transform duration-300">
-                            <div className="flex items-center justify-between mb-4">
-                                <h4 className="font-heading font-bold text-lg">Campus Top Savers</h4>
-                                <Medal className="w-5 h-5 text-yellow-500" />
-                            </div>
-                            {/* List Items */}
-                            {[1, 2, 3].map((i) => (
-                                <div key={i} className="flex items-center gap-3 mb-3 pb-3 border-b border-gray-50 last:border-0 last:pb-0">
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${i === 1 ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600'}`}>
-                                        #{i}
-                                    </div>
-                                    <div className="flex-1">
-                                        <div className="h-2 w-24 bg-gray-200 rounded mb-1"></div>
-                                        <div className="h-2 w-16 bg-gray-100 rounded"></div>
-                                    </div>
-                                    <div className="font-bold text-primary text-sm font-sans">Rs. {5000 - (i * 500)}</div>
-                                </div>
-                            ))}
-                        </div>
-
-                        {/* Mock Badge Card */}
-                        <div className="w-full max-w-sm bg-gradient-to-r from-primary to-blue-600 rounded-2xl shadow-xl p-6 text-white transform -rotate-1 hover:rotate-0 transition-transform duration-300 translate-x-12 -mt-12">
-                            <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                                    <Star className="w-6 h-6 text-secondary" fill="currentColor" />
-                                </div>
-                                <div>
-                                    <h4 className="font-heading font-bold text-lg">Leaderboard Rewards</h4>
-                                    <p className="text-xs text-white/80 font-sans">Top Saver 2024</p>
-                                </div>
-                            </div>
-                        </div>
+                    {/* Right Side: app screenshots — home in front, deal page and leaderboard fanned behind */}
+                    <div className="relative mx-auto mt-6 flex h-[380px] w-full max-w-[340px] items-center justify-center sm:h-[460px] sm:max-w-[420px] md:h-[560px] md:max-w-[520px] lg:mt-0">
+                        <PhoneShot
+                            src="/app-screens/merchant.jpg"
+                            alt="Parchi merchant page with a 20% off exclusive deal and loyalty progress"
+                            className="absolute left-0 top-1/2 w-[38%] -translate-y-[46%] -rotate-6"
+                        />
+                        <PhoneShot
+                            src="/app-screens/leaderboard.jpg"
+                            alt="Parchi all-time student leaderboard"
+                            className="absolute right-0 top-1/2 w-[38%] -translate-y-[54%] rotate-6"
+                        />
+                        <PhoneShot
+                            src="/app-screens/home.jpg"
+                            alt="Parchi home screen with the student ID card and top brands"
+                            className="relative z-10 w-[46%]"
+                        />
                     </div>
 
                 </div>
