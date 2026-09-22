@@ -63,7 +63,7 @@ export function HeroSection() {
                             transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
                             className="mt-6 max-w-xl mx-auto lg:mx-0 text-lg md:text-xl text-muted-foreground font-sans leading-relaxed"
                         >
-                            Show your student ID at partner restaurants across Karachi — and save every time you eat out.
+                            Show your student ID at partner merchants across Karachi — and save every time you eat out.
                         </motion.p>
                     </div>
 

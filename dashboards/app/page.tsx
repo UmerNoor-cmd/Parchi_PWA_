@@ -10,6 +10,8 @@ import { FAQSection } from "@/components/landing/FAQSection"
 import { Footer } from "@/components/landing/Footer"
 import { getPublicBrands, getPublicStats } from "@/lib/api-client"
 
+export const revalidate = 60;
+
 export default async function LandingPage() {
   let brands: any[] = [];
   try {
