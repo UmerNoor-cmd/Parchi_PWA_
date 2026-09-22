@@ -10,13 +10,13 @@ const NAV_LINKS = [
     { label: "Brands", href: "/#brands" },
     { label: "Features", href: "/#features" },
     { label: "For Merchants", href: "/#merchants" },
+    { label: "Campus Ambassador", href: "/#ambassador" },
     { label: "FAQ", href: "/#faq" },
 ]
 
 // Secondary journeys — surfaced in the mobile menu, and as the primary CTA on desktop.
 const JOIN_LINKS = [
     { label: "Become a Merchant", href: "/become-a-merchant" },
-    { label: "Campus Ambassador", href: "/campus-ambassador" },
     { label: "Merchant Login", href: "/portal" },
 ]
 
@@ -83,18 +83,12 @@ export function LandingNavbar({ navDelay = 2.2 }: { navDelay?: number } = {}) {
                         </nav>
 
                         {/* Desktop CTAs */}
-                        <div className="hidden md:flex items-center gap-2">
+                        <div className="hidden md:flex items-center gap-2 flex-shrink-0">
                             <Link
                                 href="/portal"
-                                className="hidden xl:inline-flex px-3 py-2 text-[0.8125rem] font-medium text-foreground/70 rounded-full transition-all duration-200 hover:text-primary hover:bg-primary/8"
+                                className="inline-flex px-3 py-2 text-[0.8125rem] font-medium text-foreground/70 rounded-full transition-all duration-200 hover:text-primary hover:bg-primary/8"
                             >
                                 Merchant Login
-                            </Link>
-                            <Link
-                                href="/campus-ambassador"
-                                className="inline-flex items-center rounded-full border border-primary/25 bg-primary/5 px-3.5 py-2 text-[0.8125rem] font-bold text-primary transition-all duration-200 hover:bg-primary hover:text-white hover:border-transparent hover:scale-[1.03]"
-                            >
-                                Campus Ambassador
                             </Link>
                             <Link
                                 href="/become-a-merchant"
