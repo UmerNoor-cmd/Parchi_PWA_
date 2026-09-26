@@ -53,21 +53,30 @@ function CountUp({ value }: { value: number }) {
     const reduceMotion = useReducedMotion()
     const [display, setDisplay] = useState(1)
     const [started, setStarted] = useState(false)
+    // Last shown number, so a changed value animates on from there instead of restarting at 1
+    const displayRef = useRef(1)
 
+    // `started` is deliberately not a dependency: setting it re-renders, and re-running this
+    // effect would call controls.stop() and freeze the counter at 1
     useEffect(() => {
-        if (!inView || started) return
+        if (!inView) return
         setStarted(true)
         if (reduceMotion) {
+            displayRef.current = value
             setDisplay(value)
             return
         }
-        const controls = animate(1, value, {
+        const controls = animate(displayRef.current, value, {
             duration: 1.4,
             ease: [0.16, 1, 0.3, 1],
-            onUpdate: (v) => setDisplay(Math.max(1, Math.round(v))),
+            onUpdate: (v) => {
+                const n = Math.max(1, Math.round(v))
+                displayRef.current = n
+                setDisplay(n)
+            },
         })
         return () => controls.stop()
-    }, [inView, reduceMotion, value, started])
+    }, [inView, reduceMotion, value])
 
     if (value <= 0) return null
 
