@@ -2976,3 +2976,58 @@ export const resolveSelfieChangeRequest = async (
     body: JSON.stringify({ action, adminNote }),
   });
 };
+
+// ── Events (Inside Karachi ticket banners) ───────────────────────────────────
+
+export interface AdminEvent {
+  id: string;
+  title: string;
+  description: string | null;
+  imageUrl: string | null;
+  externalUrl: string;
+  eventDate: string | null;
+  venue: string | null;
+  isActive: boolean;
+  displayOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminEventInput {
+  title: string;
+  description?: string;
+  imageUrl?: string;
+  externalUrl: string;
+  eventDate?: string;
+  venue?: string;
+  isActive?: boolean;
+  displayOrder?: number;
+}
+
+export const getAdminEvents = async (): Promise<AdminEvent[]> => {
+  const response = await apiRequest('/admin/events', { method: 'GET' });
+  return Array.isArray(response) ? response : (response?.data || []);
+};
+
+export const createAdminEvent = async (input: AdminEventInput): Promise<AdminEvent> => {
+  const response = await apiRequest('/admin/events', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+  return response?.data || response;
+};
+
+export const updateAdminEvent = async (
+  id: string,
+  input: Partial<AdminEventInput>,
+): Promise<AdminEvent> => {
+  const response = await apiRequest(`/admin/events/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(input),
+  });
+  return response?.data || response;
+};
+
+export const deleteAdminEvent = async (id: string): Promise<void> => {
+  await apiRequest(`/admin/events/${id}`, { method: 'DELETE' });
+};

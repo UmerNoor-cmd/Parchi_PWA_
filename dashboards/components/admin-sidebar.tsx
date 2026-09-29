@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { LayoutDashboard, Users, FileText, LogOut, CheckCircle2, ShoppingCart, Loader2, Store, Bell, UserX, Settings, TrendingUp, Activity, Briefcase, QrCode, Tag, Inbox } from "lucide-react"
+import { LayoutDashboard, Users, FileText, LogOut, CheckCircle2, ShoppingCart, Loader2, Store, Bell, UserX, Settings, TrendingUp, Activity, Briefcase, QrCode, Tag, Inbox, Ticket } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 import { DASHBOARD_COLORS } from "@/lib/colors"
@@ -110,6 +110,11 @@ export function AdminSidebarContent({ activeTab, onTabChange, onLogout }: AdminS
       id: "categories",
       label: "Categories",
       icon: Tag,
+    },
+    {
+      id: "events",
+      label: "Events",
+      icon: Ticket,
     },
     {
       id: "system-config",
