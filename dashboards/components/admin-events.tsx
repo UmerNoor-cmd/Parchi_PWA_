@@ -68,7 +68,7 @@ function extractError(err: any, fallback: string): string {
 function isValidHttpUrl(value: string): boolean {
   try {
     const u = new URL(value)
-    return u.protocol === 'http:' || u.protocol === 'https:'
+    return u.protocol === 'https:'
   } catch {
     return false
   }
