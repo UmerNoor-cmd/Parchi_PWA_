@@ -19,6 +19,10 @@ const AASA = {
             "/": "/redeem/*",
             comment: "Match all QR redemption deep-link pages",
           },
+          {
+            "/": "/verify/*",
+            comment: "Partner (Inside Karachi) student verification requests",
+          },
         ],
       },
     ],
