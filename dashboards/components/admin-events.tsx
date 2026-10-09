@@ -41,10 +41,8 @@ import {
   Copy,
   Check,
   Sparkles,
-  School,
   Tag,
   Clock,
-  Filter,
 } from 'lucide-react'
 import { useAdminEvents } from '@/hooks/use-events'
 import {
@@ -377,26 +375,26 @@ export default function AdminEvents() {
   }
 
   return (
-    <div className="space-y-6 max-w-7xl">
+    <div className="space-y-6 max-w-7xl font-sans">
       {/* Page Title */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Events &amp; Tickets</h2>
-            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 font-semibold">
+            <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white font-sans">Events &amp; Tickets</h2>
+            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 font-semibold font-sans">
               Inside Karachi Partner
             </Badge>
           </div>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-sm text-muted-foreground mt-1 font-sans">
             Track student ticket purchases, savings, pass tiers, and manage active partner event banners.
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => { fetchSales(); refetchEvents(); }}>
+          <Button variant="outline" size="sm" onClick={() => { fetchSales(); refetchEvents(); }} className="font-sans">
             <RefreshCw className={`h-4 w-4 mr-2 ${salesLoading || eventsLoading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-          <Button onClick={openCreate} className="bg-primary text-white">
+          <Button onClick={openCreate} className="bg-primary text-white font-sans">
             <Plus className="h-4 w-4 mr-2" /> Add Event Banner
           </Button>
         </div>
@@ -404,12 +402,14 @@ export default function AdminEvents() {
 
       {/* Top Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="rounded-2xl border-slate-200/80 shadow-sm">
+        <Card className="rounded-2xl border-slate-200/80 shadow-sm bg-white">
           <CardContent className="p-5 flex items-center justify-between">
             <div>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tickets Bought</p>
-              <h3 className="text-2xl font-extrabold text-slate-900 mt-1">{metrics.totalTickets.toLocaleString()}</h3>
-              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider font-sans">Tickets Bought</p>
+              <p className="text-2xl md:text-3xl font-black text-slate-900 mt-1 font-sans tracking-tight">
+                {metrics.totalTickets.toLocaleString()}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1 font-sans">
                 <Ticket className="w-3.5 h-3.5 text-blue-600" />
                 Across all partner events
               </p>
@@ -420,14 +420,14 @@ export default function AdminEvents() {
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border-slate-200/80 shadow-sm">
+        <Card className="rounded-2xl border-slate-200/80 shadow-sm bg-white">
           <CardContent className="p-5 flex items-center justify-between">
             <div>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Student Savings</p>
-              <h3 className="text-2xl font-extrabold text-emerald-600 mt-1">
+              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider font-sans">Total Student Savings</p>
+              <p className="text-2xl md:text-3xl font-black text-emerald-600 mt-1 font-sans tracking-tight">
                 Rs. {metrics.totalSavings.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
-              </h3>
-              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+              </p>
+              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1 font-sans">
                 <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
                 Discounts unlocked
               </p>
@@ -438,14 +438,14 @@ export default function AdminEvents() {
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border-slate-200/80 shadow-sm">
+        <Card className="rounded-2xl border-slate-200/80 shadow-sm bg-white">
           <CardContent className="p-5 flex items-center justify-between">
             <div>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Order Volume</p>
-              <h3 className="text-2xl font-extrabold text-slate-900 mt-1">
+              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider font-sans">Total Order Volume</p>
+              <p className="text-2xl md:text-3xl font-black text-slate-900 mt-1 font-sans tracking-tight">
                 Rs. {metrics.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
-              </h3>
-              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+              </p>
+              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1 font-sans">
                 <TrendingUp className="w-3.5 h-3.5 text-indigo-600" />
                 Gross ticket sales
               </p>
@@ -456,12 +456,14 @@ export default function AdminEvents() {
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border-slate-200/80 shadow-sm">
+        <Card className="rounded-2xl border-slate-200/80 shadow-sm bg-white">
           <CardContent className="p-5 flex items-center justify-between">
             <div>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Unique Attendees</p>
-              <h3 className="text-2xl font-extrabold text-slate-900 mt-1">{metrics.uniqueStudents.toLocaleString()}</h3>
-              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider font-sans">Unique Attendees</p>
+              <p className="text-2xl md:text-3xl font-black text-slate-900 mt-1 font-sans tracking-tight">
+                {metrics.uniqueStudents.toLocaleString()}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1 font-sans">
                 <Users className="w-3.5 h-3.5 text-violet-600" />
                 Verified student buyers
               </p>
@@ -475,12 +477,12 @@ export default function AdminEvents() {
 
       {/* Tabs */}
       <Tabs defaultValue="ticket-sales" className="space-y-4">
-        <TabsList className="bg-slate-100 p-1 rounded-xl">
-          <TabsTrigger value="ticket-sales" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+        <TabsList className="bg-slate-100 p-1 rounded-xl font-sans">
+          <TabsTrigger value="ticket-sales" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-sans font-semibold">
             <Ticket className="w-4 h-4 mr-2" />
             Ticket Purchases &amp; Attendees ({ticketSales.length})
           </TabsTrigger>
-          <TabsTrigger value="events-banners" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+          <TabsTrigger value="events-banners" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-sans font-semibold">
             <ImageIcon className="w-4 h-4 mr-2" />
             Event Banners &amp; Listings ({events.length})
           </TabsTrigger>
@@ -488,16 +490,16 @@ export default function AdminEvents() {
 
         {/* TAB 1: TICKET PURCHASES */}
         <TabsContent value="ticket-sales" className="space-y-4">
-          <Card className="rounded-2xl border-slate-200/80 shadow-sm">
+          <Card className="rounded-2xl border-slate-200/80 shadow-sm bg-white">
             <CardHeader className="pb-4">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                  <CardTitle className="text-lg font-bold">Ticket Purchases</CardTitle>
-                  <CardDescription>
+                  <CardTitle className="text-lg font-bold font-sans">Ticket Purchases</CardTitle>
+                  <CardDescription className="font-sans">
                     All verified students who claimed tickets using their Parchi student ID.
                   </CardDescription>
                 </div>
-                <Button variant="outline" size="sm" onClick={exportToCSV} disabled={filteredSales.length === 0}>
+                <Button variant="outline" size="sm" onClick={exportToCSV} disabled={filteredSales.length === 0} className="font-sans">
                   <Download className="w-4 h-4 mr-2" /> Export to CSV
                 </Button>
               </div>
@@ -510,15 +512,15 @@ export default function AdminEvents() {
                     placeholder="Search by student name, Parchi ID, email, ref..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9 bg-slate-50/50"
+                    className="pl-9 bg-slate-50/50 font-sans"
                   />
                 </div>
 
                 <Select value={selectedEventFilter} onValueChange={setSelectedEventFilter}>
-                  <SelectTrigger className="bg-slate-50/50">
+                  <SelectTrigger className="bg-slate-50/50 font-sans">
                     <SelectValue placeholder="Filter by Event" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="font-sans">
                     <SelectItem value="all">All Events</SelectItem>
                     {availableEventTitles.map((t) => (
                       <SelectItem key={t} value={t}>
@@ -529,10 +531,10 @@ export default function AdminEvents() {
                 </Select>
 
                 <Select value={selectedTierFilter} onValueChange={setSelectedTierFilter}>
-                  <SelectTrigger className="bg-slate-50/50">
+                  <SelectTrigger className="bg-slate-50/50 font-sans">
                     <SelectValue placeholder="Filter by Tier" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="font-sans">
                     <SelectItem value="all">All Tiers</SelectItem>
                     {availableTiers.map((t) => (
                       <SelectItem key={t} value={t}>
@@ -548,22 +550,22 @@ export default function AdminEvents() {
               {salesLoading ? (
                 <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-2">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  <p className="text-sm">Loading ticket sales...</p>
+                  <p className="text-sm font-sans">Loading ticket sales...</p>
                 </div>
               ) : filteredSales.length === 0 ? (
-                <div className="text-center py-16 text-muted-foreground">
+                <div className="text-center py-16 text-muted-foreground font-sans">
                   <Ticket className="w-12 h-12 mx-auto text-slate-300 mb-3" />
-                  <h4 className="font-semibold text-slate-700">No ticket purchases found</h4>
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <h4 className="font-semibold text-slate-700 font-sans">No ticket purchases found</h4>
+                  <p className="text-xs text-muted-foreground mt-1 font-sans">
                     {ticketSales.length === 0
                       ? 'When students redeem discounts on Inside Karachi, their tickets will appear here.'
                       : 'Try adjusting your search query or filters.'}
                   </p>
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm text-left">
-                    <thead className="text-xs uppercase bg-slate-50 border-y border-slate-200 text-slate-600 font-semibold">
+                <div className="overflow-x-auto font-sans">
+                  <table className="w-full text-sm text-left font-sans">
+                    <thead className="text-xs uppercase bg-slate-50 border-y border-slate-200 text-slate-600 font-semibold font-sans">
                       <tr>
                         <th className="px-6 py-3.5">Student / Buyer</th>
                         <th className="px-6 py-3.5">Event &amp; Tier</th>
@@ -573,42 +575,42 @@ export default function AdminEvents() {
                         <th className="px-6 py-3.5">Booking Ref</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-slate-100 font-sans">
                       {filteredSales.map((sale) => (
-                        <tr key={sale.id} className="hover:bg-slate-50/70 transition-colors">
+                        <tr key={sale.id} className="hover:bg-slate-50/70 transition-colors font-sans">
                           {/* Student */}
                           <td className="px-6 py-4">
-                            <div className="font-semibold text-slate-900">{sale.studentName}</div>
+                            <div className="font-semibold text-slate-900 font-sans">{sale.studentName}</div>
                             <div className="flex items-center gap-2 mt-1">
                               <Badge variant="secondary" className="font-mono text-[11px] px-1.5 py-0 bg-blue-50 text-blue-700 border border-blue-200">
                                 {sale.studentParchiId || 'Parchi ID'}
                               </Badge>
                               {sale.studentInstitute && (
-                                <span className="text-xs text-muted-foreground truncate max-w-[150px]" title={sale.studentInstitute}>
+                                <span className="text-xs text-muted-foreground truncate max-w-[150px] font-sans" title={sale.studentInstitute}>
                                   • {sale.studentInstitute}
                                 </span>
                               )}
                             </div>
                             {sale.studentEmail && (
-                              <div className="text-xs text-muted-foreground mt-0.5">{sale.studentEmail}</div>
+                              <div className="text-xs text-muted-foreground mt-0.5 font-sans">{sale.studentEmail}</div>
                             )}
                           </td>
 
                           {/* Event & Tier */}
                           <td className="px-6 py-4">
-                            <div className="font-medium text-slate-900">{sale.eventTitle}</div>
+                            <div className="font-medium text-slate-900 font-sans">{sale.eventTitle}</div>
                             <div className="flex items-center gap-2 mt-1">
-                              <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-200">
+                              <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-200 font-sans">
                                 <Tag className="w-3 h-3 mr-1" />
                                 {sale.ticketTier}
                               </Badge>
-                              <span className="text-xs text-slate-400">via {sale.partnerName}</span>
+                              <span className="text-xs text-slate-400 font-sans">via {sale.partnerName}</span>
                             </div>
                           </td>
 
                           {/* Purchase Date */}
-                          <td className="px-6 py-4 text-slate-600">
-                            <div className="flex items-center gap-1.5 text-xs font-medium text-slate-900">
+                          <td className="px-6 py-4 text-slate-600 font-sans">
+                            <div className="flex items-center gap-1.5 text-xs font-medium text-slate-900 font-sans">
                               <Clock className="w-3.5 h-3.5 text-slate-400" />
                               {sale.paidAt ? new Date(sale.paidAt).toLocaleDateString(undefined, {
                                 day: 'numeric',
@@ -616,20 +618,20 @@ export default function AdminEvents() {
                                 year: 'numeric',
                               }) : '—'}
                             </div>
-                            <div className="text-xs text-muted-foreground mt-0.5">
+                            <div className="text-xs text-muted-foreground mt-0.5 font-sans">
                               {sale.paidAt ? new Date(sale.paidAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                             </div>
                           </td>
 
                           {/* Discount Saved */}
                           <td className="px-6 py-4">
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 font-sans">
                               Rs. {Number(sale.discountAmountPkr).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
                             </span>
                           </td>
 
                           {/* Order Total */}
-                          <td className="px-6 py-4 text-slate-700 font-semibold">
+                          <td className="px-6 py-4 text-slate-700 font-semibold font-sans">
                             {sale.orderTotalPkr != null
                               ? `Rs. ${Number(sale.orderTotalPkr).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
                               : '—'}
@@ -664,12 +666,12 @@ export default function AdminEvents() {
         <TabsContent value="events-banners" className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-bold">Event Banners</h3>
-              <p className="text-xs text-muted-foreground">
+              <h3 className="text-lg font-bold font-sans">Event Banners</h3>
+              <p className="text-xs text-muted-foreground font-sans">
                 Banners shown on the student app&apos;s Events tab. Tapping one opens the ticket link on Inside Karachi.
               </p>
             </div>
-            <Button onClick={openCreate} size="sm">
+            <Button onClick={openCreate} size="sm" className="font-sans">
               <Plus className="h-4 w-4 mr-2" /> Add Event
             </Button>
           </div>
@@ -681,20 +683,20 @@ export default function AdminEvents() {
           ) : eventsError ? (
             <Card className="border-red-200 bg-red-50">
               <CardHeader>
-                <CardTitle>Error Loading Events</CardTitle>
-                <CardDescription className="text-red-700">{eventsError}</CardDescription>
+                <CardTitle className="font-sans">Error Loading Events</CardTitle>
+                <CardDescription className="text-red-700 font-sans">{eventsError}</CardDescription>
               </CardHeader>
             </Card>
           ) : events.length === 0 ? (
             <Card>
-              <CardContent className="py-10 text-center text-muted-foreground">
+              <CardContent className="py-10 text-center text-muted-foreground font-sans">
                 No events yet. Click &quot;Add Event&quot; to create the first one.
               </CardContent>
             </Card>
           ) : (
             <div className="space-y-4">
               {events.map((event) => (
-                <Card key={event.id} className={!event.isActive ? 'opacity-70 bg-secondary/20' : ''}>
+                <Card key={event.id} className={`bg-white ${!event.isActive ? 'opacity-70 bg-secondary/20' : ''}`}>
                   <CardContent className="p-4 flex gap-4 items-start">
                     <div className="w-40 h-24 rounded-md overflow-hidden bg-muted flex items-center justify-center shrink-0">
                       {event.imageUrl ? (
@@ -705,30 +707,30 @@ export default function AdminEvents() {
                       )}
                     </div>
 
-                    <div className="flex-1 min-w-0 space-y-1">
+                    <div className="flex-1 min-w-0 space-y-1 font-sans">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-semibold text-lg truncate">{event.title}</h3>
+                        <span className="font-sans font-bold text-lg text-slate-900 truncate">{event.title}</span>
                         {!event.isActive && (
-                          <span className="text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground font-medium">
+                          <span className="text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground font-medium font-sans">
                             Hidden
                           </span>
                         )}
-                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                        <span className="text-xs text-muted-foreground flex items-center gap-1 font-sans">
                           <ArrowUpDown className="h-3 w-3" /> {event.displayOrder}
                         </span>
                       </div>
                       {event.description && (
-                        <p className="text-sm text-muted-foreground line-clamp-2">{event.description}</p>
+                        <p className="text-sm text-muted-foreground line-clamp-2 font-sans">{event.description}</p>
                       )}
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground font-sans">
                         {event.eventDate && (
-                          <span className="flex items-center gap-1">
+                          <span className="flex items-center gap-1 font-sans">
                             <Calendar className="h-3 w-3" />
                             {new Date(event.eventDate).toLocaleString()}
                           </span>
                         )}
                         {event.venue && (
-                          <span className="flex items-center gap-1">
+                          <span className="flex items-center gap-1 font-sans">
                             <MapPin className="h-3 w-3" /> {event.venue}
                           </span>
                         )}
@@ -736,10 +738,10 @@ export default function AdminEvents() {
                           href={event.externalUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-1 text-primary hover:underline truncate max-w-xs"
+                          className="flex items-center gap-1 text-primary hover:underline truncate max-w-xs font-sans"
                         >
                           <ExternalLink className="h-3 w-3 shrink-0" />
-                          <span className="truncate">{event.externalUrl}</span>
+                          <span className="truncate font-sans">{event.externalUrl}</span>
                         </a>
                       </div>
                     </div>
@@ -751,7 +753,7 @@ export default function AdminEvents() {
                           disabled={busyId === event.id}
                           onCheckedChange={() => handleToggleActive(event)}
                         />
-                        <Label className="text-xs text-muted-foreground">Live</Label>
+                        <Label className="text-xs text-muted-foreground font-sans">Live</Label>
                       </div>
                       <Button
                         size="icon"
@@ -782,28 +784,29 @@ export default function AdminEvents() {
 
       {/* Banner Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={(open) => !saving && setDialogOpen(open)}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto font-sans">
           <DialogHeader>
-            <DialogTitle>{editing ? 'Edit Event' : 'Add Event'}</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="font-sans">{editing ? 'Edit Event' : 'Add Event'}</DialogTitle>
+            <DialogDescription className="font-sans">
               Students see the banner, title, date and venue. The ticket link opens on Inside Karachi.
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleSave} className="space-y-4">
+          <form onSubmit={handleSave} className="space-y-4 font-sans">
             <div className="space-y-2">
-              <Label htmlFor="event-title">Title *</Label>
+              <Label htmlFor="event-title" className="font-sans">Title *</Label>
               <Input
                 id="event-title"
                 value={form.title}
                 maxLength={255}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
                 placeholder="e.g. Prismfest'26"
+                className="font-sans"
               />
             </div>
 
             <div className="space-y-2">
-              <Label>Banner image</Label>
+              <Label className="font-sans">Banner image</Label>
               {form.imageUrl && (
                 <div className="relative w-full h-40 rounded-md overflow-hidden bg-muted">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -832,6 +835,7 @@ export default function AdminEvents() {
                   variant="outline"
                   disabled={uploading}
                   onClick={() => fileInputRef.current?.click()}
+                  className="font-sans"
                 >
                   {uploading ? (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -844,60 +848,66 @@ export default function AdminEvents() {
                   value={form.imageUrl}
                   onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
                   placeholder="or paste an image URL (https://...)"
+                  className="font-sans"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="event-url">Ticket link (Inside Karachi) *</Label>
+              <Label htmlFor="event-url" className="font-sans">Ticket link (Inside Karachi) *</Label>
               <Input
                 id="event-url"
                 value={form.externalUrl}
                 onChange={(e) => setForm({ ...form, externalUrl: e.target.value })}
                 placeholder="https://insidekarachi.com/events/..."
+                className="font-sans"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="event-desc">Description</Label>
+              <Label htmlFor="event-desc" className="font-sans">Description</Label>
               <Textarea
                 id="event-desc"
                 rows={3}
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
+                className="font-sans"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="event-date">Date &amp; time</Label>
+                <Label htmlFor="event-date" className="font-sans">Date &amp; time</Label>
                 <Input
                   id="event-date"
                   type="datetime-local"
                   value={form.eventDate}
                   onChange={(e) => setForm({ ...form, eventDate: e.target.value })}
+                  className="font-sans"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="event-venue">Venue</Label>
+                <Label htmlFor="event-venue" className="font-sans">Venue</Label>
                 <Input
                   id="event-venue"
                   value={form.venue}
                   maxLength={255}
                   onChange={(e) => setForm({ ...form, venue: e.target.value })}
+                  className="font-sans"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4 items-end">
               <div className="space-y-2">
-                <Label htmlFor="event-order">Display order</Label>
+                <Label htmlFor="event-order" className="font-sans">Display order</Label>
                 <Input
                   id="event-order"
                   type="number"
                   min={0}
                   value={form.displayOrder}
                   onChange={(e) => setForm({ ...form, displayOrder: e.target.value })}
+                  className="font-sans"
                 />
               </div>
               <div className="flex items-center gap-2 pb-2">
@@ -905,15 +915,15 @@ export default function AdminEvents() {
                   checked={form.isActive}
                   onCheckedChange={(v) => setForm({ ...form, isActive: v })}
                 />
-                <Label className="text-sm">Live in student app</Label>
+                <Label className="text-sm font-sans">Live in student app</Label>
               </div>
             </div>
 
             <DialogFooter>
-              <Button type="button" variant="outline" disabled={saving} onClick={() => setDialogOpen(false)}>
+              <Button type="button" variant="outline" disabled={saving} onClick={() => setDialogOpen(false)} className="font-sans">
                 Cancel
               </Button>
-              <Button type="submit" disabled={saving || uploading}>
+              <Button type="submit" disabled={saving || uploading} className="font-sans">
                 {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 {editing ? 'Save changes' : 'Create event'}
               </Button>
