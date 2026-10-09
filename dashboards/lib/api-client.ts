@@ -3081,3 +3081,29 @@ export const updateAdminEvent = async (
 export const deleteAdminEvent = async (id: string): Promise<void> => {
   await apiRequest(`/admin/events/${id}`, { method: 'DELETE' });
 };
+
+export interface AdminEventTicketSale {
+  id: string;
+  studentId: string;
+  studentName: string;
+  studentEmail: string | null;
+  studentPhone: string | null;
+  studentParchiId: string;
+  studentInstitute: string | null;
+  eventLabel: string | null;
+  eventTitle: string;
+  ticketTier: string;
+  discountAmountPkr: number;
+  orderTotalPkr: number | null;
+  currency: string;
+  partnerName: string;
+  externalReference: string;
+  paidAt: string;
+  createdAt: string;
+}
+
+export const getAdminEventTicketSales = async (): Promise<AdminEventTicketSale[]> => {
+  const response = await apiRequest('/admin/events/ticket-sales', { method: 'GET' });
+  return Array.isArray(response) ? response : (response?.data || []);
+};
+
