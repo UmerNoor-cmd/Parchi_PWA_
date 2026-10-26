@@ -7,7 +7,16 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Eye, EyeOff, RefreshCw, Building2, Store, Upload, Loader2, ImageIcon, X } from "lucide-react"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command"
+import { Eye, EyeOff, RefreshCw, Building2, Store, Upload, Loader2, ImageIcon, X, Check, ChevronsUpDown } from "lucide-react"
 import { DASHBOARD_COLORS } from "@/lib/colors"
 import { SupabaseStorageService } from "@/lib/storage"
 import { corporateSignup, branchSignup, type ApiError } from "@/lib/api-client"
@@ -17,6 +26,7 @@ import { MERCHANT_CATEGORIES, getSubcategoriesForCategory } from "@/lib/merchant
 import { useCategories, buildCategoryMap } from "@/hooks/use-categories"
 import { PakistaniPhoneInput } from "@/components/pakistani-phone-input"
 import { isCompletePakistaniPhone } from "@/lib/pakistani-phone"
+import { cn } from "@/lib/utils"
 
 interface AccountCreationProps {
   role?: 'admin' | 'corporate'
@@ -28,6 +38,7 @@ export function AccountCreation({ role = 'admin', corporateId, emailPrefix }: Ac
   const colors = DASHBOARD_COLORS(role === 'corporate' ? 'corporate' : 'admin')
   const { toast } = useToast()
   const [showPassword, setShowPassword] = useState(false)
+  const [corporateSelectOpen, setCorporateSelectOpen] = useState(false)
 
   const { categories: dbCategories } = useCategories()
   const categoryMap = buildCategoryMap(dbCategories)
@@ -377,36 +388,69 @@ export function AccountCreation({ role = 'admin', corporateId, emailPrefix }: Ac
             {role === 'admin' && (
               <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="branch-corporate">Linked Corporate Account</Label>
-                <Select
-                  value={branchData.linkedCorporate}
-                  onValueChange={(value) => {
-                    const corporate = corporateAccounts.find(c => c.id === value)
-                    const slug = corporate ? generateSlug(corporate.businessName) : ""
-                    setBranchData(prev => ({
-                      ...prev,
-                      linkedCorporate: value,
-                      emailPrefix: slug
-                    }))
-                  }}
-                  disabled={merchantsLoading || corporateAccounts.length === 0}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={
-                      merchantsLoading
-                        ? "Loading corporations..."
-                        : merchantsError
-                          ? "Error loading corporations"
-                          : corporateAccounts.length === 0
-                            ? "No corporations available"
-                            : "Select a corporate entity"
-                    } />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {corporateAccounts.map(corp => (
-                      <SelectItem key={corp.id} value={corp.id}>{corp.businessName}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={corporateSelectOpen} onOpenChange={setCorporateSelectOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      id="branch-corporate"
+                      type="button"
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={corporateSelectOpen}
+                      disabled={merchantsLoading || corporateAccounts.length === 0}
+                      className={cn(
+                        "w-full justify-between font-normal h-10 px-3 border-input bg-transparent hover:bg-accent/40 transition-colors",
+                        !branchData.linkedCorporate && "text-muted-foreground"
+                      )}
+                    >
+                      <span className="truncate">
+                        {branchData.linkedCorporate
+                          ? corporateAccounts.find(corp => corp.id === branchData.linkedCorporate)?.businessName || "Select a corporate entity"
+                          : merchantsLoading
+                            ? "Loading corporations..."
+                            : merchantsError
+                              ? "Error loading corporations"
+                              : corporateAccounts.length === 0
+                                ? "No corporations available"
+                                : "Select a corporate entity"}
+                      </span>
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] min-w-[280px] p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Search corporate entity..." />
+                      <CommandList>
+                        <CommandEmpty>No corporate entity found.</CommandEmpty>
+                        <CommandGroup>
+                          {corporateAccounts.map(corp => (
+                            <CommandItem
+                              key={corp.id}
+                              value={corp.businessName}
+                              onSelect={() => {
+                                const slug = generateSlug(corp.businessName)
+                                setBranchData(prev => ({
+                                  ...prev,
+                                  linkedCorporate: corp.id,
+                                  emailPrefix: slug
+                                }))
+                                setCorporateSelectOpen(false)
+                              }}
+                              className="cursor-pointer"
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4 shrink-0",
+                                  branchData.linkedCorporate === corp.id ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              <span className="truncate">{corp.businessName}</span>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
             )}
 
