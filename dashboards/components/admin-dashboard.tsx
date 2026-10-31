@@ -86,6 +86,7 @@ import { AdminAccountDeletion } from "./admin-account-deletion"
 import { AdminSystemConfig } from "./admin-system-config"
 import AdminCategories from "./admin-categories"
 import AdminEvents from "./admin-events"
+import AdminAds from "./admin-ads"
 import { AdminAnalytics } from "./admin-analytics"
 import { AdminApprovedSignups } from "./admin-approved-signups"
 import { AdminRedemptionEngine } from "./admin-redemption-engine"
@@ -987,6 +988,8 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           {activeTab === "categories" && <AdminCategories />}
 
           {activeTab === "events" && <AdminEvents />}
+
+          {activeTab === "home-banners" && <AdminAds />}
 
           {activeTab === "system-config" && <AdminSystemConfig />}
         </div>

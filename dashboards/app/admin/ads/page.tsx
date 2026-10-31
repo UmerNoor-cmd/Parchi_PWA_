@@ -5,7 +5,7 @@ import { ArrowLeft } from "lucide-react"
 import ProtectedRoute from "@/components/ProtectedRoute"
 import AdminAds from "@/components/admin-ads"
 
-// Intentionally not linked from the admin sidebar — reach it at /admin/ads.
+// Standalone route for the Home Banners tab (also in the admin sidebar).
 export default function AdminAdsPage() {
   return (
     <ProtectedRoute allowedRoles={['admin']}>
