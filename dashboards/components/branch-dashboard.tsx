@@ -68,6 +68,43 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
   const realtimeChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const activeQrRequestRef = useRef<QrPendingRequest | null>(null)
+  // True while an approve/reject call is in flight, so expiry/poll/realtime
+  // don't yank the dialog out from under the request.
+  const qrActionInFlightRef = useRef(false)
+  const [qrSecondsLeft, setQrSecondsLeft] = useState<number | null>(null)
+  const [isQrImagePreviewOpen, setIsQrImagePreviewOpen] = useState(false)
+
+  // Drop the active QR request (expired, cancelled, or handled) and let the
+  // poller pick up the next pending one.
+  const closeQrRequest = (errorMessage?: string) => {
+    setIsQrApprovalDialogOpen(false)
+    setIsQrRejectDialogOpen(false)
+    setIsQrImagePreviewOpen(false)
+    setQrRejectionReason("")
+    activeQrRequestRef.current = null
+    setActiveQrRequest(null)
+    if (errorMessage) toast.error(errorMessage)
+  }
+
+  // Countdown to the request's expiry; closes the dialog when it runs out.
+  useEffect(() => {
+    if (!activeQrRequest) {
+      setQrSecondsLeft(null)
+      return
+    }
+    const expiresAt = new Date(activeQrRequest.expiresAt).getTime()
+    const tick = () => {
+      const left = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000))
+      setQrSecondsLeft(left)
+      if (left === 0 && !qrActionInFlightRef.current) {
+        closeQrRequest("This request expired. Ask the student to scan the QR code again.")
+      }
+    }
+    tick()
+    const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeQrRequest])
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -115,12 +152,21 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
       } catch {/* non-critical */}
     }
 
-    // Polls every 8 s as a safety net when Realtime misses events
+    // Polls every 8 s as a safety net when Realtime misses events. While a
+    // request is open it also checks that request is still pending.
     const pollPendingRequests = async () => {
-      if (activeQrRequestRef.current) return // already handling one
       try {
         const pending = await getPendingQrRequests()
-        if (!cancelled && pending.length > 0) showPendingRequest(pending)
+        if (cancelled) return
+        const active = activeQrRequestRef.current
+        if (active) {
+          if (qrActionInFlightRef.current) return
+          if (!pending.some((p) => p.id === active.id)) {
+            closeQrRequest("This request is no longer available. The student cancelled it or it expired.")
+          }
+          return
+        }
+        if (pending.length > 0) showPendingRequest(pending)
       } catch {/* non-critical */}
     }
 
@@ -148,6 +194,21 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
               if (payload.new?.branch_id !== settings.branchId) return
               if (payload.new?.status !== 'pending') return
               await handleIncomingRequest()
+            }
+          )
+          .on(
+            'postgres_changes',
+            { event: 'UPDATE', schema: 'public', table: 'qr_redemption_requests' },
+            (payload) => {
+              // The open request was cancelled by the student or expired.
+              const active = activeQrRequestRef.current
+              if (!active || payload.new?.id !== active.id || qrActionInFlightRef.current) return
+              if (payload.new?.status === 'pending') return
+              closeQrRequest(
+                payload.new?.rejection_reason === 'cancelled_by_student'
+                  ? "The student cancelled this request."
+                  : "This request is no longer available."
+              )
             }
           )
           .subscribe((status) => {
@@ -296,11 +357,24 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
     ? isSameDayAsToday(studentDetails.lastBranchRedemptionAt)
     : false;
 
+  // After a failed approve/reject: close the dialog if the request is gone,
+  // otherwise keep it open so staff can retry or reject.
+  const handleQrActionError = async (requestId: string, error: unknown, fallback: string) => {
+    const raw = (error as ApiError)?.message
+    const message = Array.isArray(raw) ? raw.join(", ") : raw || fallback
+    const stillPending = await getPendingQrRequests()
+      .then((pending) => pending.some((p) => p.id === requestId))
+      .catch(() => true)
+    if (stillPending) toast.error(message)
+    else closeQrRequest(message)
+  }
+
   const handleApproveQrRequest = async () => {
     if (!activeQrRequest) return
     setIsApprovingQr(true)
+    qrActionInFlightRef.current = true
     try {
-      await approveQrRequest(activeQrRequest.id)
+      const result = await approveQrRequest(activeQrRequest.id)
       setIsQrApprovalDialogOpen(false)
       activeQrRequestRef.current = null
       setActiveQrRequest(null)
@@ -312,11 +386,17 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
       setDailyStats(stats)
       setDailyRedemptionDetails(details)
       setAggregatedStats(aggregated)
-      toast.success("QR redemption approved!")
+      if (result?.isBonusApplied) {
+        toast.success("QR redemption approved with loyalty bonus!", {
+          description: result.bonusDescription || undefined,
+        })
+      } else {
+        toast.success("QR redemption approved!")
+      }
     } catch (error) {
-      const message = (error as ApiError)?.message
-      toast.error(Array.isArray(message) ? message.join(", ") : message || "Failed to approve request")
+      await handleQrActionError(activeQrRequest.id, error, "Failed to approve request")
     } finally {
+      qrActionInFlightRef.current = false
       setIsApprovingQr(false)
     }
   }
@@ -326,6 +406,7 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
   const handleConfirmQrRejection = async () => {
     if (!activeQrRequest) return
     setIsRejectingQr(true)
+    qrActionInFlightRef.current = true
     try {
       await rejectQrRequest(activeQrRequest.id, qrRejectionReason || undefined)
       setIsQrRejectDialogOpen(false)
@@ -334,9 +415,10 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
       setActiveQrRequest(null)
       setQrRejectionReason("")
       toast.info("QR request rejected")
-    } catch {
-      toast.error("Failed to reject request")
+    } catch (error) {
+      await handleQrActionError(activeQrRequest.id, error, "Failed to reject request")
     } finally {
+      qrActionInFlightRef.current = false
       setIsRejectingQr(false)
     }
   }
@@ -1107,11 +1189,28 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
             <DialogDescription>A student has scanned your QR code and wants to redeem an offer.</DialogDescription>
           </DialogHeader>
 
+          {activeQrRequest && qrSecondsLeft !== null && (
+            <div
+              className={`flex items-center justify-center gap-2 rounded-md py-2 text-sm font-medium ${qrSecondsLeft <= 30 ? 'bg-red-50 text-red-600' : 'bg-muted text-muted-foreground'}`}
+            >
+              <Clock className="w-4 h-4" />
+              Expires in {Math.floor(qrSecondsLeft / 60)}:{String(qrSecondsLeft % 60).padStart(2, '0')}
+            </div>
+          )}
+
           {activeQrRequest ? (
             <div className="py-4 space-y-5">
               {/* Student info */}
               <div className="flex flex-col items-center text-center space-y-3">
-                <Avatar className="w-24 h-24 border-4 border-background shadow-lg">
+                <Avatar
+                  className={`w-24 h-24 border-4 border-background shadow-lg ${activeQrRequest.student.verificationSelfie || activeQrRequest.student.profilePicture ? 'cursor-zoom-in hover:opacity-90 transition-opacity' : ''}`}
+                  title="Click to enlarge"
+                  onClick={() => {
+                    if (activeQrRequest.student.verificationSelfie || activeQrRequest.student.profilePicture) {
+                      setIsQrImagePreviewOpen(true)
+                    }
+                  }}
+                >
                   <AvatarImage src={activeQrRequest.student.verificationSelfie || activeQrRequest.student.profilePicture || ""} />
                   <AvatarFallback className="text-2xl bg-muted">
                     {activeQrRequest.student.firstName[0]}{activeQrRequest.student.lastName[0]}
@@ -1123,6 +1222,18 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
                   <Badge variant="outline" className="mt-2 font-mono">{activeQrRequest.student.parchiId}</Badge>
                 </div>
               </div>
+
+              {activeQrRequest.bonus?.isBonus && (
+                <div className="flex items-start gap-2 p-3 rounded-md border border-orange-200 bg-orange-50 text-orange-700 text-sm">
+                  <Sparkles className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-semibold">🎉 Loyalty bonus unlocked!</p>
+                    <p>
+                      {activeQrRequest.bonus.description || "Bonus reward"} — applied automatically when you approve.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Offer + stats */}
               <div className="grid grid-cols-2 gap-4 text-sm border rounded-lg p-4 bg-muted/20">
@@ -1190,6 +1301,36 @@ export function BranchDashboard({ onLogout }: { onLogout: () => void }) {
               Approve & Redeem
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* QR Student Photo Preview */}
+      <Dialog open={isQrImagePreviewOpen} onOpenChange={setIsQrImagePreviewOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Student Photos</DialogTitle>
+            <DialogDescription>
+              {activeQrRequest?.student.firstName} {activeQrRequest?.student.lastName}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 p-2">
+            {[
+              { src: activeQrRequest?.student.verificationSelfie, label: "Verification selfie" },
+              { src: activeQrRequest?.student.profilePicture, label: "Profile picture" },
+            ]
+              .filter((img): img is { src: string; label: string } => !!img.src)
+              .map((img) => (
+                <figure key={img.label} className="flex flex-col items-center gap-2 min-w-0">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={img.src}
+                    alt={img.label}
+                    className="max-w-full max-h-[65vh] object-contain rounded-lg shadow-lg"
+                  />
+                  <figcaption className="text-xs text-muted-foreground">{img.label}</figcaption>
+                </figure>
+              ))}
+          </div>
         </DialogContent>
       </Dialog>
 

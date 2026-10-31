@@ -2945,6 +2945,8 @@ export interface QrPendingRequest {
   status: string;
   expiresAt: string;
   createdAt: string;
+  /** Whether approving now unlocks a loyalty bonus (absent on older backends). */
+  bonus?: { isBonus: boolean; description: string | null };
   student: {
     id: string;
     parchiId: string;
@@ -2985,8 +2987,15 @@ export const getPendingQrRequests = async (): Promise<QrPendingRequest[]> => {
   return response.data;
 };
 
-export const approveQrRequest = async (requestId: string): Promise<void> => {
-  await apiRequest(`/qr-redemptions/${requestId}/approve`, { method: 'PATCH' });
+export interface QrApproveResult {
+  success: boolean;
+  isBonusApplied?: boolean;
+  bonusDescription?: string | null;
+}
+
+export const approveQrRequest = async (requestId: string): Promise<QrApproveResult> => {
+  const response = await apiRequest(`/qr-redemptions/${requestId}/approve`, { method: 'PATCH' });
+  return response?.data || response;
 };
 
 export const rejectQrRequest = async (requestId: string, rejectionReason?: string): Promise<void> => {
